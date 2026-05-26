@@ -1,0 +1,465 @@
+import { VoucherCard, Voucher } from "../components/VoucherCard";
+import { useState } from "react";
+import { useSearchParams, Link } from "react-router";
+import { ChevronDown, Grid3x3, List, X, ChevronRight } from "lucide-react";
+import { Button, Input } from "@voucherhub/ui";
+import { PriceRangeSlider } from "../components/PriceRangeSlider";
+import { useLanguage } from "../../shared/contexts/LanguageContext";
+
+const searchVouchers: Voucher[] = [
+  {
+    id: "1",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "SPA",
+    name: "Grand Bliss Royal Massage & Hydro-Aromatherapy (90 Min)",
+    partner: "Ethereal Zen Wellness Spa",
+    price: 129,
+    originalPrice: 245,
+    discount: 47,
+    rating: 4.8,
+    reviews: 248,
+    flashDeal: true,
+  },
+  {
+    id: "2",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "WELLNESS",
+    name: "Rejuvenating Spa Day Package with Facial",
+    partner: "Tranquil Waters Spa",
+    price: 99,
+    originalPrice: 189,
+    discount: 48,
+    rating: 4.5,
+    reviews: 156,
+  },
+  {
+    id: "3",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "SPA",
+    name: "Hot Stone Therapy & Deep Tissue Massage",
+    partner: "Serenity Spa & Wellness",
+    price: 149,
+    originalPrice: 279,
+    discount: 47,
+    rating: 4.9,
+    reviews: 312,
+  },
+  {
+    id: "4",
+    image: "https://images.unsplash.com/photo-1762742316793-b1845065429a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJlc29ydCUyMHZhY2F0aW9uJTIwdHJhdmVsfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "TRAVEL",
+    name: "Luxury Resort Spa Package - 3 Days 2 Nights",
+    partner: "Paradise Beach Resort",
+    price: 399,
+    originalPrice: 799,
+    discount: 50,
+    rating: 4.7,
+    reviews: 189,
+  },
+  {
+    id: "5",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "WELLNESS",
+    name: "Couple's Romantic Spa Treatment",
+    partner: "Harmony Wellness Center",
+    price: 179,
+    originalPrice: 349,
+    discount: 49,
+    rating: 4.6,
+    reviews: 95,
+  },
+  {
+    id: "6",
+    image: "https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "FOOD",
+    name: "Premium Dining Experience with Wine Pairing",
+    partner: "The Elegant Table Restaurant",
+    price: 119,
+    originalPrice: 249,
+    discount: 52,
+    rating: 4.8,
+    reviews: 224,
+  },
+  {
+    id: "7",
+    image: "https://images.unsplash.com/photo-1584827386916-b5351d3ba34b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwZ3ltJTIwd29ya291dCUyMGV4ZXJjaXNlfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "FITNESS",
+    name: "Yoga & Meditation Wellness Retreat",
+    partner: "Mindful Movement Studio",
+    price: 89,
+    originalPrice: 159,
+    discount: 44,
+    rating: 4.7,
+    reviews: 178,
+  },
+  {
+    id: "8",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "SPA",
+    name: "Organic Aromatherapy & Herbal Treatment",
+    partner: "Nature's Touch Spa",
+    price: 109,
+    originalPrice: 219,
+    discount: 50,
+    rating: 4.6,
+    reviews: 134,
+  },
+  {
+    id: "9",
+    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+    category: "WELLNESS",
+    name: "Full Body Detox & Lymphatic Drainage",
+    partner: "Vitality Health Spa",
+    price: 139,
+    originalPrice: 269,
+    discount: 48,
+    rating: 4.8,
+    reviews: 201,
+  },
+];
+
+export function SearchResultsPage() {
+  const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get("q") || "Wellness & Spa";
+  const [sortBy, setSortBy] = useState("popular");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isBrandsModalOpen, setIsBrandsModalOpen] = useState(false);
+  const [priceRange, setPriceRange] = useState([10, 1000]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedState, setSelectedState] = useState("California (124)");
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
+  const [sliderResetKey, setSliderResetKey] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
+
+  const handleClearAll = () => {
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setSelectedState("California (124)");
+    setSelectedCities([]);
+    setSelectedRatings([]);
+    setPriceRange([10, 1000]);
+    setSliderResetKey(prev => prev + 1);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(searchVouchers.length / ITEMS_PER_PAGE);
+  const paginatedVouchers = searchVouchers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      
+      <main className="flex-1 max-w-[1440px] mx-auto px-6 py-8 w-full">
+        {/* Breadcrumb */}
+        <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+          <Link to="/" className="hover:text-foreground font-semibold">{t('search.home')}</Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="font-bold text-foreground">{t('search.results')}</span>
+        </div>
+
+        {/* Page Title */}
+        <h1 className="text-3xl font-bold mb-2">
+          {t('search.results_for')} <span className="text-primary">"{query}"</span>
+        </h1>
+        <p className="text-muted-foreground mb-6">{t('search.showing')}</p>
+
+        {/* Sort Bar */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-border">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold">{t('search.sort_by')}</span>
+            <Button
+              variant={sortBy === "popular" ? "default" : "secondary"}
+              onClick={() => setSortBy("popular")}
+              className={sortBy === "popular" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+            >
+              {t('search.sort.popular')}
+            </Button>
+            <Button
+              variant={sortBy === "newest" ? "default" : "secondary"}
+              onClick={() => setSortBy("newest")}
+              className={sortBy === "newest" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+            >
+              {t('search.sort.newest')}
+            </Button>
+            <Button
+              variant={sortBy === "price-low" ? "default" : "secondary"}
+              onClick={() => setSortBy("price-low")}
+              className={sortBy === "price-low" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+            >
+              {t('search.sort.price_low')}
+            </Button>
+            <Button
+              variant={sortBy === "price-high" ? "default" : "secondary"}
+              onClick={() => setSortBy("price-high")}
+              className={sortBy === "price-high" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+            >
+              {t('search.sort.price_high')}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted">{t('search.per_page')}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded ${
+                  viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                }`}
+              >
+                <Grid3x3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded ${
+                  viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                }`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content - Sidebar + Grid */}
+        <div className="flex gap-8">
+          {/* Left Sidebar - Filters */}
+          <aside className="w-64 shrink-0 hidden lg:block">
+            <div className="sticky top-24">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold">{t('search.filters')}</h3>
+                <button onClick={handleClearAll} className="text-sm text-primary hover:underline">
+                  {t('search.clear_all')}
+                </button>
+              </div>
+
+              {/* Categories */}
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3 text-sm uppercase">{t('search.categories')}</h4>
+                <div className="space-y-2">
+                  {[
+                    { name: "Travel & Hotels", key: 'search.cat.travel', count: 24 },
+                    { name: "Food & Beverages", key: 'search.cat.food', count: 18 },
+                    { name: "Wellness & Spa", key: 'search.cat.wellness', count: 12 },
+                    { name: "Entertainment", key: 'search.cat.entertainment', count: 8 },
+                    { name: "Sports & Fitness", key: 'search.cat.sports', count: 15 },
+                  ].map((cat) => (
+                    <label key={cat.name} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-border" 
+                        checked={selectedCategories.includes(cat.name)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedCategories([...selectedCategories, cat.name]);
+                          else setSelectedCategories(selectedCategories.filter(c => c !== cat.name));
+                        }}
+                      />
+                      <span className="text-sm">{t(cat.key)}</span>
+                      <span className="text-xs text-muted ml-auto">({cat.count})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Brands / Providers */}
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3 text-sm uppercase">
+                  {t('search.brands')}
+                </h4>
+                <div className="space-y-2">
+                  {["Marriott Int.", "Starbucks", "Hilton Resorts", "Nike Store"].map(
+                    (brand) => (
+                      <label key={brand} className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-border" 
+                          checked={selectedBrands.includes(brand)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedBrands([...selectedBrands, brand]);
+                            else setSelectedBrands(selectedBrands.filter(b => b !== brand));
+                          }}
+                        />
+                        <span className="text-sm">{brand}</span>
+                      </label>
+                    )
+                  )}
+                  <button onClick={() => setIsBrandsModalOpen(true)} className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+                    {t('search.view_more')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3 text-sm uppercase">{t('search.location')}</h4>
+                <select 
+                  className="w-full px-3 py-2 bg-input-background rounded-lg border border-border text-sm"
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                >
+                  <option>California (124)</option>
+                  <option>New York (98)</option>
+                  <option>Florida (67)</option>
+                  <option>Texas (54)</option>
+                </select>
+                <div className="space-y-2 mt-3 ml-4">
+                  {[
+                    { name: "Miami", count: 42 },
+                    { name: "Orlando", count: 28 },
+                    { name: "Tampa", count: 19 },
+                  ].map((city) => (
+                    <label key={city.name} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-border" 
+                        checked={selectedCities.includes(city.name)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedCities([...selectedCities, city.name]);
+                          else setSelectedCities(selectedCities.filter(c => c !== city.name));
+                        }}
+                      />
+                      <span className="text-sm">{city.name}</span>
+                      <span className="text-xs text-muted ml-auto">({city.count})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3 text-sm uppercase">{t('search.price_range')}</h4>
+                <div className="px-2">
+                  <PriceRangeSlider 
+                    key={sliderResetKey}
+                    min={10} 
+                    max={1000} 
+                    value={priceRange}
+                    onChange={(min, max) => setPriceRange([min, max])} 
+                  />
+                </div>
+                <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
+                  <span>$10</span>
+                  <span className="font-semibold text-foreground text-sm">
+                    ${priceRange[0]} - ${priceRange[1]}{priceRange[1] === 1000 ? '+' : ''}
+                  </span>
+                  <span>$1000+</span>
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3 text-sm uppercase">{t('search.rating')}</h4>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map((stars) => (
+                    <label key={stars} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-border" 
+                        checked={selectedRatings.includes(stars)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedRatings([...selectedRatings, stars]);
+                          else setSelectedRatings(selectedRatings.filter(r => r !== stars));
+                        }}
+                      />
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <svg key={i} className={`w-4 h-4 ${i < stars ? "fill-current" : "text-gray-300 fill-current"}`} viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filter Button */}
+              <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 hover:opacity-90 transition-colors">
+                {t('search.apply_filters')}
+              </Button>
+            </div>
+          </aside>
+
+          {/* Right - Voucher Grid */}
+          <div className="flex-1">
+            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" : "flex flex-col gap-6 mb-8"}>
+              {paginatedVouchers.map((voucher) => (
+                <VoucherCard key={voucher.id} voucher={voucher} viewMode={viewMode} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2">
+                <Button 
+                  variant="secondary" 
+                  className="px-3 py-2 disabled:opacity-50"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  &lt;
+                </Button>
+                
+                {[...Array(totalPages)].map((_, i) => (
+                  <Button 
+                    key={i}
+                    variant={currentPage === i + 1 ? "default" : "secondary"}
+                    className={`px-4 py-2 ${currentPage === i + 1 ? 'bg-primary text-primary-foreground font-semibold hover:opacity-90' : ''}`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+
+                <Button 
+                  variant="secondary" 
+                  className="px-3 py-2 disabled:opacity-50"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  &gt;
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+
+        {/* Brands Modal */}
+        {isBrandsModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-[400px] max-h-[80vh] flex flex-col mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-lg">{t('search.all_brands')}</h3>
+                <button onClick={() => setIsBrandsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="relative mb-4">
+                <Input placeholder={t('search.search_brands')} className="w-full bg-input-background" />
+              </div>
+              <div className="overflow-y-auto flex-1 space-y-3 pr-2">
+                {["Adidas", "Amazon", "Apple", "Burger King", "Domino's", "Dunkin'", "Hilton Resorts", "Hyatt", "KFC", "Marriott Int.", "McDonald's", "Nike Store", "Pizza Hut", "Starbucks", "Subway", "Target", "Uber", "Walmart", "Wendy's"].map((brand) => (
+                  <label key={brand} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="rounded border-border" />
+                    <span className="text-sm">{brand}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-6 pt-4 border-t border-border flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsBrandsModalOpen(false)}>{t('common.cancel')}</Button>
+                <Button onClick={() => setIsBrandsModalOpen(false)} className="bg-primary text-primary-foreground font-semibold">{t('search.apply_filters')}</Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+    </div>
+  );
+}
