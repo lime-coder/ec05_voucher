@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
 
 interface PageHeaderProps {
   title: string;
@@ -9,27 +8,18 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: { xs: 'stretch', sm: 'center' },
-        flexDirection: { xs: 'column', sm: 'row' },
-        gap: 2,
-        mb: 3,
-      }}
-    >
-      <Box>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div>
+        <h2 className="text-xl font-bold mb-1">
           {title}
-        </Typography>
+        </h2>
         {description && (
-          <Typography variant="body2" color="text.secondary">
+          <p className="text-sm text-gray-500">
             {description}
-          </Typography>
+          </p>
         )}
-      </Box>
+      </div>
       {action}
-    </Box>
+    </div>
   );
 }

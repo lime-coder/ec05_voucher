@@ -82,8 +82,8 @@ export default function VerifyVoucher() {
                 className="flex-1 text-lg py-6"
                 placeholder={t('verify.input_placeholder')}
                 value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVoucherCode(e.target.value)}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleVerify()}
               />
               <Button
                 size="lg"

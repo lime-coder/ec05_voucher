@@ -78,12 +78,12 @@ export default function CreateVoucher() {
     setImages(images.filter(img => img.id !== id));
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -344,7 +344,7 @@ export default function CreateVoucher() {
                       <Input
                         placeholder={t('partner.create.image_desc_ph')}
                         value={image.description}
-                        onChange={(e) => handleImageDescriptionChange(image.id, e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageDescriptionChange(image.id, e.target.value)}
                       />
                       <Button
                         variant="destructive"

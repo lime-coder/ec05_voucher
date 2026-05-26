@@ -1,6 +1,5 @@
 export const vi = {
   // Common
-  'common.cancel': 'Hủy',
   'common.mon_fri': 'Thứ 2 - Thứ 6',
   'common.saturday': 'Thứ 7',
   'common.sunday': 'Chủ Nhật',
@@ -240,23 +239,6 @@ export const vi = {
   'voucher.load_more_reviews': 'Tải thêm Đánh giá',
   'voucher.all_reviews_loaded': 'Đã tải hết đánh giá',
 
-  // Brand Store
-  'store.sales': 'Đã Bán',
-  'store.rating': 'Đánh Giá',
-  'store.joined': 'Đã Tham Gia',
-  'store.about': 'Về Cửa Hàng',
-  'store.read_more': 'Xem thêm',
-  'store.read_less': 'Ẩn bớt',
-  'store.business_hours': 'Giờ Hoạt Động',
-  'store.branches': 'Chi Nhánh',
-  'store.view_all_branches': 'Xem tất cả chi nhánh',
-  'store.available_vouchers': 'Voucher Hiện Có',
-  'store.reviews.count': '{count} Đánh Giá',
-  'store.filter.sort_by': 'Sắp xếp:',
-  'store.filter.default': 'Mặc định',
-  'store.filter.price_low_high': 'Giá: Thấp đến Cao',
-  'store.filter.price_high_low': 'Giá: Cao đến Thấp',
-  'store.reviews.view_all': 'Xem Tất Cả Đánh Giá',
 
   // Cart
   'cart.title': 'Giỏ Hàng',

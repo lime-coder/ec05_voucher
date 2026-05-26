@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 interface PriceRangeSliderProps {
   min: number;
   max: number;
+  value?: number[];
   onChange: (min: number, max: number) => void;
 }
 

@@ -8,11 +8,5 @@
     "dev:customer": "pnpm --filter Customer dev",
     "dev:partner": "pnpm --filter Partner dev",
     "build": "pnpm -r build"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "esbuild"
-    ]
   }
 }

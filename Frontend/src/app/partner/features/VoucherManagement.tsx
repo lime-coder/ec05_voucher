@@ -119,7 +119,7 @@ export default function VoucherManagement() {
                 placeholder={t('partner.vouchers.search_ph')}
                 className="pl-9"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
               />
             </div>
             <Button variant="outline" className="shrink-0 gap-2" onClick={() => alert(t('partner.vouchers.filter') + " - Coming soon")}>

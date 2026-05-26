@@ -8,7 +8,7 @@ import { useLanguage } from "../../shared/contexts/LanguageContext";
 export function PartnerProfilePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
+  const [activeTab, setActiveTab] = useState<string>("profile");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("https://ui-avatars.com/api/?name=Technova+Global&background=f59e0b&color=fff&size=128");
   const [formData, setFormData] = useState({

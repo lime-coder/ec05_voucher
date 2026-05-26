@@ -1,5 +1,3 @@
-import type { ChipProps } from '@mui/material';
-
 export type ViewId =
   | 'dashboard'
   | 'vouchers'
@@ -28,7 +26,7 @@ export interface Voucher {
 
 export interface StatusConfig {
   label: string;
-  color: ChipProps['color'];
+  color: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'error';
 }
 
 export type VerificationStatus = 'valid' | 'used' | 'expired' | 'invalid';
@@ -89,7 +87,7 @@ export interface CreateVoucherFormData {
   terms: string;
   originalPrice: string;
   salePrice: string;
-  
+  discountPercent: string;
   quantity: string;
   branches: string[];
   saleStartDate: string;

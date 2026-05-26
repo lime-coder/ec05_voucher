@@ -4,6 +4,9 @@ packages:
   - "Customer"
   - "Partner"
   - "packages/*"
-allowBuilds:
-  '@tailwindcss/oxide': set this to true or false
-  esbuild: set this to true or false
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild
+overrides:
+  '@types/react': 18.3.18
+  '@types/react-dom': 18.3.7

@@ -241,24 +241,6 @@ export const en = {
   'voucher.load_more_reviews': 'Load More Reviews',
   'voucher.all_reviews_loaded': 'All reviews loaded',
 
-  // Brand Store
-  'store.sales': 'Sales',
-  'store.rating': 'Rating',
-  'store.joined': 'Joined',
-  'store.about': 'About Store',
-  'store.read_more': 'Read more',
-  'store.read_less': 'Read less',
-  'store.business_hours': 'Business Hours',
-  'store.branches': 'Available Branches',
-  'store.view_all_branches': 'View all branches',
-  'store.available_vouchers': 'Available Vouchers',
-  'store.reviews.count': '{count} Reviews',
-  'store.filter.sort_by': 'Sort by:',
-  'store.filter.default': 'Default Recommended',
-  'store.filter.price_low_high': 'Price: Low to High',
-  'store.filter.price_high_low': 'Price: High to Low',
-  'store.reviews.view_all': 'View All Reviews',
-
   // Cart
   'cart.title': 'Shopping Cart',
   'cart.step.cart': 'Cart',

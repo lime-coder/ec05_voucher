@@ -1,16 +1,17 @@
-import type { ReactNode } from 'react';
-import { Paper } from '@mui/material';
-import type { SxProps, Theme } from '@mui/material/styles';
+import type { ReactNode, CSSProperties } from 'react';
 
 interface SectionPaperProps {
   children: ReactNode;
-  sx?: SxProps<Theme>;
+  sx?: CSSProperties;
 }
 
 export default function SectionPaper({ children, sx }: SectionPaperProps) {
   return (
-    <Paper sx={{ p: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', ...sx }}>
+    <div
+      className="p-6 rounded-xl bg-white shadow-sm border border-gray-100"
+      style={sx}
+    >
       {children}
-    </Paper>
+    </div>
   );
 }

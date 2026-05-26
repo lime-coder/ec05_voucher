@@ -43,6 +43,7 @@ export const initialCreateVoucherForm: CreateVoucherFormData = {
   
   
   isRefundable: true,
+  refundPolicy: '',
   dateSetBy: 'partner',
 };
 
