@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev:frontend": "pnpm --filter @voucherhub/frontend dev",
-    "dev:admin": "pnpm --filter Admin dev",
-    "dev:customer": "pnpm --filter Customer dev",
-    "dev:partner": "pnpm --filter Partner dev",
+    "dev": "pnpm --filter @voucherhub/frontend dev",
     "build": "pnpm -r build"
   }
 }

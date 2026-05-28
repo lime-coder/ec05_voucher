@@ -4,10 +4,10 @@ import type {
   CreateVoucherFormData,
   RecentVerification,
   StatusConfig,
-  Voucher,
+  PartnerVoucher as Voucher,
   VoucherCode,
   VoucherStatus,
-} from '../types/domain';
+} from '@voucherhub/types';
 
 export const voucherCategories = [
   'Ẩm thực',

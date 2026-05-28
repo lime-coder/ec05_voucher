@@ -10,7 +10,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { vouchers, voucherStatusConfig } from '../data/mockData';
-import type { Voucher } from '../types/domain';
+import type { PartnerVoucher as Voucher } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { useNavigate } from 'react-router';
 

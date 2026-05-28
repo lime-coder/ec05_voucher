@@ -15,7 +15,7 @@ import { useSearchParams, useNavigate } from 'react-router';
 import { initialBusinessProfile } from '../data/mockData';
 import { ImageUploadModal } from '../../shared/components/ImageUploadModal';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
-import type { BusinessProfile } from '../types/domain';
+import type { BusinessProfile } from '@voucherhub/types';
 
 import {
   Button,

@@ -8,7 +8,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { recentVerifications, voucherCodeLookup } from '../data/mockData';
-import type { VoucherCode } from '../types/domain';
+import type { VoucherCode } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 
 import {

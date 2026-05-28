@@ -1,15 +1,10 @@
-export type ViewId =
-  | 'dashboard'
-  | 'vouchers'
-  | 'create'
-  | 'verify'
-  | 'reports'
-  | 'branches'
-  | 'profile';
+// ============================================
+// Partner Domain Types
+// ============================================
 
 export type VoucherStatus = 'active' | 'pending' | 'paused' | 'expired';
 
-export interface Voucher {
+export interface PartnerVoucher {
   id: string;
   name: string;
   categories: string[];
@@ -94,9 +89,25 @@ export interface CreateVoucherFormData {
   saleEndDate: string;
   validStartDate: string;
   validEndDate: string;
-  
-  
   isRefundable: boolean;
   refundPolicy: string;
   dateSetBy: 'partner' | 'admin' | 'system';
+}
+
+// ============================================
+// Customer Domain Types
+// ============================================
+
+export interface CustomerVoucher {
+  id: string;
+  image: string;
+  category: string;
+  name: string;
+  partner: string;
+  price: number;
+  originalPrice: number;
+  discount: number;
+  rating?: number;
+  reviews?: number;
+  flashDeal?: boolean;
 }

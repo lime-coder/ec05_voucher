@@ -1,20 +1,11 @@
 import { useNavigate, Link } from "react-router";
 import { Star } from "lucide-react";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import type { CustomerVoucher } from "@voucherhub/types";
 
-export interface Voucher {
-  id: string;
-  image: string;
-  category: string;
-  name: string;
-  partner: string;
-  price: number;
-  originalPrice: number;
-  discount: number;
-  rating?: number;
-  reviews?: number;
-  flashDeal?: boolean;
-}
+// Re-export for consumers that import Voucher from this file
+export type Voucher = CustomerVoucher;
+
 
 interface VoucherCardProps {
   voucher: Voucher;

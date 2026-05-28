@@ -1,8 +1,5 @@
 packages:
-  - "Admin"
   - "Frontend"
-  - "Customer"
-  - "Partner"
   - "packages/*"
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'

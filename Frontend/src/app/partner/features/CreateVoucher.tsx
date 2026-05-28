@@ -13,7 +13,7 @@ import {
   partnerBranches,
   voucherCategories,
 } from '../data/mockData';
-import type { CreateVoucherFormData, ImageItem } from '../types/domain';
+import type { CreateVoucherFormData, ImageItem } from '@voucherhub/types';
 
 import {
   Button,
