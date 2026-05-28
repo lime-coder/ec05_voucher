@@ -40,7 +40,7 @@ interface KPICardProps {
 
 function KPICard({ icon, label, value, change, isPositive, colorClass, bgClass }: KPICardProps) {
   return (
-    <div className={`bg-white rounded-lg p-5 shadow-sm border-l-4 ${colorClass.replace('text-', 'border-')}`}>
+    <div className="bg-white rounded-lg p-5 shadow-sm">
       <div className="flex items-start justify-between mb-3">
         <div className={`p-2 rounded-lg ${bgClass}`}>
           {icon}

@@ -29,7 +29,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+    <div className="min-h-screen md:h-screen flex flex-col md:flex-row bg-background">
       
       {/* Left side - Hero Image */}
       <div className="hidden md:flex md:w-1/2 bg-secondary relative overflow-hidden">
@@ -48,8 +48,8 @@ export function LoginPage() {
       </div>
 
       {/* Right side - Login Form */}
-      <main className="flex-1 flex flex-col justify-center px-6 py-12 md:px-12 lg:px-24">
-        <div className="w-full max-w-[480px] mx-auto">
+      <main className="flex-1 flex flex-col justify-center px-6 py-12 md:px-12 lg:px-24 md:overflow-y-auto">
+        <div className="w-full max-w-[480px] mx-auto py-8">
           {/* Card */}
           <div className="bg-white rounded-xl shadow-lg p-8">
             {/* Avatar */}

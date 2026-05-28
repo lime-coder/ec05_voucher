@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { toast } from 'sonner';
 import {
   CloudUpload,
   Save,
@@ -62,7 +63,18 @@ export default function CreateVoucher() {
   };
 
   const handleFiles = (files: FileList) => {
-    const newImages = Array.from(files).map(file => ({
+    let hasInvalid = false;
+    const validFiles = Array.from(files).filter(file => {
+      if (file.type === 'image/jpeg' || file.type === 'image/png') return true;
+      hasInvalid = true;
+      return false;
+    });
+    
+    if (hasInvalid) {
+      toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+    }
+
+    const newImages = validFiles.map(file => ({
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
       url: URL.createObjectURL(file),
       description: '',

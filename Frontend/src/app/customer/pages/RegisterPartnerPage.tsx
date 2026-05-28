@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, User, Briefcase, Building2, FileText, Info } from "lucide-react";
-import { Button, Input } from "@voucherhub/ui";
+import { Mail, Lock, User, Briefcase, Building2, FileText, Info, CheckCircle2 } from "lucide-react";
+import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
 export function RegisterPartnerPage() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [accountType, setAccountType] = useState<"customer" | "partner">("partner");
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate registration - show success message
-    alert(t('auth.partner_submit_alert'));
+    setIsSuccessDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsSuccessDialogOpen(false);
     navigate("/login");
   };
 
@@ -228,16 +232,37 @@ export function RegisterPartnerPage() {
                 </button>
               </p>
 
-              {/* Footer Links */}
-              <div className="flex justify-center gap-6 mt-6 text-xs text-muted-foreground">
-                <a href="/not-implemented" className="hover:text-primary">{language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}</a>
-                <a href="/not-implemented" className="hover:text-primary">{language === 'vi' ? 'Điều Khoản Dịch Vụ' : 'Terms of Service'}</a>
-                <a href="/not-implemented" className="hover:text-primary">{t('auth.partner_agreement')}</a>
-              </div>
+              {/* Legal Text */}
+              <p className="text-xs text-muted-foreground text-center mt-4">
+                {t('auth.register_terms').split('Terms of Service')[0]}<a href="/not-implemented" className="text-primary hover:underline">{language === 'vi' ? 'Điều Khoản Dịch Vụ' : 'Terms of Service'}</a>{t('auth.register_terms').includes('and') ? ' and ' : ' và '}<a href="/not-implemented" className="text-primary hover:underline">{language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}</a>{t('auth.register_terms').split('Privacy Policy')[1] || t('auth.register_terms').split('Chính Sách Bảo Mật')[1]}
+              </p>
             </form>
           </div>
         </div>
       </main>
+
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
+        <DialogContent className="sm:max-w-md text-center">
+          <div className="flex justify-center pt-6 pb-2">
+            <CheckCircle2 className="w-16 h-16 text-green-500" />
+          </div>
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center font-bold">
+              {t('auth.partner_register_success_title')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              {t('auth.partner_register_success_msg')}
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center flex-col sm:flex-col gap-2">
+            <Button onClick={handleCloseDialog} className="w-full">
+              {t('auth.login_here')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

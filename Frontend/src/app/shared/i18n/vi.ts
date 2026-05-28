@@ -490,6 +490,11 @@ export const vi = {
   'auth.review_notice': 'Đội ngũ quản trị của chúng tôi sẽ xét duyệt đơn của bạn trong vòng 2-3 ngày làm việc.',
   'auth.already_partner': 'Đã là đối tác?',
   'auth.partner_agreement': 'Thỏa Thuận Đối Tác',
+  
+  'auth.customer_register_success_title': 'Đăng ký thành công',
+  'auth.customer_register_success': 'Bạn đã đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.',
+  'auth.partner_register_success_title': 'Đã Gửi Đơn Đăng Ký',
+  'auth.partner_register_success_msg': 'Chúng tôi sẽ mất từ 2-3 ngày làm việc để xét duyệt đơn đăng ký của bạn. Vui lòng kiểm tra email thường xuyên vì chúng tôi sẽ liên lạc với bạn.',
 
   // Partner Profile
   'partner.profile_updated': 'Cập nhật hồ sơ đối tác thành công!',

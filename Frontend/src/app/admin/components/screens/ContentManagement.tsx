@@ -52,25 +52,25 @@ export function ContentManagement() {
           <TabsList className="bg-transparent gap-2 p-0 h-auto justify-start flex-wrap">
             <TabsTrigger
               value="banners"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-b-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
             >
               Banner & Slider
             </TabsTrigger>
             <TabsTrigger
               value="categories"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-b-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
             >
               Danh mục
             </TabsTrigger>
             <TabsTrigger
               value="articles"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-b-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
             >
               Tin tức
             </TabsTrigger>
             <TabsTrigger
               value="faqs"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-9 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow data-[state=active]:border-b-primary hover:data-[state=active]:bg-primary/80 data-[state=inactive]:bg-background data-[state=inactive]:text-gray-700 data-[state=inactive]:border-input data-[state=inactive]:shadow-sm hover:data-[state=inactive]:bg-primary/10 hover:data-[state=inactive]:text-accent-foreground"
             >
               FAQ
             </TabsTrigger>

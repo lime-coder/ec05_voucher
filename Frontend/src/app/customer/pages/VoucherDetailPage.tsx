@@ -302,7 +302,7 @@ export function VoucherDetailPage() {
                 )}
               </Button>
               <Button
-                onClick={() => navigate("/checkout/review")}
+                onClick={() => navigate("/cart")}
                 className="py-6 bg-primary text-foreground hover:opacity-90 transition-colors font-bold cursor-pointer"
               >
                 {t('voucher.buy_now')}

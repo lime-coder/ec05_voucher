@@ -73,21 +73,21 @@ export default function ProfileSettings() {
             <TabsList className="bg-transparent gap-6 p-0 h-auto">
               <TabsTrigger
                 value="business"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 gap-2"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3 gap-2"
               >
                 <Store className="w-4 h-4" />
                 {t('partner.settings.tab_business')}
               </TabsTrigger>
               <TabsTrigger
                 value="security"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 gap-2"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3 gap-2"
               >
                 <Shield className="w-4 h-4" />
                 {t('partner.settings.tab_security')}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 gap-2"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3 gap-2"
               >
                 <Settings className="w-4 h-4" />
                 {t('partner.settings.tab_settings')}

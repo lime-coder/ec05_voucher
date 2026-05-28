@@ -84,13 +84,13 @@ export default function ReportsView() {
             <TabsList className="bg-transparent gap-6 p-0 h-auto">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.report.tab_overview')}
               </TabsTrigger>
               <TabsTrigger
                 value="customers"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.report.tab_customers')}
               </TabsTrigger>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, User, Phone, Calendar, MapPin } from "lucide-react";
+import { Mail, Lock, User, Phone, Calendar, MapPin, CheckCircle } from "lucide-react";
 import { Button, Input } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
@@ -8,11 +8,11 @@ export function RegisterCustomerPage() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [accountType, setAccountType] = useState<"customer" | "partner">("customer");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate registration - navigate to login
-    navigate("/login");
+    setIsSuccess(true);
   };
 
   return (
@@ -22,8 +22,21 @@ export function RegisterCustomerPage() {
         <div className="max-w-[760px] mx-auto">
           {/* Card */}
           <div className="bg-white rounded-xl shadow-lg p-8">
-            {/* Header */}
-            <h2 className="text-3xl font-bold mb-2">{t('auth.register_title')}</h2>
+            {isSuccess ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold mb-4">{t('auth.customer_register_success_title')}</h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  {t('auth.customer_register_success')}
+                </p>
+                <Button onClick={() => navigate('/login')} className="px-8">
+                  {t('auth.login_here')}
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <h2 className="text-3xl font-bold mb-2">{t('auth.register_title')}</h2>
             <p className="text-muted mb-6">
               {t('auth.register_desc')}
             </p>
@@ -185,6 +198,8 @@ export function RegisterCustomerPage() {
                 {t('auth.register_terms').split('Terms of Service')[0]}<a href="/not-implemented" className="text-primary hover:underline">{language === 'vi' ? 'Điều Khoản Dịch Vụ' : 'Terms of Service'}</a>{t('auth.register_terms').includes('and') ? ' and ' : ' và '}<a href="/not-implemented" className="text-primary hover:underline">{language === 'vi' ? 'Chính Sách Bảo Mật' : 'Privacy Policy'}</a>{t('auth.register_terms').split('Privacy Policy')[1] || t('auth.register_terms').split('Chính Sách Bảo Mật')[1]}
               </p>
             </form>
+            </>
+            )}
           </div>
         </div>
       </main>

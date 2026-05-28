@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { UploadCloud, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@voucherhub/ui';
 
 interface ImageUploadModalProps {
@@ -28,14 +29,24 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
     setDragActive(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (file.type === 'image/jpeg' || file.type === 'image/png') {
+        setSelectedFile(file);
+      } else {
+        toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+      }
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.type === 'image/jpeg' || file.type === 'image/png') {
+        setSelectedFile(file);
+      } else {
+        toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+      }
     }
   };
 

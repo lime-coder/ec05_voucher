@@ -85,25 +85,25 @@ export default function VoucherManagement() {
             <TabsList className="bg-transparent gap-6 p-0 h-auto">
               <TabsTrigger
                 value="all"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.vouchers.tab_all')}
               </TabsTrigger>
               <TabsTrigger
                 value="active"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.vouchers.tab_active')}
               </TabsTrigger>
               <TabsTrigger
                 value="pending"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.vouchers.tab_pending')}
               </TabsTrigger>
               <TabsTrigger
                 value="paused"
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
                 {t('partner.vouchers.tab_paused')}
               </TabsTrigger>
