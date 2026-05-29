@@ -9,10 +9,18 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t, language } = useLanguage();
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot_password">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  const handleForgotPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simulate sending email
+    setForgotSuccess(true);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,12 +133,13 @@ export function LoginPage() {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-semibold">{t('auth.password')}</label>
-                    <a
-                      href="/not-implemented"
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("forgot_password")}
                       className="text-sm text-primary hover:underline"
                     >
                       {t('auth.forgot_password')}
-                    </a>
+                    </button>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -183,6 +192,65 @@ export function LoginPage() {
                     {t('auth.partner_with_us')}
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {/* Forgot Password Tab */}
+            {activeTab === "forgot_password" && (
+              <div className="space-y-4">
+                {forgotSuccess ? (
+                  <div className="p-4 text-center text-green-700 bg-green-50 border border-green-200 rounded-md">
+                    Email have been sent if the email do associate with an account.
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full mt-4 py-4"
+                      onClick={() => {
+                        setForgotSuccess(false);
+                        setActiveTab("login");
+                      }}
+                    >
+                      Back to Login
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <p className="text-center text-muted-foreground mb-4">
+                      Enter your email address and we will send you a link to reset your password.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">
+                        {t('auth.email')}
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="alex@example.com"
+                          className="pl-10 py-6 bg-input-background"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full py-6 text-primary-foreground font-bold mt-6 hover:opacity-90"
+                    >
+                      Reset Password
+                    </Button>
+                    <div className="text-center mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("login")}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Back to Login
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             )}
           </div>
