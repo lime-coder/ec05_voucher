@@ -1,38 +1,52 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, ShieldCheck, Ticket, Zap, User } from "lucide-react";
+import { Mail, Lock, User, ShieldCheck, Ticket, Zap } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@voucherhub/ui";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { loginSchema, type LoginInput, forgotPasswordSchema, type ForgotPasswordInput } from "../../../lib/validations/auth";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot_password">("login");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [forgotEmail, setForgotEmail] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
-  const handleForgotPassword = (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register: registerLogin,
+    handleSubmit: handleLoginSubmit,
+    formState: { errors: loginErrors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const {
+    register: registerForgot,
+    handleSubmit: handleForgotSubmit,
+    formState: { errors: forgotErrors },
+  } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const onForgotSubmit = (data: ForgotPasswordInput) => {
     // Simulate sending email
     setForgotSuccess(true);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const onLoginSubmit = (data: LoginInput) => {
+    setLoginError("");
 
-    const success = login(username, password);
+    const success = login(data.username, data.password);
     if (success) {
-      if (username === "admin") navigate("/admin");
-      else if (username === "partner") navigate("/partner");
-      else if (username === "customer") navigate("/");
+      if (data.username === "admin") navigate("/admin");
+      else if (data.username === "partner") navigate("/partner");
+      else if (data.username === "customer") navigate("/");
     } else {
-      setError(t('auth.invalid_credentials'));
+      setLoginError(t('auth.invalid_credentials'));
     }
   };
 
@@ -105,13 +119,13 @@ export function LoginPage() {
 
             {/* Login Form */}
             {activeTab === "login" && (
-              <form onSubmit={handleLogin} className="space-y-4">
-                {error && (
+              <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
+                {loginError && (
                   <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                    {error}
+                    {loginError}
                   </div>
                 )}
-                {/* Email Field */}
+                {/* Username/Email Field */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">
                     {t('auth.email')}
@@ -122,11 +136,12 @@ export function LoginPage() {
                       type="text"
                       placeholder="alex@example.com"
                       className="pl-10 py-6 bg-input-background"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
+                      {...registerLogin("username")}
                     />
                   </div>
+                  {loginErrors.username && (
+                    <p className="text-red-500 text-xs mt-1">{loginErrors.username.message}</p>
+                  )}
                 </div>
 
                 {/* Password Field */}
@@ -147,11 +162,12 @@ export function LoginPage() {
                       type="password"
                       placeholder={t('auth.password_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
+                      {...registerLogin("password")}
                     />
                   </div>
+                  {loginErrors.password && (
+                    <p className="text-red-500 text-xs mt-1">{loginErrors.password.message}</p>
+                  )}
                 </div>
 
                 {/* Submit Button */}
@@ -214,7 +230,7 @@ export function LoginPage() {
                     </Button>
                   </div>
                 ) : (
-                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <form onSubmit={handleForgotSubmit(onForgotSubmit)} className="space-y-4">
                     <p className="text-center text-muted-foreground mb-4">
                       Enter your email address and we will send you a link to reset your password.
                     </p>
@@ -228,11 +244,12 @@ export function LoginPage() {
                           type="email"
                           placeholder="alex@example.com"
                           className="pl-10 py-6 bg-input-background"
-                          value={forgotEmail}
-                          onChange={(e) => setForgotEmail(e.target.value)}
-                          required
+                          {...registerForgot("email")}
                         />
                       </div>
+                      {forgotErrors.email && (
+                        <p className="text-red-500 text-xs mt-1">{forgotErrors.email.message}</p>
+                      )}
                     </div>
                     <Button
                       type="submit"

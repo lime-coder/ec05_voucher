@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Mail, Lock, User, Phone, Calendar, MapPin, CheckCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { registerCustomerSchema, type RegisterCustomerInput } from "../../../lib/validations/auth";
 
 export function RegisterCustomerPage() {
   const navigate = useNavigate();
@@ -13,6 +16,14 @@ export function RegisterCustomerPage() {
   const [timer, setTimer] = useState(30);
   const [otpError, setOtpError] = useState("");
   const [showNotification, setShowNotification] = useState(false);
+
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    formState: { errors },
+  } = useForm<RegisterCustomerInput>({
+    resolver: zodResolver(registerCustomerSchema),
+  });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -34,8 +45,8 @@ export function RegisterCustomerPage() {
     setTimeout(() => setShowNotification(false), 15000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onRegisterSubmit = (data: RegisterCustomerInput) => {
+    // We can use `data` here when connected to the backend
     setStep("otp");
     generateAndSendOtp();
   };
@@ -119,7 +130,7 @@ export function RegisterCustomerPage() {
             </h3>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleFormSubmit(onRegisterSubmit)} className="space-y-4">
               {/* Two-column grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Username */}
@@ -133,9 +144,10 @@ export function RegisterCustomerPage() {
                       type="text"
                       placeholder={t('auth.username_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("username")}
                     />
                   </div>
+                  {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
                 </div>
 
                 {/* Email */}
@@ -149,9 +161,10 @@ export function RegisterCustomerPage() {
                       type="email"
                       placeholder={t('auth.email_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("email")}
                     />
                   </div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 {/* Password */}
@@ -165,9 +178,10 @@ export function RegisterCustomerPage() {
                       type="password"
                       placeholder={t('profile.new_password_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("password")}
                     />
                   </div>
+                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                 </div>
 
                 {/* Full Name */}
@@ -181,9 +195,10 @@ export function RegisterCustomerPage() {
                       type="text"
                       placeholder={t('auth.fullname_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("fullName")}
                     />
                   </div>
+                  {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>}
                 </div>
 
                 {/* Phone Number */}
@@ -197,9 +212,10 @@ export function RegisterCustomerPage() {
                       type="tel"
                       placeholder={t('auth.phone_ph')}
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("phone")}
                     />
                   </div>
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
 
                 {/* Date of Birth */}
@@ -212,22 +228,27 @@ export function RegisterCustomerPage() {
                     <Input
                       type="date"
                       className="pl-10 py-6 bg-input-background"
-                      required
+                      {...register("dob")}
                     />
                   </div>
+                  {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
                 </div>
               </div>
 
               {/* Gender - Full Width */}
               <div>
                 <label className="block text-sm font-semibold mb-2">{t('profile.gender')}</label>
-                <select className="w-full px-4 py-3 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option>{t('auth.select_gender')}</option>
-                  <option>{t('profile.gender.male')}</option>
-                  <option>{t('profile.gender.female')}</option>
-                  <option>{t('profile.gender.other')}</option>
-                  <option>{t('auth.prefer_not_say')}</option>
+                <select 
+                  {...register("gender")}
+                  className="w-full px-4 py-3 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">{t('auth.select_gender')}</option>
+                  <option value="male">{t('profile.gender.male')}</option>
+                  <option value="female">{t('profile.gender.female')}</option>
+                  <option value="other">{t('profile.gender.other')}</option>
+                  <option value="prefer_not_say">{t('auth.prefer_not_say')}</option>
                 </select>
+                {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender.message}</p>}
               </div>
 
               {/* Address - Full Width */}
@@ -241,9 +262,10 @@ export function RegisterCustomerPage() {
                     placeholder={t('auth.address_ph')}
                     rows={3}
                     className="w-full pl-10 pr-4 py-3 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    required
+                    {...register("address")}
                   />
                 </div>
+                {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>}
               </div>
 
               <Button

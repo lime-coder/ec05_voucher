@@ -4,13 +4,7 @@ import { AlertTriangle, CreditCard, Lock, ChevronRight } from "lucide-react";
 import { Button, Input } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
-interface VoucherItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  quantity: number;
-}
+import { useCartStore } from "../../../store/useCartStore";
 
 export function ReviewOrderPage() {
   const navigate = useNavigate();
@@ -21,34 +15,9 @@ export function ReviewOrderPage() {
     email: "",
   });
 
-  const vouchers: VoucherItem[] = [
-    {
-      id: "1",
-      name: "Premium Dining Experience",
-      description: "Valid at 50+ locations",
-      price: 150.0,
-      quantity: 2,
-    },
-    {
-      id: "2",
-      name: "Luxury Spa Retreat",
-      description: "Full Day Access + Massage",
-      price: 299.0,
-      quantity: 1,
-    },
-    {
-      id: "3",
-      name: "City Tour Pass",
-      description: "48-Hour Unlimited Access",
-      price: 75.0,
-      quantity: 3,
-    },
-  ];
+  const { items: vouchers, getCartTotal } = useCartStore();
 
-  const subtotal = vouchers.reduce(
-    (sum, v) => sum + v.price * v.quantity,
-    0
-  );
+  const subtotal = getCartTotal();
   const processingFee = 12.5;
   const tax = 45.0;
   const grandTotal = subtotal + processingFee + tax;

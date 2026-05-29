@@ -4,61 +4,29 @@ import { Trash2, ShoppingCart as CartIcon, Clock, RefreshCw, Zap, ChevronRight }
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
-interface CartItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  quantity: number;
-}
+import { useCartStore } from "../../../store/useCartStore";
 
 export function ShoppingCartPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Summer Getaway Deluxe",
-      description: "Valid for 2 Nights at Riverside Resort",
-      price: 249.0,
-      quantity: 1,
-    },
-    {
-      id: "2",
-      name: "City Dining Experience",
-      description: "Premium 5-Course Meal at Skyline Restaurant",
-      price: 85.5,
-      quantity: 2,
-    },
-    {
-      id: "3",
-      name: "Extreme Spa Package",
-      description: "Full Day Wellness Treatment with Massage",
-      price: 120.0,
-      quantity: 1,
-    },
-  ]);
+  const { items: cartItems, updateQuantity: storeUpdateQuantity, removeItem, clearCart, getCartTotal } = useCartStore();
 
   const updateQuantity = (id: string, delta: number) => {
-    setCartItems((items) => {
-      const itemToUpdate = items.find((item) => item.id === id);
-      if (!itemToUpdate) return items;
+    const itemToUpdate = cartItems.find((item) => item.id === id);
+    if (!itemToUpdate) return;
 
-      if (itemToUpdate.quantity + delta <= 0) {
-        setItemToDelete(id);
-        return items;
-      }
+    if (itemToUpdate.quantity + delta <= 0) {
+      setItemToDelete(id);
+      return;
+    }
 
-      return items.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + delta } : item
-      );
-    });
+    storeUpdateQuantity(id, itemToUpdate.quantity + delta);
   };
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setCartItems((items) => items.filter((item) => item.id !== itemToDelete));
+      removeItem(itemToDelete);
       setItemToDelete(null);
     }
   };
@@ -67,18 +35,11 @@ export function ShoppingCartPage() {
     setItemToDelete(null);
   };
 
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-  };
-
   const clearAll = () => {
-    setCartItems([]);
+    clearCart();
   };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const subtotal = getCartTotal();
   const tax = subtotal * 0.08;
   const platformFee = 2.5;
   const total = subtotal + tax + platformFee;
