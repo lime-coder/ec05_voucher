@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartVoucherItem } from "../data/mock/vouchers";
+import { type CartVoucherItem, cartVouchers } from "../data/mock/vouchers";
 
 interface CartState {
   items: CartVoucherItem[];
@@ -14,7 +14,7 @@ interface CartState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: [],
+      items: cartVouchers,
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => i.id === item.id);

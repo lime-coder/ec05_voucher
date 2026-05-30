@@ -4,6 +4,7 @@ import {
   Tag,
   Users,
   Star,
+  ChevronDown,
 } from 'lucide-react';
 import {
   LineChart,
@@ -39,16 +40,21 @@ export default function ReportsView() {
           <h1 className="text-2xl font-bold tracking-tight">{t('partner.report.title')}</h1>
           <p className="text-gray-500">{t('partner.report.subtitle')}</p>
         </div>
-        <select
-          className="flex h-10 w-full sm:w-[150px] rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-        >
-          <option value="week">{t('partner.report.time_7d')}</option>
-          <option value="month">{t('partner.report.time_30d')}</option>
-          <option value="quarter">{t('partner.report.time_3m')}</option>
-          <option value="year">{t('partner.report.time_12m')}</option>
-        </select>
+        <div className="relative w-full sm:w-[150px]">
+          <select
+            className="flex h-10 w-full appearance-none rounded-md border border-border bg-white px-3 py-2 pr-8 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+          >
+            <option value="week">{t('partner.report.time_7d')}</option>
+            <option value="month">{t('partner.report.time_30d')}</option>
+            <option value="quarter">{t('partner.report.time_3m')}</option>
+            <option value="year">{t('partner.report.time_12m')}</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

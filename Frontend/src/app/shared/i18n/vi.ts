@@ -126,6 +126,7 @@ export const vi = {
   'verify.camera_scanning': 'Đang quét...',
   'verify.camera_desc': 'Hướng camera về phía mã QR để xác minh voucher.',
   'common.cancel': 'Hủy',
+  'common.confirm': 'Xác nhận',
 
   // Error Page
   'error.title_default': 'Đã có lỗi xảy ra',

@@ -1,6 +1,7 @@
 export const en = {
   // Common
   'common.cancel': 'Cancel',
+  'common.confirm': 'Confirm',
   'common.mon_fri': 'Monday - Friday',
   'common.saturday': 'Saturday',
   'common.sunday': 'Sunday',

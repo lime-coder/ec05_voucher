@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (username: string, password: string) => {
     // Mock login logic based on user prompt
-    if (password === "123") {
+    if (password === "123456") {
       if (username === "admin") {
         setUser({ id: "1", role: "admin", name: "System Admin" });
         return true;

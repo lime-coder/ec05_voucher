@@ -29,6 +29,7 @@ export default function VerifyVoucher() {
   const [verificationResult, setVerificationResult] = useState<VoucherCode | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   const handleVerify = () => {
     setIsVerifying(true);
@@ -56,9 +57,13 @@ export default function VerifyVoucher() {
   };
 
   const handleConfirmUse = () => {
-    alert(t('verify.confirm_use') + '!');
+    setConfirmModalOpen(true);
+  };
+
+  const confirmUsageAction = () => {
     setVerificationResult(null);
     setVoucherCode('');
+    setConfirmModalOpen(false);
   };
 
   return (
@@ -244,7 +249,7 @@ export default function VerifyVoucher() {
           </div>
 
           <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 text-sm">
-            <strong>Lưu ý:</strong> {t('verify.note')}
+            <strong>{t('verify.note').split(':')[0]}:</strong>{t('verify.note').split(':').slice(1).join(':')}
           </div>
 
           <div className="bg-gray-50 rounded-xl border border-gray-100 p-6">
@@ -276,8 +281,38 @@ export default function VerifyVoucher() {
               onClick={() => setQrModalOpen(false)}
               className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 transition-colors"
             >
-              {t('common.cancel')}
+              {t('common.cancel') || 'Cancel'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {confirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 animate-in fade-in zoom-in duration-200 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="font-bold text-xl mb-2">{t('verify.confirm_use')}!</h3>
+              <p className="text-gray-500">
+                {t('verify.guide.step3.desc')}
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setConfirmModalOpen(false)}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button 
+                onClick={confirmUsageAction}
+                className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors"
+              >
+                {t('common.confirm') || 'OK'}
+              </button>
+            </div>
           </div>
         </div>
       )}
