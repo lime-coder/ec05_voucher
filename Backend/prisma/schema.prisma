@@ -7,38 +7,202 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Basic schemas to show how they link together
+model Admin {
+  SDT_Admin  String    @id(map: "PK__Admin__574698DDEA3DA776") @db.VarChar(15)
+  IDTaiKhoan Int?      @unique(map: "UQ__Admin__BC5F907D5A930172")
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_Admin_TaiKhoan")
+}
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  role      String   // e.g., "CUSTOMER", "PARTNER", "ADMIN"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  orders    Order[]
+model BaiViet {
+  MaBaiViet Int       @id(map: "PK_BaiViet") @default(autoincrement())
+  TieuDe    String    @db.NVarChar(255)
+  NoiDung   String?   @db.NVarChar(Max)
+  TacGia    String?   @db.NVarChar(255)
+  LuotXem   Int?      @default(0, map: "DF__BaiViet__LuotXem__7C1A6C5A")
+  TrangThai String?   @default("N'Nháp'", map: "DF__BaiViet__TrangTh__7D0E9093") @db.NVarChar(50)
+  NgayTao   DateTime? @default(now(), map: "DF__BaiViet__NgayTao__7E02B4CC") @db.DateTime
+}
+
+model Banner {
+  MaBanner  Int       @id(map: "PK_Banner") @default(autoincrement())
+  TieuDe    String    @db.NVarChar(255)
+  HinhAnh   String?   @db.NVarChar(500)
+  LinkURL   String?   @db.NVarChar(500)
+  ViTri     String?   @db.NVarChar(100)
+  TrangThai String?   @default("N'Đang hiển thị'", map: "DF__Banner__TrangTha__756D6ECB") @db.NVarChar(50)
+  ThuTu     Int?      @default(0, map: "DF__Banner__ThuTu__76619304")
+  NgayTao   DateTime? @default(now(), map: "DF__Banner__NgayTao__7755B73D") @db.DateTime
+}
+
+model ChiNhanh {
+  MaChiNhanh     Int                @id(map: "PK__ChiNhanh__4B5BA5BDAA3C8550") @default(autoincrement())
+  TenChiNhanh    String?            @db.NVarChar(255)
+  SDT_CN         String?            @db.VarChar(15)
+  DiaChiChiNhanh String?            @db.NVarChar(500)
+  Vouchers       Voucher_ChiNhanh[]
+}
+
+model ChiTietDonHang {
+  MaCTDonHang Int         @id(map: "PK__ChiTietD__B9F4AB6C58D591C0") @default(autoincrement())
+  MaDonHang   Int?
+  VoucherID   Int?
+  SoLuongMua  Int?
+  DonGia      Decimal?    @db.Decimal(18, 2)
+  ThanhTien   Decimal?    @db.Decimal(18, 2)
+  DonHang     DonHang?    @relation(fields: [MaDonHang], references: [MaDonHang], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTDH_DonHang")
+  Voucher     Voucher?    @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTDH_Voucher")
+  MaVouchers  MaVoucher[]
+}
+
+model ChiTietGioHang {
+  MaCTGioHang  Int       @id(map: "PK__ChiTietG__CE44847376511675") @default(autoincrement())
+  MaGioHang    Int?
+  VoucherID    Int?
+  SoLuong      Int?
+  ThoiGianThem DateTime? @default(now(), map: "DF__ChiTietGi__ThoiG__531856C7") @db.DateTime
+  GioHang      GioHang?  @relation(fields: [MaGioHang], references: [MaGioHang], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTGH_GioHang")
+  Voucher      Voucher?  @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTGH_Voucher")
+}
+
+model DanhGia {
+  MaDanhGia   Int       @id(map: "PK__DanhGia__AA9515BFC2148C37") @default(autoincrement())
+  VoucherID   Int?
+  IDTaiKhoan  Int?
+  DiemDanhGia Int?
+  NoiDung     String?   @db.NVarChar(Max)
+  NgayDanhGia DateTime? @default(now(), map: "DF__DanhGia__NgayDan__6442E2C9") @db.DateTime
+  PhanHoiXuLy String?   @db.NVarChar(Max)
+  TaiKhoan    TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_DanhGia_TaiKhoan")
+  Voucher     Voucher?  @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_DanhGia_Voucher")
+}
+
+model DanhMuc {
+  MaDanhMuc  Int       @id(map: "PK__DanhMuc__B375088720B22A09") @default(autoincrement())
+  TenDanhMuc String    @db.NVarChar(255)
+  MoTa       String?
+  Vouchers   Voucher[]
+}
+
+model DoiTac {
+  MaDoiTac          Int              @id(map: "PK__DoiTac__5F76BF3484C439FB") @default(autoincrement())
+  TenDoanhNghiep    String?          @db.NVarChar(255)
+  MaSoThue          String?          @db.VarChar(50)
+  CaNhanDaiDien     String?          @db.NVarChar(255)
+  LinhVucKinhDoanh  String?          @db.NVarChar(255)
+  TrangThaiPheDuyet String?          @db.NVarChar(50)
+  TrangThaiHoatDong String?          @db.NVarChar(50)
+  NhanViens         NhanVienDoiTac[]
+  Vouchers          Voucher[]
+}
+
+model DonHang {
+  MaDonHang           Int              @id(map: "PK__DonHang__129584AD439B6660") @default(autoincrement())
+  IDTaiKhoan          Int?
+  ThoiGianThanhToan   DateTime?        @db.DateTime
+  TongTien            Decimal?         @db.Decimal(18, 2)
+  PhuongThucThanhToan String?          @db.NVarChar(100)
+  TrangThaiDonHang    String?          @db.NVarChar(50)
+  TrangThaiThanhToan  String?          @db.NVarChar(50)
+  ChiTietDonHangs     ChiTietDonHang[]
+  TaiKhoan            TaiKhoan?        @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_DonHang_TaiKhoan")
+}
+
+model FAQ {
+  MaFAQ      Int     @id(map: "PK_FAQ") @default(autoincrement())
+  CauHoi     String  @db.NVarChar(500)
+  TraLoi     String? @db.NVarChar(Max)
+  DanhMucFAQ String? @db.NVarChar(100)
+  ThuTu      Int?    @default(0, map: "DF__FAQ__ThuTu__01D345B0")
+  TrangThai  String? @default("N'Hiển thị'", map: "DF__FAQ__TrangThai__02C769E9") @db.NVarChar(50)
+}
+
+model GioHang {
+  MaGioHang   Int              @id(map: "PK__GioHang__F5001DA30C08495D") @default(autoincrement())
+  IDTaiKhoan  Int?             @unique(map: "UQ__GioHang__BC5F907DA9CC7602")
+  ThoiGianTao DateTime?        @default(now(), map: "DF__GioHang__ThoiGia__4E53A1AA") @db.DateTime
+  ChiTiet     ChiTietGioHang[]
+  TaiKhoan    TaiKhoan?        @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_GioHang_TaiKhoan")
+}
+
+model KhachHang {
+  SDT_KH          String    @id(map: "PK__KhachHan__DE78DCDA495FA377") @db.VarChar(15)
+  IDTaiKhoan      Int?      @unique(map: "UQ__KhachHan__BC5F907DE37108C3")
+  NgaySinh        DateTime? @db.Date
+  GioiTinh        String?   @db.NVarChar(10)
+  DiaChiKhachHang String?   @db.NVarChar(500)
+  TaiKhoan        TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_KhachHang_TaiKhoan")
+}
+
+model MaVoucher {
+  SoMaVoucher      String          @id(map: "PK__MaVouche__9FAD330E58F12E4E") @db.VarChar(100)
+  MaCTDonHang      Int?
+  TrangThaiSuDung  String?         @db.NVarChar(50)
+  ThoiDiemPhatHanh DateTime?       @db.DateTime
+  ThoiDiemSuDung   DateTime?       @db.DateTime
+  ChiTietDonHang   ChiTietDonHang? @relation(fields: [MaCTDonHang], references: [MaCTDonHang], onDelete: NoAction, onUpdate: NoAction, map: "FK_MaVoucher_CTDonHang")
+}
+
+model NhanVienDoiTac {
+  IDNhanVien Int       @id(map: "PK__NhanVien__7AC2D9F709C1CB2A") @default(autoincrement())
+  IDTaiKhoan Int?
+  MaDoiTac   Int?
+  ChucVu     String?   @db.NVarChar(100)
+  DoiTac     DoiTac?   @relation(fields: [MaDoiTac], references: [MaDoiTac], onDelete: NoAction, onUpdate: NoAction, map: "FK_NhanVien_DoiTac")
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_NhanVien_TaiKhoan")
+}
+
+model TaiKhoan {
+  IDTaiKhoan        Int              @id(map: "PK__TaiKhoan__BC5F907C614DEE4F") @default(autoincrement())
+  TenDangNhap       String           @unique(map: "UQ__TaiKhoan__55F68FC080F4D1C9") @db.VarChar(100)
+  MatKhau           String           @db.VarChar(255)
+  Email             String           @unique(map: "UQ__TaiKhoan__A9D1053492A35299") @db.VarChar(255)
+  HoTenNguoiDung    String?          @db.NVarChar(255)
+  TrangThaiTaiKhoan String?          @db.NVarChar(50)
+  Admin             Admin?
+  DanhGias          DanhGia[]
+  DonHangs          DonHang[]
+  GioHang           GioHang?
+  KhachHang         KhachHang?
+  NhanVienDoiTacs   NhanVienDoiTac[]
 }
 
 model Voucher {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  stock       Int
-  price       Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  orders      Order[]
+  VoucherID        Int                @id(map: "PK__Voucher__3AEE79C1B53D81DF") @default(autoincrement())
+  MaDanhMuc        Int?
+  MaDoiTac         Int?
+  TenVoucher       String             @db.NVarChar(255)
+  MoTaVoucher      String?            @db.NVarChar(Max)
+  MoTaDieuKien     String?            @db.NVarChar(Max)
+  GiaGoc           Decimal            @db.Decimal(18, 2)
+  GiaBan           Decimal            @db.Decimal(18, 2)
+  ThoiGianBatDau   DateTime           @db.DateTime
+  ThoiGianKetThuc  DateTime           @db.DateTime
+  SoLuongChoPhep   Int
+  SoLuongDaBan     Int?               @default(0, map: "DF__Voucher__SoLuong__41EDCAC5")
+  TrangThaiVoucher String?            @db.NVarChar(50)
+  ChiTietDonHangs  ChiTietDonHang[]
+  ChiTietGioHangs  ChiTietGioHang[]
+  DanhGias         DanhGia[]
+  DanhMuc          DanhMuc?           @relation(fields: [MaDanhMuc], references: [MaDanhMuc], onDelete: NoAction, onUpdate: NoAction, map: "FK_Voucher_DanhMuc")
+  DoiTac           DoiTac?            @relation(fields: [MaDoiTac], references: [MaDoiTac], onDelete: NoAction, onUpdate: NoAction, map: "FK_Voucher_DoiTac")
+  ChiNhanhs        Voucher_ChiNhanh[]
 }
 
-model Order {
-  id          String   @id @default(uuid())
-  userId      String
-  voucherId   String
-  quantity    Int
-  createdAt   DateTime @default(now())
+model Voucher_ChiNhanh {
+  STT             Int       @id(map: "PK__Voucher___CA1EB69086A8AE3A") @default(autoincrement())
+  VoucherID       Int?
+  MaChiNhanh      Int?
+  TrangThaiApDung String?   @db.NVarChar(50)
+  ChiNhanh        ChiNhanh? @relation(fields: [MaChiNhanh], references: [MaChiNhanh], onDelete: NoAction, onUpdate: NoAction, map: "FK_VoucherChiNhanh_ChiNhanh")
+  Voucher         Voucher?  @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_VoucherChiNhanh_Voucher")
+}
 
-  // Relationships
-  user        User     @relation(fields: [userId], references: [id])
-  voucher     Voucher  @relation(fields: [voucherId], references: [id])
+model sysdiagrams {
+  name         String @db.NVarChar(128)
+  principal_id Int
+  diagram_id   Int    @id(map: "PK__sysdiagr__C2B05B615E131116") @default(autoincrement())
+  version      Int?
+  definition   Bytes?
+
+  @@unique([principal_id, name], map: "UK_principal_name")
 }
