@@ -24,7 +24,9 @@ export function PartnerLayout() {
   const location = useLocation();
   const { t } = useLanguage();
   const titleKey = screenTitleKeys[location.pathname] || 'partner.nav.dashboard';
-  const title = t(titleKey);
+  
+  const isDashboard = titleKey === 'partner.nav.dashboard';
+  const title = isDashboard ? t(titleKey) : t('partner.dash.greeting');
 
   return (
     <div className="min-h-screen bg-[#F0F4F8]">

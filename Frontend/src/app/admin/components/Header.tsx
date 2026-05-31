@@ -7,9 +7,10 @@ import { AdminSettingsModal } from './AdminSettingsModal';
 
 interface HeaderProps {
   title: string;
+  subtitle?: string;
 }
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, subtitle }: HeaderProps) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -24,7 +25,10 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <header className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between">
-      <h2 className="text-2xl font-bold text-primary">{title}</h2>
+      <div>
+        <h2 className="text-2xl font-bold text-primary">{title}</h2>
+        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+      </div>
 
       <div className="flex items-center gap-4 relative">
         <div className="relative">

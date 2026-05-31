@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// Basic schemas to show how they link together
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   // e.g., "CUSTOMER", "PARTNER", "ADMIN"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orders    Order[]
+}
+
+model Voucher {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  stock       Int
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  userId      String
+  voucherId   String
+  quantity    Int
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  user        User     @relation(fields: [userId], references: [id])
+  voucher     Voucher  @relation(fields: [voucherId], references: [id])
+}
