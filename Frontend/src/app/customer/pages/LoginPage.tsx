@@ -14,6 +14,7 @@ export function LoginPage() {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot_password">("login");
   const [loginError, setLoginError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
   const {
@@ -37,16 +38,19 @@ export function LoginPage() {
     setForgotSuccess(true);
   };
 
-  const onLoginSubmit = (data: LoginInput) => {
+  const onLoginSubmit = async (data: LoginInput) => {
     setLoginError("");
+    setIsSubmitting(true);
 
-    const success = login(data.username, data.password);
-    if (success) {
-      if (data.username === "admin") navigate("/admin");
-      else if (data.username === "partner") navigate("/partner");
-      else if (data.username === "customer") navigate("/");
+    const result = await login(data.username, data.password);
+    setIsSubmitting(false);
+
+    if (result.success && result.user) {
+      if (result.user.role === "admin") navigate("/admin");
+      else if (result.user.role === "partner") navigate("/partner");
+      else navigate("/");
     } else {
-      setLoginError(t('auth.invalid_credentials'));
+      setLoginError(result.error || t('auth.invalid_credentials'));
     }
   };
 
@@ -173,9 +177,10 @@ export function LoginPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="w-full py-6 text-primary-foreground font-bold mt-6 hover:opacity-90"
                 >
-                  {t('auth.sign_in')}
+                  {isSubmitting ? "Loading..." : t('auth.sign_in')}
                 </Button>
               </form>
             )}

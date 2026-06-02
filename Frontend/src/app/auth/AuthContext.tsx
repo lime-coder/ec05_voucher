@@ -1,18 +1,20 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { useNavigate } from "react-router";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import api from "../../lib/api";
 
 type Role = "admin" | "partner" | "customer" | null;
 
 interface User {
-  id: string;
+  IDTaiKhoan: string;
   role: Role;
-  name: string;
-  username?: string;
+  TenDangNhap: string;
+  Email: string;
+  HoTenNguoiDung: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => boolean;
+  loading: boolean;
+  login: (username: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
 }
 
@@ -20,33 +22,44 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (username: string, password: string) => {
-    // Mock login logic based on user prompt
-    if (password === "123456") {
-      if (username === "admin") {
-        setUser({ id: "1", role: "admin", name: "System Admin" });
-        return true;
-      }
-      if (username === "partner") {
-        setUser({ id: "2", role: "partner", name: "Partner Store" });
-        return true;
-      }
-      if (username === "customer") {
-        setUser({ id: "3", role: "customer", name: "John Customer" });
-        return true;
-      }
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser));
     }
-    return false;
+    setLoading(false);
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await api.post('/auth/login', { TenDangNhap: username, MatKhau: password });
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      return { success: true, user: userData };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Login failed' 
+      };
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
@@ -58,3 +71,4 @@ export function useAuth() {
   }
   return context;
 }
+

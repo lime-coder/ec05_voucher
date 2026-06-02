@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 import { registerCustomerSchema, type RegisterCustomerInput } from "../../../lib/validations/auth";
+import api from "../../../lib/api";
 
 export function RegisterCustomerPage() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export function RegisterCustomerPage() {
   const [timer, setTimer] = useState(30);
   const [otpError, setOtpError] = useState("");
   const [showNotification, setShowNotification] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -45,10 +48,28 @@ export function RegisterCustomerPage() {
     setTimeout(() => setShowNotification(false), 15000);
   };
 
-  const onRegisterSubmit = (data: RegisterCustomerInput) => {
-    // We can use `data` here when connected to the backend
-    setStep("otp");
-    generateAndSendOtp();
+  const onRegisterSubmit = async (data: RegisterCustomerInput) => {
+    setIsSubmitting(true);
+    setRegisterError("");
+    try {
+      const payload = {
+        TenDangNhap: data.username,
+        MatKhau: data.password,
+        Email: data.email,
+        HoTenNguoiDung: data.fullName,
+        SDT: data.phone,
+        NgaySinh: data.dob,
+        GioiTinh: data.gender,
+        DiaChi: data.address
+      };
+      await api.post('/auth/register/customer', payload);
+      setStep("otp");
+      generateAndSendOtp();
+    } catch (error: any) {
+      setRegisterError(error.response?.data?.message || "Registration failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
@@ -128,6 +149,12 @@ export function RegisterCustomerPage() {
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-4">
               {t('profile.personal_information')}
             </h3>
+
+            {registerError && (
+              <div className="p-3 mb-4 text-sm text-destructive bg-destructive/10 rounded-md">
+                {registerError}
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleFormSubmit(onRegisterSubmit)} className="space-y-4">
@@ -270,9 +297,10 @@ export function RegisterCustomerPage() {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full py-6 bg-primary hover:opacity-90 text-primary-foreground font-bold mt-6"
               >
-                {t('auth.register_now')}
+                {isSubmitting ? "Loading..." : t('auth.register_now')}
               </Button>
 
               {/* Login Link */}
