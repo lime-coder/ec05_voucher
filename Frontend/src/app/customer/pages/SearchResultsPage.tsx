@@ -1,122 +1,12 @@
 import { VoucherCard, Voucher } from "../components/VoucherCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router";
 import { ChevronDown, Grid3x3, List, X, ChevronRight } from "lucide-react";
 import { Button, Input } from "@voucherhub/ui";
 import { PriceRangeSlider } from "../components/PriceRangeSlider";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
-const searchVouchers: Voucher[] = [
-  {
-    id: "1",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Grand Bliss Royal Massage & Hydro-Aromatherapy (90 Min)",
-    partner: "Ethereal Zen Wellness Spa",
-    price: 129,
-    originalPrice: 245,
-    discount: 47,
-    rating: 4.8,
-    reviews: 248,
-    flashDeal: true,
-  },
-  {
-    id: "2",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Rejuvenating Spa Day Package with Facial",
-    partner: "Tranquil Waters Spa",
-    price: 99,
-    originalPrice: 189,
-    discount: 48,
-    rating: 4.5,
-    reviews: 156,
-  },
-  {
-    id: "3",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Hot Stone Therapy & Deep Tissue Massage",
-    partner: "Serenity Spa & Wellness",
-    price: 149,
-    originalPrice: 279,
-    discount: 47,
-    rating: 4.9,
-    reviews: 312,
-  },
-  {
-    id: "4",
-    image: "https://images.unsplash.com/photo-1762742316793-b1845065429a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJlc29ydCUyMHZhY2F0aW9uJTIwdHJhdmVsfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "TRAVEL",
-    name: "Luxury Resort Spa Package - 3 Days 2 Nights",
-    partner: "Paradise Beach Resort",
-    price: 399,
-    originalPrice: 799,
-    discount: 50,
-    rating: 4.7,
-    reviews: 189,
-  },
-  {
-    id: "5",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Couple's Romantic Spa Treatment",
-    partner: "Harmony Wellness Center",
-    price: 179,
-    originalPrice: 349,
-    discount: 49,
-    rating: 4.6,
-    reviews: 95,
-  },
-  {
-    id: "6",
-    image: "https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "FOOD",
-    name: "Premium Dining Experience with Wine Pairing",
-    partner: "The Elegant Table Restaurant",
-    price: 119,
-    originalPrice: 249,
-    discount: 52,
-    rating: 4.8,
-    reviews: 224,
-  },
-  {
-    id: "7",
-    image: "https://images.unsplash.com/photo-1584827386916-b5351d3ba34b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwZ3ltJTIwd29ya291dCUyMGV4ZXJjaXNlfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "FITNESS",
-    name: "Yoga & Meditation Wellness Retreat",
-    partner: "Mindful Movement Studio",
-    price: 89,
-    originalPrice: 159,
-    discount: 44,
-    rating: 4.7,
-    reviews: 178,
-  },
-  {
-    id: "8",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Organic Aromatherapy & Herbal Treatment",
-    partner: "Nature's Touch Spa",
-    price: 109,
-    originalPrice: 219,
-    discount: 50,
-    rating: 4.6,
-    reviews: 134,
-  },
-  {
-    id: "9",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Full Body Detox & Lymphatic Drainage",
-    partner: "Vitality Health Spa",
-    price: 139,
-    originalPrice: 269,
-    discount: 48,
-    rating: 4.8,
-    reviews: 201,
-  },
-];
+
 
 export function SearchResultsPage() {
   const { t } = useLanguage();
@@ -146,8 +36,194 @@ export function SearchResultsPage() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(searchVouchers.length / ITEMS_PER_PAGE);
-  const paginatedVouchers = searchVouchers.slice(
+  // API vouchers
+  const [vouchers, setVouchers] =
+    useState<any[]>([]);
+
+  // Loading
+  const [loading, setLoading] =
+    useState(false);
+
+  /**
+   * Load voucher search
+   */
+  useEffect(() => {
+
+    fetchVouchers();
+
+  }, [
+    query,
+    priceRange,
+    selectedCategories,
+    selectedBrands,
+    sortBy,
+  ]);
+
+
+
+  /**
+   * Fetch voucher API
+   */
+  const fetchVouchers = async () => {
+
+    try {
+
+      setLoading(true);
+
+      // Build query params
+      const params =
+        new URLSearchParams();
+
+      // Search keyword
+      if (query) {
+
+        params.append(
+          "keyword",
+          query
+        );
+      }
+
+      // Price filter
+      params.append(
+        "minPrice",
+        String(priceRange[0])
+      );
+
+      params.append(
+        "maxPrice",
+        String(priceRange[1])
+      );
+
+      // Category filter
+      if (
+        selectedCategories.length > 0
+      ) {
+
+        params.append(
+          "category",
+          selectedCategories.join(",")
+        );
+      }
+
+      // Brand filter
+      if (
+        selectedBrands.length > 0
+      ) {
+
+        params.append(
+          "brand",
+          selectedBrands.join(",")
+        );
+      }
+
+      // API
+      const response =
+        await fetch(
+
+          `http://localhost:3000/api/vouchers/search?${params.toString()}`
+
+        );
+
+      const data =
+        await response.json();
+
+      // Mapping data
+      const mappedData =
+        data.map(
+          (voucher: any) => ({
+
+            id:
+              String(
+                voucher.VoucherID
+              ),
+
+            image:
+              "https://images.unsplash.com/photo-1544161515-4ab6ce6db874",
+
+            category:
+              voucher.DanhMuc
+                ?.TenDanhMuc ||
+              "OTHER",
+
+            name:
+              voucher.TenVoucher,
+
+            partner:
+              voucher.DoiTac
+                ?.TenDoanhNghiep ||
+              "Partner",
+
+            price:
+              Number(
+                voucher.GiaBan
+              ),
+
+            originalPrice:
+              Number(
+                voucher.GiaGoc
+              ),
+
+            discount:
+              Math.round(
+
+                (
+                  (
+                    voucher.GiaGoc -
+                    voucher.GiaBan
+                  ) /
+                  voucher.GiaGoc
+                ) * 100
+
+              ),
+
+            rating: 5,
+
+            reviews: 100,
+
+            flashDeal: true,
+
+          })
+        );
+
+      // SORT FRONTEND
+      if (
+        sortBy === "price-low"
+      ) {
+
+        mappedData.sort(
+          (a: any, b: any) =>
+            a.price - b.price
+        );
+      }
+
+      if (
+        sortBy === "price-high"
+      ) {
+
+        mappedData.sort(
+          (a: any, b: any) =>
+            b.price - a.price
+        );
+      }
+
+      setVouchers(
+        mappedData
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+
+  const totalPages = Math.ceil(vouchers.length / ITEMS_PER_PAGE);
+  const paginatedVouchers = vouchers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -462,4 +538,4 @@ export function SearchResultsPage() {
 
     </div>
   );
-}
+  }  

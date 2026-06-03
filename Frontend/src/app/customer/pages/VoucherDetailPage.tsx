@@ -90,6 +90,47 @@ export function VoucherDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  const [voucher, setVoucher] = useState<any>(null);
+
+  const [loading, setLoading] = useState(true);
+
+
+  useEffect(() => {
+
+    if (!id) return;
+
+    const fetchVoucher = async () => {
+
+      try {
+
+        setLoading(true);
+
+        const response =
+          await fetch(
+            `http://localhost:3000/api/vouchers/${id}`
+          );
+
+        const data =
+          await response.json();
+
+        setVoucher(data);
+
+      } catch (error) {
+
+        console.error(error);
+
+      } finally {
+
+        setLoading(false);
+
+      }
+    };
+
+    fetchVoucher();
+
+  }, [id]);
+
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
@@ -149,6 +190,27 @@ export function VoucherDetailPage() {
     window.scrollTo(0, 0);
   }, []);
 
+
+  if (loading) {
+
+    return (
+      <div className="p-10">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!voucher) {
+
+    return (
+      <div className="p-10">
+        Voucher not found
+      </div>
+    );
+  }
+
+
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       
@@ -205,7 +267,8 @@ export function VoucherDetailPage() {
             {/* Category & Location */}
             <div className="flex items-center gap-3 mb-3">
               <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full uppercase">
-                SPA & WELLNESS
+                {voucher.DanhMuc?.TenDanhMuc}
+
               </span>
               <div className="flex items-center gap-1 text-sm text-muted">
                 <MapPin className="w-4 h-4" />
@@ -215,7 +278,7 @@ export function VoucherDetailPage() {
 
             {/* Title */}
             <h1 className="text-3xl font-bold mb-4">
-              Grand Bliss Royal Massage & Hydro-Aromatherapy (90 Min)
+              {voucher.TenVoucher}
             </h1>
 
             {/* Rating */}
@@ -232,8 +295,8 @@ export function VoucherDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-4xl font-bold text-primary">$129.00</span>
-              <span className="text-xl text-muted line-through">$245.00</span>
+              <span className="text-4xl font-bold text-primary">${voucher.GiaBan}</span>
+              <span className="text-xl text-muted line-through">${voucher.GiaGoc}</span>
               <span className="px-3 py-1 bg-[#FF4444] text-white rounded-md font-bold">
                 {t('voucher.off').replace('{percentage}', '47')}
               </span>
@@ -325,7 +388,7 @@ export function VoucherDetailPage() {
               <div>
                 <Link to="/brand/123" className="hover:text-primary transition-colors">
                   <h3 className="font-bold text-xl flex items-center gap-2">
-                    Ethereal Zen Wellness Spa
+                    {voucher.DoiTac?.TenDoanhNghiep}
                     <BadgeCheck className="w-5 h-5 text-blue-500 shrink-0" />
                   </h3>
                 </Link>
@@ -379,10 +442,7 @@ export function VoucherDetailPage() {
             <div className="prose max-w-none">
               <h3 className="font-bold text-xl mb-4">{t('voucher.about_this')}</h3>
               <p className="text-muted mb-4">
-                Indulge in the ultimate relaxation experience with our Grand Bliss Royal
-                Massage combined with Hydro-Aromatherapy. This 90-minute premium
-                treatment is designed to melt away stress, ease muscle tension, and
-                restore inner balance.
+                {voucher.MoTa}
               </p>
               <p className="text-muted mb-6">
                 Our highly trained therapists use a blend of traditional and modern

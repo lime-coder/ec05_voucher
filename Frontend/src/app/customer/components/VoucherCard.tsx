@@ -13,7 +13,6 @@ interface VoucherCardProps {
 }
 
 export function VoucherCard({ voucher, viewMode = "grid" }: VoucherCardProps) {
-  const navigate = useNavigate();
   const { t } = useLanguage();
 
   return (
@@ -84,14 +83,40 @@ export function VoucherCard({ voucher, viewMode = "grid" }: VoucherCardProps) {
         </div>
 
         {/* Button */}
+
         <div className={viewMode === 'list' ? 'mt-auto' : ''}>
-          <button
-            onClick={() => navigate(`/voucher/${voucher.id}`)}
-            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-semibold cursor-pointer"
+
+          <Link
+            to={`/voucher/${voucher.id}`}
           >
-            {voucher.rating ? t('voucher.view_detail') : t('voucher.buy_now')}
-          </button>
+
+            <button
+              className="
+                w-full
+                py-2
+                bg-primary
+                text-primary-foreground
+                rounded-lg
+                hover:opacity-90
+                transition-colors
+                font-semibold
+                cursor-pointer
+              "
+            >
+
+              {
+                voucher.rating
+
+                  ? t('voucher.view_detail')
+
+                  : t('voucher.buy_now')
+              }
+
+            </button>
+          </Link>
         </div>
+
+
       </div>
     </div>
   );

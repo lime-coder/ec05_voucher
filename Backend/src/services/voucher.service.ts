@@ -1,21 +1,151 @@
-import prisma from '../config/db';
-// NOTE: Later you will import types from '@voucherhub/types' 
-// import { Voucher } from '@voucherhub/types';
+import prisma from "../config/db";
 
 export class VoucherService {
+
   /**
-   * Retrieves all vouchers from the database using Prisma.
-   * This is where the business logic and database queries live.
+   * Lấy toàn bộ voucher
    */
   static async getAllVouchers() {
-    // return await prisma.voucher.findMany();
+    return await prisma.voucher.findMany({
+
+      include: {
+        DanhMuc: true,
+        DoiTac: true,
+      },
+
+    });
   }
 
-  static async getVoucherById(id: string) {
-    // return await prisma.voucher.findUnique({ where: { id } });
+
+  static async searchVoucher(
+    keyword: string,
+    minPrice?: number,
+    maxPrice?: number,
+    category?: string,
+    brand?: string,
+  ) {
+
+    return await prisma.voucher.findMany({
+
+      where: {
+
+        TrangThaiVoucher:
+          "ACTIVE",
+
+        AND: [
+
+          // Search
+          {
+            OR: [
+
+              {
+                TenVoucher: {
+                  contains: keyword,
+                },
+              },
+
+              {
+                DoiTac: {
+                  is: {
+                    TenDoanhNghiep: {
+                      contains: keyword,
+                    },
+                  },
+                },
+              },
+
+              {
+                DanhMuc: {
+                  is: {
+                    TenDanhMuc: {
+                      contains: keyword,
+                    },
+                  },
+                },
+              },
+
+            ],
+          },
+
+          // Price min
+          minPrice
+            ? {
+                GiaBan: {
+                  gte: minPrice,
+                },
+              }
+            : {},
+
+          // Price max
+          maxPrice
+            ? {
+                GiaBan: {
+                  lte: maxPrice,
+                },
+              }
+            : {},
+
+          // Category
+          category
+            ? {
+                DanhMuc: {
+                  is: {
+                    TenDanhMuc: {
+                      in: category.split(","),
+                    },
+                  },
+                },
+              }
+            : {},
+
+          // Brand
+          brand
+            ? {
+                DoiTac: {
+                  is: {
+                    TenDoanhNghiep: {
+                      in: brand.split(","),
+                    },
+                  },
+                },
+              }
+            : {},
+        ],
+      },
+
+      include: {
+
+        DanhMuc: true,
+
+        DoiTac: true,
+
+      },
+    });
   }
 
-  static async createVoucher(data: any) {
-    // return await prisma.voucher.create({ data });
+
+
+  /**
+   * Lấy voucher theo ID
+   */
+
+  static async getVoucherById(
+    id: string
+  ) {
+
+    return await prisma.voucher.findUnique({
+
+      where: {
+        VoucherID: Number(id),
+      },
+
+      include: {
+        DanhMuc: true,
+        DoiTac: true,
+      },
+
+    });
   }
+
+
 }
