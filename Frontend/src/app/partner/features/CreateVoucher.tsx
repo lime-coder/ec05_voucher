@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import {
   initialCreateVoucherForm,
-  partnerBranches,
-  voucherCategories,
 } from '../data/mockData';
 import type { CreateVoucherFormData, ImageItem } from '@voucherhub/types';
 
@@ -21,23 +19,56 @@ import {
   Badge,
 } from '@voucherhub/ui';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
-
+import { cn } from '@voucherhub/ui';
 export default function CreateVoucher() {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState<CreateVoucherFormData>(initialCreateVoucherForm);
+  const [formData, setFormData] = useState<CreateVoucherFormData & { id?: number }>(initialCreateVoucherForm);
 
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [submitModal, setSubmitModal] = useState<{isOpen: boolean, isDraft: boolean}>({isOpen: false, isDraft: false});
+  const [submitModal, setSubmitModal] = useState<{ isOpen: boolean, isDraft: boolean }>({ isOpen: false, isDraft: false });
+  const [partnerBranches, setPartnerBranches] = useState<string[]>([]);
+  const [voucherCategories, setVoucherCategories] = useState<{ id: number; name: string }[]>([]);
+
+  // Fetch branches and categories from API
+  useEffect(() => {
+    const partnerId = localStorage.getItem('partnerId') || '1';
+    fetch(`http://localhost:5000/api/branches/partner/${partnerId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setPartnerBranches(data.map((b: any) => b.TenChiNhanh));
+        }
+      })
+      .catch(console.error);
+
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setVoucherCategories(data.map((c: any) => ({ id: c.MaDanhMuc, name: c.TenDanhMuc })));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  // Restore draft from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('voucher_draft');
+    if (saved) {
+      try {
+        setFormData(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  // Save draft to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('voucher_draft', JSON.stringify(formData));
+  }, [formData]);
 
   const handleChange = (field: keyof CreateVoucherFormData) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = event.target.value;
-    setFormData((current) => {
-      const next = { ...current, [field]: value };
-
-
-
-      return next;
-    });
+    setFormData((current) => ({ ...current, [field]: value }));
   };
 
   const handleBranchToggle = (branch: string) => {
@@ -69,7 +100,7 @@ export default function CreateVoucher() {
       hasInvalid = true;
       return false;
     });
-    
+
     if (hasInvalid) {
       toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
     }
@@ -110,8 +141,61 @@ export default function CreateVoucher() {
   };
 
   const handleSubmit = (isDraft: boolean) => {
-    console.log('Form data:', formData, 'Images:', images, 'Is draft:', isDraft);
-    setSubmitModal({isOpen: true, isDraft});
+    if (!isDraft) {
+      if (!formData.name || !formData.originalPrice || !formData.salePrice || !formData.quantity) {
+        toast.error('Vui lòng nhập đầy đủ Tên, Giá và Số lượng!');
+        return;
+      }
+    }
+    setSubmitModal({ isOpen: true, isDraft });
+  };
+
+  const executeSubmit = async () => {
+    try {
+      const status = submitModal.isDraft ? 'DRAFT' : 'PENDING_APPROVAL';
+      
+      const selectedCategoryName = formData.categories && formData.categories.length > 0 ? formData.categories[0] : null;
+      const categoryObj = voucherCategories.find(c => c.name === selectedCategoryName);
+
+      const payload = {
+        ...formData,
+        categoryId: categoryObj ? categoryObj.id : null,
+        partnerId: parseInt(localStorage.getItem('partnerId') || '1', 10),
+        status,
+        images // Optional: send images if the backend handles them
+      };
+
+      const url = formData.id ? `http://localhost:5000/api/vouchers/${formData.id}` : 'http://localhost:5000/api/vouchers';
+      const method = formData.id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error('Lỗi khi lưu Voucher');
+      }
+      
+      const data = await response.json();
+
+      toast.success(submitModal.isDraft ? 'Đã lưu bản nháp thành công!' : 'Đã gửi duyệt Voucher thành công!');
+      setSubmitModal({ isOpen: false, isDraft: false });
+      
+      if (submitModal.isDraft) {
+        // Cập nhật ID để lần save sau sẽ gọi PUT thay vì tạo mới
+        setFormData(prev => ({ ...prev, id: data.VoucherID }));
+      } else {
+        // Nộp xong thì clear form và localStorage
+        setFormData(initialCreateVoucherForm);
+        localStorage.removeItem('voucher_draft');
+      }
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi lưu Voucher. Vui lòng thử lại!');
+    }
   };
 
   return (
@@ -141,14 +225,14 @@ export default function CreateVoucher() {
                 <label className="text-sm font-medium">{t('partner.create.category_label')}</label>
                 <div className="border border-input rounded-md p-3 max-h-[160px] overflow-y-auto space-y-2 bg-transparent shadow-sm">
                   {voucherCategories.map((cat) => (
-                    <label key={cat} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                      <input 
-                        type="checkbox" 
-                        checked={(formData.categories || []).includes(cat)}
-                        onChange={() => handleCategoryToggle(cat)}
+                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={(formData.categories || []).includes(cat.name)}
+                        onChange={() => handleCategoryToggle(cat.name)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                      <span className="text-sm">{cat}</span>
+                      <span className="text-sm">{cat.name}</span>
                     </label>
                   ))}
                 </div>
@@ -166,8 +250,8 @@ export default function CreateVoucher() {
                 <div className="border border-input rounded-md p-3 max-h-[160px] overflow-y-auto space-y-2 bg-transparent shadow-sm">
                   {partnerBranches.map((branch) => (
                     <label key={branch} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={(formData.branches || []).includes(branch)}
                         onChange={() => handleBranchToggle(branch)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
@@ -394,8 +478,8 @@ export default function CreateVoucher() {
                     checked={formData.isRefundable}
                     onChange={(e) => setFormData({ ...formData, isRefundable: e.target.checked })}
                   />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${formData.isRefundable ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isRefundable ? 'translate-x-4' : ''}`}></div>
+                  <div className={cn('block w-10 h-6 rounded-full transition-colors', formData.isRefundable ? 'bg-primary' : 'bg-gray-300')}></div>
+                  <div className={cn('absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform', formData.isRefundable ? 'translate-x-4' : '')}></div>
                 </div>
                 <span className="font-medium">{t('partner.create.refundable')}</span>
               </label>
@@ -438,8 +522,8 @@ export default function CreateVoucher() {
             <p className="text-muted-foreground mb-6 text-sm">
               {submitModal.isDraft ? t('partner.create.draft_desc') : t('partner.create.submit_desc')}
             </p>
-            <Button 
-              onClick={() => setSubmitModal({isOpen: false, isDraft: false})}
+            <Button
+              onClick={executeSubmit}
               className="w-full py-3"
             >
               OK

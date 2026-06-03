@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
   Tag,
   CheckCircle,
@@ -5,12 +6,12 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { cn } from '@voucherhub/ui';
 
 import {
-  dashboardStats,
   recentActivities,
-  salesData,
-  topVouchers,
+  salesData as mockSalesData,
+  topVouchers as mockTopVouchers,
 } from '../data/mockData';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 
@@ -23,6 +24,43 @@ const statIcons: Record<string, React.ReactNode> = {
 
 export default function DashboardView() {
   const { t } = useLanguage();
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalSold: 0,
+    pendingVouchers: 0,
+    activeVouchers: 0,
+    topVouchers: mockTopVouchers,
+    salesData: mockSalesData // Fallback or initial state
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const partnerId = localStorage.getItem('partnerId') || '1';
+        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/statistics`);
+        if (response.ok) {
+          const data = await response.json();
+          // Merge with mockTopVouchers if backend doesn't return topVouchers or returns empty array
+          setStats(prev => ({
+            ...prev,
+            ...data,
+            topVouchers: data.topVouchers && data.topVouchers.length > 0 ? data.topVouchers : mockTopVouchers,
+            salesData: data.salesData || mockSalesData
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch partner stats", err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const dynamicStats = [
+    { title: 'Tổng Doanh Thu', value: `${stats.totalRevenue.toLocaleString('vi-VN')}₫`, change: '+0%', icon: 'money', colorClass: 'text-blue-500', bgClass: 'bg-blue-50' },
+    { title: 'Voucher Đã Bán', value: stats.totalSold.toString(), change: '+0%', icon: 'voucher', colorClass: 'text-green-500', bgClass: 'bg-green-50' },
+    { title: 'Chờ Duyệt', value: stats.pendingVouchers.toString(), change: '0%', icon: 'check', colorClass: 'text-yellow-500', bgClass: 'bg-yellow-50' },
+    { title: 'Đang Phát Hành', value: stats.activeVouchers.toString(), change: '0%', icon: 'schedule', colorClass: 'text-purple-500', bgClass: 'bg-purple-50' }
+  ];
 
   return (
     <div>
@@ -36,16 +74,16 @@ export default function DashboardView() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        {dashboardStats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <div key={stat.title} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className={`p-4 rounded-full`} style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
+            <div className={cn('p-4 rounded-full', stat.bgClass, stat.colorClass)}>
               {statIcons[stat.icon]}
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
               <h3 className="text-2xl font-bold">{stat.value}</h3>
-              <p className={`text-xs font-medium ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                {stat.change} {t('partner.dash.vs_last_month')}
+              <p className={cn('text-xs font-medium', stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600')}>
+                {stat.change} {t('partner.dash.vs_last_month') || 'so với tháng trước'}
               </p>
             </div>
           </div>
@@ -57,7 +95,7 @@ export default function DashboardView() {
           <h2 className="text-lg font-bold mb-6">{t('partner.dash.revenue_sales')}</h2>
           <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesData}>
+              <LineChart data={stats.salesData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" />
                 <YAxis yAxisId="left" />
@@ -114,7 +152,7 @@ export default function DashboardView() {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-lg font-bold mb-6">{t('partner.dash.top_vouchers')}</h2>
         <div className="flex flex-col gap-6">
-          {topVouchers.map((voucher, index) => (
+          {stats.topVouchers.map((voucher, index) => (
             <div key={index}>
               <div className="flex flex-col sm:flex-row justify-between gap-4 mb-2">
                 <div className="flex gap-3 items-center min-w-0">
