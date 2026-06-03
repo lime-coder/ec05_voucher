@@ -7,6 +7,9 @@ import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import contentRoutes from './routes/content.routes';
 import adminRoutes from './routes/admin.routes';
+import partnerRoutes from './routes/partner.routes';
+import branchRoutes from './routes/branch.routes';
+import categoryRoutes from './routes/category.routes';
 
 // Load environment variables from .env
 dotenv.config();
@@ -28,6 +31,9 @@ app.use('/api/admin', adminRoutes);
 
 // Static uploads serving
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/api/partners', partnerRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Start the server
 app.listen(PORT, () => {

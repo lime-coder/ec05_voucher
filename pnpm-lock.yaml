@@ -32,6 +32,9 @@ importers:
       multer:
         specifier: ^2.1.1
         version: 2.1.1
+      nanoid:
+        specifier: ^3.3.12
+        version: 3.3.12
       zod:
         specifier: ^3.22.4
         version: 3.25.76
