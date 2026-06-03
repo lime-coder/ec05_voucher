@@ -22,7 +22,7 @@ export function RegisterCustomerPage() {
     handleSubmit: handleFormSubmit,
     formState: { errors },
   } = useForm<RegisterCustomerInput>({
-    resolver: zodResolver(registerCustomerSchema),
+    resolver: zodResolver(registerCustomerSchema as any),
   });
 
   useEffect(() => {

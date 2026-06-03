@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Search, Eye, Edit2, Trash2, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Eye, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
   Button,
   Badge,
@@ -10,29 +12,140 @@ import {
   TableHead,
   TableBody,
   TableCell,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '@voucherhub/ui';
 
-const mockPartners = [
-  { id: 1, name: 'Highlands Coffee', category: 'F&B', vouchers: 45, revenue: '125,000,000đ', status: 'Hoạt động', date: '01/01/2026' },
-  { id: 2, name: 'CGV Cinemas', category: 'Giải trí', vouchers: 28, revenue: '89,500,000đ', status: 'Hoạt động', date: '05/01/2026' },
-  { id: 3, name: 'The Coffee House', category: 'F&B', vouchers: 52, revenue: '156,200,000đ', status: 'Hoạt động', date: '10/01/2026' },
-  { id: 4, name: 'Lotteria', category: 'F&B', vouchers: 34, revenue: '78,900,000đ', status: 'Tạm dừng', date: '15/01/2026' },
-  { id: 5, name: 'Pizza Hut', category: 'F&B', vouchers: 29, revenue: '92,400,000đ', status: 'Hoạt động', date: '20/01/2026' },
-  { id: 6, name: 'Galaxy Cinema', category: 'Giải trí', vouchers: 18, revenue: '54,300,000đ', status: 'Hoạt động', date: '25/01/2026' },
-  { id: 7, name: 'Phúc Long', category: 'F&B', vouchers: 41, revenue: '103,700,000đ', status: 'Hoạt động', date: '28/01/2026' },
-  { id: 8, name: 'KFC', category: 'F&B', vouchers: 38, revenue: '115,800,000đ', status: 'Hoạt động', date: '01/02/2026' },
-];
-
 export function PartnerManagement() {
+  const { language } = useLanguage();
+  const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
+
+  const [partners, setPartners] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [approvalFilter, setApprovalFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredPartners = mockPartners.filter((partner) => {
+  // Modals state
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
+
+  const fetchPartners = () => {
+    fetch('/api/admin/partners')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          // Map backend approval status string
+          const mapped = data.map((p: any) => ({
+            ...p,
+            displayApprovalStatus: p.approvalStatus === 'APPROVED' ? 'Approved'
+                                 : p.approvalStatus === 'REJECTED' ? 'Rejected'
+                                 : 'Pending'
+          }));
+          setPartners(mapped);
+        } else {
+          setPartners([]);
+        }
+      })
+      .catch(err => console.error('Fetch partners error:', err));
+  };
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  const handleApprovePartner = async (id: number, name: string) => {
+    const confirmMsg = tText(
+      `Are you sure you want to approve partner "${name}"?`,
+      `Bạn có chắc chắn muốn duyệt đối tác "${name}" không?`
+    );
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/admin/partners/${id}/approve`, {
+        method: 'PATCH'
+      });
+
+      if (res.ok) {
+        toast.success(
+          tText(
+            `Successfully approved partner "${name}"!`,
+            `Đã phê duyệt đối tác "${name}" thành công!`
+          )
+        );
+        fetchPartners();
+      } else {
+        toast.error(tText('Approval failed!', 'Duyệt đối tác thất bại!'));
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+    }
+  };
+
+  const handleRejectPartner = async (id: number, name: string) => {
+    const confirmMsg = tText(
+      `Are you sure you want to reject partner "${name}"?`,
+      `Bạn có chắc chắn muốn từ chối đối tác "${name}" không?`
+    );
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/admin/partners/${id}/reject`, {
+        method: 'PATCH'
+      });
+
+      if (res.ok) {
+        toast.success(
+          tText(
+            `Successfully rejected partner "${name}"!`,
+            `Đã từ chối đối tác "${name}"!`
+          )
+        );
+        fetchPartners();
+      } else {
+        toast.error(tText('Rejection failed!', 'Từ chối đối tác thất bại!'));
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+    }
+  };
+
+  const handleDeletePartner = async (id: number, name: string) => {
+    const confirmMsg = tText(
+      `Are you sure you want to delete partner "${name}"?`,
+      `Bạn có chắc chắn muốn xóa đối tác "${name}" không?`
+    );
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/admin/partners/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success(tText('Deleted partner successfully!', 'Xóa đối tác thành công!'));
+        fetchPartners();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || tText('Failed to delete partner!', 'Xóa đối tác thất bại!'));
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+    }
+  };
+
+  const handleViewPartner = (partner: any) => {
+    setSelectedPartner(partner);
+    setShowDetailModal(true);
+  };
+
+  const filteredPartners = partners.filter((partner) => {
     const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || partner.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesApproval = approvalFilter === 'all' || partner.displayApprovalStatus.toLowerCase() === approvalFilter.toLowerCase();
+    return matchesSearch && matchesApproval;
   });
 
   const totalPages = Math.ceil(filteredPartners.length / itemsPerPage);
@@ -43,47 +156,62 @@ export function PartnerManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4 flex-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <Input
-              type="text"
-              placeholder="Tìm kiếm đối tác..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white shadow-sm border-gray-200"
-            />
-          </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-10 py-0 pl-4 pr-8 border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-[length:16px_16px] bg-[position:right_8px_center] bg-no-repeat cursor-pointer"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Tabs for approval status */}
+        <div className="flex gap-2">
+          <Button
+            variant={approvalFilter === 'all' ? 'default' : 'outline'}
+            onClick={() => { setApprovalFilter('all'); setCurrentPage(1); }}
           >
-            <option value="all">Tất cả danh mục</option>
-            <option value="F&B">F&B</option>
-            <option value="Giải trí">Giải trí</option>
-          </select>
+            {tText('All', 'Tất cả')}
+          </Button>
+          <Button
+            variant={approvalFilter === 'pending' ? 'default' : 'outline'}
+            onClick={() => { setApprovalFilter('pending'); setCurrentPage(1); }}
+            className={approvalFilter === 'pending' ? '' : 'text-yellow-600 border-yellow-200 hover:bg-yellow-50'}
+          >
+            {tText('Pending Approval', 'Chờ duyệt')}
+          </Button>
+          <Button
+            variant={approvalFilter === 'approved' ? 'default' : 'outline'}
+            onClick={() => { setApprovalFilter('approved'); setCurrentPage(1); }}
+            className={approvalFilter === 'approved' ? '' : 'text-green-600 border-green-200 hover:bg-green-50'}
+          >
+            {tText('Approved', 'Đã duyệt')}
+          </Button>
+          <Button
+            variant={approvalFilter === 'rejected' ? 'default' : 'outline'}
+            onClick={() => { setApprovalFilter('rejected'); setCurrentPage(1); }}
+            className={approvalFilter === 'rejected' ? '' : 'text-red-600 border-red-200 hover:bg-red-50'}
+          >
+            {tText('Rejected', 'Từ chối')}
+          </Button>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Thêm đối tác
-        </Button>
+
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            type="text"
+            placeholder={tText('Search partners...', 'Tìm kiếm đối tác...')}
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="pl-10 bg-white shadow-sm border-gray-200"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50/50">
-              <TableHead>STT</TableHead>
-              <TableHead>Tên đối tác</TableHead>
-              <TableHead>Danh mục</TableHead>
-              <TableHead>Voucher</TableHead>
-              <TableHead>Doanh thu</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Ngày tham gia</TableHead>
-              <TableHead className="text-right">Hành động</TableHead>
+              <TableHead>{tText('No.', 'STT')}</TableHead>
+              <TableHead>{tText('Partner Name', 'Tên đối tác')}</TableHead>
+              <TableHead>{tText('Category', 'Lĩnh vực')}</TableHead>
+              <TableHead>{tText('Vouchers', 'Vouchers')}</TableHead>
+              <TableHead>{tText('Revenue', 'Doanh thu')}</TableHead>
+              <TableHead>{tText('Approval Status', 'Trạng thái duyệt')}</TableHead>
+              <TableHead>{tText('Operational Status', 'Trạng thái HĐ')}</TableHead>
+              <TableHead className="text-right">{tText('Actions', 'Hành động')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,45 +221,98 @@ export function PartnerManagement() {
                   {(currentPage - 1) * itemsPerPage + index + 1}
                 </TableCell>
                 <TableCell className="font-medium text-gray-900">{partner.name}</TableCell>
-                <TableCell>{partner.category}</TableCell>
+                <TableCell>
+                  {partner.category === 'Giải trí' ? tText('Entertainment', 'Giải trí') 
+                   : partner.category === 'Du lịch' ? tText('Travel', 'Du lịch') 
+                   : partner.category === 'Làm đẹp' ? tText('Beauty', 'Làm đẹp') 
+                   : partner.category === 'Khác' ? tText('Other', 'Khác') 
+                   : partner.category}
+                </TableCell>
                 <TableCell>{partner.vouchers}</TableCell>
                 <TableCell className="font-medium text-gray-900">{partner.revenue}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={partner.status === 'Hoạt động' ? 'default' : 'secondary'}
+                    variant={
+                      partner.displayApprovalStatus === 'Approved' ? 'default'
+                      : partner.displayApprovalStatus === 'Pending' ? 'outline'
+                      : 'destructive'
+                    }
                     className={
-                      partner.status === 'Hoạt động'
+                      partner.displayApprovalStatus === 'Approved'
                         ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent'
-                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 shadow-none border-transparent'
+                        : partner.displayApprovalStatus === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 shadow-none border-transparent'
+                        : 'bg-red-100 text-red-700 hover:bg-red-100 shadow-none border-transparent'
                     }
                   >
-                    {partner.status}
+                    {tText(partner.displayApprovalStatus, 
+                      partner.displayApprovalStatus === 'Approved' ? 'Đã duyệt'
+                      : partner.displayApprovalStatus === 'Pending' ? 'Chờ duyệt'
+                      : 'Từ chối'
+                    )}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-gray-500">{partner.date}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      partner.status === 'ACTIVE' ? 'default'
+                      : partner.status === 'PENDING' ? 'outline'
+                      : 'secondary'
+                    }
+                    className={
+                      partner.status === 'ACTIVE'
+                        ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent'
+                        : partner.status === 'PENDING'
+                        ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 shadow-none border-transparent'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-100 shadow-none border-transparent'
+                    }
+                  >
+                    {partner.status === 'ACTIVE' ? tText('Active', 'Hoạt động')
+                     : partner.status === 'PENDING' ? tText('Pending', 'Chờ kích hoạt')
+                     : tText('Inactive', 'Tạm dừng')}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                    <Button onClick={() => handleViewPartner(partner)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View details', 'Xem chi tiết')}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
+                    
+                    {partner.displayApprovalStatus === 'Pending' && (
+                      <>
+                        <Button onClick={() => handleApprovePartner(partner.id, partner.name)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Approve', 'Duyệt đối tác')}>
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => handleRejectPartner(partner.id, partner.name)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={tText('Reject', 'Từ chối')}>
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+
+                    <Button onClick={() => handleDeletePartner(partner.id, partner.name)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={tText('Delete', 'Xóa')}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
+            {filteredPartners.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                  {tText('No partners found.', 'Không tìm thấy đối tác nào.')}
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
 
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
             <div className="text-sm text-gray-500">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{' '}
-              {Math.min(currentPage * itemsPerPage, filteredPartners.length)} / {filteredPartners.length}
+              {tText(
+                `Showing ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredPartners.length)} of ${filteredPartners.length}`,
+                `Hiển thị ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredPartners.length)} trên ${filteredPartners.length}`
+              )}
             </div>
             <div className="flex gap-2">
               <Button
@@ -140,7 +321,7 @@ export function PartnerManagement() {
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                Trước
+                {tText('Previous', 'Trước')}
               </Button>
               <Button
                 variant="outline"
@@ -148,12 +329,83 @@ export function PartnerManagement() {
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
-                Sau
+                {tText('Next', 'Sau')}
               </Button>
             </div>
           </div>
         )}
       </div>
+
+      {/* --- View Partner Details Dialog --- */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold">
+              {tText('Partner Details', 'Chi tiết đối tác')}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPartner && (
+            <div className="py-4 space-y-3 text-sm">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Enterprise Name:', 'Tên doanh nghiệp:')}</span>
+                <span className="font-semibold text-gray-900">{selectedPartner.name}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Field of Business:', 'Lĩnh vực kinh doanh:')}</span>
+                <span className="text-gray-900">
+                  {selectedPartner.category === 'Giải trí' ? tText('Entertainment', 'Giải trí') 
+                   : selectedPartner.category === 'Du lịch' ? tText('Travel', 'Du lịch') 
+                   : selectedPartner.category === 'Làm đẹp' ? tText('Beauty', 'Làm đẹp') 
+                   : selectedPartner.category === 'Khác' ? tText('Other', 'Khác') 
+                   : selectedPartner.category}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Tax Code:', 'Mã số thuế:')}</span>
+                <span className="text-gray-900 font-mono">{selectedPartner.taxCode || tText('Not provided', 'Chưa cung cấp')}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Legal Representative:', 'Người đại diện:')}</span>
+                <span className="text-gray-900">{selectedPartner.representative || tText('Not provided', 'Chưa cung cấp')}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Voucher Count:', 'Số lượng voucher:')}</span>
+                <span className="text-gray-900 font-semibold">{selectedPartner.vouchers}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Total Revenue:', 'Tổng doanh thu:')}</span>
+                <span className="text-green-600 font-semibold">{selectedPartner.revenue}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Approval Status:', 'Trạng thái duyệt:')}</span>
+                <Badge
+                  variant={
+                    selectedPartner.displayApprovalStatus === 'Approved' ? 'default'
+                    : selectedPartner.displayApprovalStatus === 'Pending' ? 'outline'
+                    : 'destructive'
+                  }
+                  className={selectedPartner.displayApprovalStatus === 'Approved' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none' : ''}
+                >
+                  {tText(selectedPartner.displayApprovalStatus, 
+                    selectedPartner.displayApprovalStatus === 'Approved' ? 'Đã duyệt'
+                    : selectedPartner.displayApprovalStatus === 'Pending' ? 'Chờ duyệt'
+                    : 'Từ chối'
+                  )}
+                </Badge>
+              </div>
+              <div className="flex justify-between pb-2">
+                <span className="text-gray-500 font-medium">{tText('Join Date:', 'Ngày tham gia:')}</span>
+                <span className="text-gray-900">{selectedPartner.date}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button className="w-full" onClick={() => setShowDetailModal(false)}>
+              {tText('Close', 'Đóng')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

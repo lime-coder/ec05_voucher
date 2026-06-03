@@ -21,7 +21,7 @@ export function LoginPage() {
     handleSubmit: handleLoginSubmit,
     formState: { errors: loginErrors },
   } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema as any),
   });
 
   const {
@@ -29,7 +29,7 @@ export function LoginPage() {
     handleSubmit: handleForgotSubmit,
     formState: { errors: forgotErrors },
   } = useForm<ForgotPasswordInput>({
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: zodResolver(forgotPasswordSchema as any),
   });
 
   const onForgotSubmit = (data: ForgotPasswordInput) => {
