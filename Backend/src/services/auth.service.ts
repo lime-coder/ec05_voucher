@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { LogService } from './log.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_for_voucherhub_change_in_production';
 const JWT_EXPIRES_IN = '30m';
@@ -114,6 +115,15 @@ export class AuthService {
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
+
+    // Capture log
+    await LogService.createLog({
+      IDTaiKhoan: user.IDTaiKhoan,
+      HanhDong: 'Đăng nhập hệ thống',
+      DoiTuong: user.TenDangNhap,
+      DiaChiIP: credentials.ip, // IP passed from controller
+      TrangThai: 'Thành công'
+    });
 
     return { token, user: { ...safeUser, role } };
   }

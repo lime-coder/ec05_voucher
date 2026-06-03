@@ -14,3 +14,18 @@ ALTER TABLE FAQ ADD CONSTRAINT DF_FAQ_TrangThai_Fixed DEFAULT N'Hiển thị' FO
 UPDATE BaiViet SET TrangThai = N'Nháp' WHERE TrangThai = N'N''Nháp''';
 UPDATE Banner SET TrangThai = N'Đang hiển thị' WHERE TrangThai = N'N''Đang hiển thị''';
 UPDATE FAQ SET TrangThai = N'Hiển thị' WHERE TrangThai = N'N''Hiển thị''';
+
+
+SELECT 
+    t.name AS table_name,
+    c.name AS column_name,
+    dc.name AS default_constraint_name,
+    dc.definition
+FROM sys.default_constraints dc
+JOIN sys.columns c 
+    ON dc.parent_object_id = c.object_id
+   AND dc.parent_column_id = c.column_id
+JOIN sys.tables t
+    ON t.object_id = c.object_id
+WHERE t.name IN ('BaiViet', 'Banner', 'FAQ')
+  AND c.name = 'TrangThai';

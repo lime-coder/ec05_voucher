@@ -3,7 +3,13 @@ import { AuthService } from '../services/auth.service';
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const result = await AuthService.login(req.body);
+    let ip = (req.ip || req.connection.remoteAddress || '').toString();
+    // Normalize IPv6 localhost and IPv4-mapped localhost to 127.0.0.1
+    if (ip === '::1' || ip === '::ffff:127.0.0.1' || ip.includes('127.0.0.1') || ip === '::ffff::1') {
+      ip = '127.0.0.1';
+    }
+    const credentials = { ...req.body, ip };
+    const result = await AuthService.login(credentials);
     res.status(200).json(result);
   } catch (error: any) {
     res.status(401).json({ message: error.message || 'Invalid credentials' });

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Search, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Download, Loader2 } from 'lucide-react';
+import api from '../../../../lib/api';
 import {
   Button,
   Badge,
@@ -12,39 +13,44 @@ import {
   TableCell,
 } from '@voucherhub/ui';
 
-const mockLogs = [
-  { id: 1, user: 'admin@voucher.vn', action: 'Phê duyệt voucher', target: 'Highlands Coffee - Giảm 50K', ip: '192.168.1.100', time: '19/05/2026 10:45:23', status: 'Thành công' },
-  { id: 2, user: 'admin@voucher.vn', action: 'Khóa tài khoản', target: 'Lê Văn C', ip: '192.168.1.100', time: '19/05/2026 10:30:15', status: 'Thành công' },
-  { id: 3, user: 'admin@voucher.vn', action: 'Cập nhật đối tác', target: 'CGV Cinemas', ip: '192.168.1.100', time: '19/05/2026 10:15:42', status: 'Thành công' },
-  { id: 4, user: 'admin@voucher.vn', action: 'Xóa banner', target: 'Banner khuyến mãi xuân', ip: '192.168.1.100', time: '19/05/2026 09:55:18', status: 'Thành công' },
-  { id: 5, user: 'admin@voucher.vn', action: 'Từ chối voucher', target: 'Pizza Hut - Giảm 30%', ip: '192.168.1.100', time: '19/05/2026 09:30:45', status: 'Thành công' },
-  { id: 6, user: 'admin@voucher.vn', action: 'Đăng nhập hệ thống', target: 'Dashboard', ip: '192.168.1.100', time: '19/05/2026 09:00:12', status: 'Thành công' },
-  { id: 7, user: 'admin@voucher.vn', action: 'Hoàn tiền đơn hàng', target: 'ORD-2398', ip: '192.168.1.100', time: '18/05/2026 17:45:33', status: 'Thành công' },
-  { id: 8, user: 'admin@voucher.vn', action: 'Thêm danh mục', target: 'Spa & Massage', ip: '192.168.1.100', time: '18/05/2026 16:20:08', status: 'Thành công' },
-  { id: 9, user: 'admin@voucher.vn', action: 'Cập nhật banner', target: 'Flash Sale cuối tuần', ip: '192.168.1.100', time: '18/05/2026 15:10:55', status: 'Thành công' },
-  { id: 10, user: 'admin@voucher.vn', action: 'Kích hoạt tài khoản', target: 'Đỗ Văn G', ip: '192.168.1.100', time: '18/05/2026 14:35:27', status: 'Thành công' },
-];
-
 export function SystemLogs() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredLogs = mockLogs.filter((log) => {
-    const matchesSearch =
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.target.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAction = actionFilter === 'all' || log.action.includes(actionFilter);
-    return matchesSearch && matchesAction;
-  });
+  useEffect(() => {
+    fetchLogs();
+  }, [actionFilter, searchTerm]);
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const currentLogs = filteredLogs.slice(
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    try {
+      // Backend filtering is supported, so we pass the params
+      const response = await api.get('/logs', {
+        params: { search: searchTerm, action: actionFilter }
+      });
+      setLogs(response.data);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
+  const currentLogs = logs.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN');
+  };
 
   return (
     <div className="space-y-6">
@@ -98,23 +104,39 @@ export function SystemLogs() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentLogs.map((log, index) => (
-              <TableRow key={log.id} className="hover:bg-gray-50/50">
-                <TableCell className="text-gray-500">
-                  {(currentPage - 1) * itemsPerPage + index + 1}
-                </TableCell>
-                <TableCell className="text-gray-700">{log.user}</TableCell>
-                <TableCell className="font-medium text-gray-900">{log.action}</TableCell>
-                <TableCell className="text-gray-700">{log.target}</TableCell>
-                <TableCell className="text-gray-500 font-mono text-xs">{log.ip}</TableCell>
-                <TableCell className="text-gray-500">{log.time}</TableCell>
-                <TableCell>
-                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
-                    {log.status}
-                  </Badge>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : currentLogs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                  Không tìm thấy nhật ký hệ thống nào.
+                </TableCell>
+              </TableRow>
+            ) : (
+              currentLogs.map((log, index) => (
+                <TableRow key={log.MaLog} className="hover:bg-gray-50/50">
+                  <TableCell className="text-gray-500">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </TableCell>
+                  <TableCell className="text-gray-700">{log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống'}</TableCell>
+                  <TableCell className="font-medium text-gray-900">{log.HanhDong}</TableCell>
+                  <TableCell className="text-gray-700">{log.DoiTuong || log.ChiTiet || '-'}</TableCell>
+                  <TableCell className="text-gray-500 font-mono text-xs">{log.DiaChiIP || '-'}</TableCell>
+                  <TableCell className="text-gray-500">{formatDate(log.ThoiGian)}</TableCell>
+                  <TableCell>
+                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
+                      {log.TrangThai || 'Thành công'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
 
@@ -122,7 +144,7 @@ export function SystemLogs() {
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
             <div className="text-sm text-gray-500">
               Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{' '}
-              {Math.min(currentPage * itemsPerPage, filteredLogs.length)} / {filteredLogs.length}
+              {Math.min(currentPage * itemsPerPage, logs.length)} / {logs.length}
             </div>
             <div className="flex gap-2">
               <Button

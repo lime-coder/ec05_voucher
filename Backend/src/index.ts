@@ -20,6 +20,7 @@ app.use(express.json()); // Parse incoming JSON payloads
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/logs', require('./routes/log.routes').default);
 
 // Start the server
 app.listen(PORT, () => {

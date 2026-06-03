@@ -50,7 +50,7 @@ export function LoginPage() {
       else if (result.user.role === "partner") navigate("/partner");
       else navigate("/");
     } else {
-      setLoginError(result.error || t('auth.invalid_credentials'));
+      setLoginError("Incorrect email address or password");
     }
   };
 
@@ -124,11 +124,7 @@ export function LoginPage() {
             {/* Login Form */}
             {activeTab === "login" && (
               <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
-                {loginError && (
-                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                    {loginError}
-                  </div>
-                )}
+
                 {/* Username/Email Field */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">
@@ -169,8 +165,10 @@ export function LoginPage() {
                       {...registerLogin("password")}
                     />
                   </div>
-                  {loginErrors.password && (
-                    <p className="text-red-500 text-xs mt-1">{loginErrors.password.message}</p>
+                  {(loginErrors.password || loginError) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {loginErrors.password?.message || loginError}
+                    </p>
                   )}
                 </div>
 
