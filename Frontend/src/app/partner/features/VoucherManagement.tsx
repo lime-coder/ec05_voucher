@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   MoreVertical,
@@ -9,7 +9,7 @@ import {
   PlayCircle,
   Filter,
 } from 'lucide-react';
-import { vouchers, voucherStatusConfig } from '../data/mockData';
+import { voucherStatusConfig } from '../data/mockData';
 import type { PartnerVoucher as Voucher } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { useNavigate } from 'react-router';
@@ -37,12 +37,53 @@ import {
 export default function VoucherManagement() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('all');
+
+  useEffect(() => {
+    const partnerId = localStorage.getItem('partnerId') || '1';
+    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mappedVouchers: Voucher[] = data.map((v: any) => {
+            let status: any = 'draft';
+            if (v.TrangThaiVoucher === 'PENDING_APPROVAL') status = 'pending';
+            if (v.TrangThaiVoucher === 'APPROVED' || v.TrangThaiVoucher === 'ACTIVE') status = 'active';
+            if (v.TrangThaiVoucher === 'PAUSED') status = 'paused';
+            if (v.TrangThaiVoucher === 'REJECTED') status = 'rejected';
+
+            const originalPrice = v.GiaGoc ? parseFloat(v.GiaGoc) : 0;
+            const salePrice = v.GiaBan ? parseFloat(v.GiaBan) : 0;
+            let discount = 0;
+            if (originalPrice > 0) {
+              discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+            }
+
+            return {
+              id: v.VoucherID.toString(),
+              name: v.TenVoucher || '',
+              originalPrice,
+              salePrice,
+              discount,
+              quantity: v.SoLuongChoPhep || 0,
+              sold: v.SoLuongDaBan || 0,
+              status,
+              categories: v.DanhMuc ? [v.DanhMuc.TenDanhMuc] : [], // Dynamic category from backend
+              validFrom: new Date(v.ThoiGianBatDau).toLocaleDateString('vi-VN'),
+              validTo: new Date(v.ThoiGianKetThuc).toLocaleDateString('vi-VN'),
+            };
+          });
+          setVouchers(mappedVouchers);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const handleViewDetails = (voucher: Voucher) => {
     setSelectedVoucher(voucher);

@@ -39,6 +39,8 @@ model ChiNhanh {
   TenChiNhanh    String?            @db.NVarChar(255)
   SDT_CN         String?            @db.VarChar(15)
   DiaChiChiNhanh String?            @db.NVarChar(500)
+  MaDoiTac       Int?
+  DoiTac         DoiTac?            @relation(fields: [MaDoiTac], references: [MaDoiTac], onDelete: NoAction, onUpdate: NoAction, map: "FK_ChiNhanh_DoiTac")
   Vouchers       Voucher_ChiNhanh[]
 }
 
@@ -91,6 +93,7 @@ model DoiTac {
   LinhVucKinhDoanh  String?          @db.NVarChar(255)
   TrangThaiPheDuyet String?          @db.NVarChar(50)
   TrangThaiHoatDong String?          @db.NVarChar(50)
+  ChiNhanh          ChiNhanh[]
   NhanViens         NhanVienDoiTac[]
   Vouchers          Voucher[]
 }
