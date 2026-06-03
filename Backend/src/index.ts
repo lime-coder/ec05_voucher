@@ -1,9 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import voucherRoutes from './routes/voucher.routes';
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
+import contentRoutes from './routes/content.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Load environment variables from .env
 dotenv.config();
@@ -20,6 +23,11 @@ app.use(express.json()); // Parse incoming JSON payloads
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Static uploads serving
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Start the server
 app.listen(PORT, () => {

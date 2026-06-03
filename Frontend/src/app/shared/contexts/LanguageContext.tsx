@@ -24,10 +24,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const setLanguage = (lang: Language) => {
-    if (lang === language) return;
     localStorage.setItem('appLanguage', lang);
     setLanguageState(lang);
-    window.location.reload();
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {
