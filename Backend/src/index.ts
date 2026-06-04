@@ -1,9 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import voucherRoutes from './routes/voucher.routes';
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
+import contentRoutes from './routes/content.routes';
+import adminRoutes from './routes/admin.routes';
 import partnerRoutes from './routes/partner.routes';
 import branchRoutes from './routes/branch.routes';
 import categoryRoutes from './routes/category.routes';
@@ -25,6 +28,11 @@ app.use('/public', express.static(path.join(__dirname, '../public')));
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Static uploads serving
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/partners', partnerRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);

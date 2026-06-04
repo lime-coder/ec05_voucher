@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Handshake, Ticket, CheckCircle, Send, Award } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@voucherhub/ui';
+import { useLanguage } from '../../../shared/contexts/LanguageContext';
 
-const revenueData = [
+const defaultRevenueData = [
   { date: '14/05', revenue: 45000000 },
   { date: '15/05', revenue: 52000000 },
   { date: '16/05', revenue: 48000000 },
@@ -12,20 +14,20 @@ const revenueData = [
   { date: '20/05', revenue: 72000000 },
 ];
 
-const topVouchers = [
-  { name: 'Highlands Coffee - Giảm 50K', sales: 1250 },
-  { name: 'CGV - Combo bắp nước', sales: 980 },
-  { name: 'The Coffee House - Buy 1 Get 1', sales: 850 },
-  { name: 'Lotteria - Combo gà giòn', sales: 720 },
-  { name: 'Pizza Hut - Giảm 30%', sales: 650 },
+const defaultTopVouchers = [
+  { name: 'Highlands Coffee - 50K Off', nameVi: 'Highlands Coffee - Giảm 50K', sales: 1250 },
+  { name: 'CGV - Popcorn Combo', nameVi: 'CGV - Combo bắp nước', sales: 980 },
+  { name: 'The Coffee House - Buy 1 Get 1', nameVi: 'The Coffee House - Mua 1 Tặng 1', sales: 850 },
+  { name: 'Lotteria - Crispy Chicken Combo', nameVi: 'Lotteria - Combo gà giòn', sales: 720 },
+  { name: 'Pizza Hut - 30% Off', nameVi: 'Pizza Hut - Giảm 30%', sales: 650 },
 ];
 
-const recentOrders = [
-  { id: 'ORD-2401', customer: 'Nguyễn Văn A', total: '245,000đ', status: 'Đã thanh toán', time: '10:30 - 19/05/2026' },
-  { id: 'ORD-2402', customer: 'Trần Thị B', total: '189,000đ', status: 'Chờ thanh toán', time: '10:15 - 19/05/2026' },
-  { id: 'ORD-2403', customer: 'Lê Văn C', total: '320,000đ', status: 'Đã thanh toán', time: '09:45 - 19/05/2026' },
-  { id: 'ORD-2404', customer: 'Phạm Thị D', total: '156,000đ', status: 'Đã hủy', time: '09:20 - 19/05/2026' },
-  { id: 'ORD-2405', customer: 'Hoàng Văn E', total: '278,000đ', status: 'Đã thanh toán', time: '08:55 - 19/05/2026' },
+const defaultRecentOrders = [
+  { id: 'ORD-2401', customer: 'Nguyen Van A', total: '245,000đ', status: 'Đã thanh toán', time: '10:30 - 19/05/2026' },
+  { id: 'ORD-2402', customer: 'Tran Thi B', total: '189,000đ', status: 'Chờ thanh toán', time: '10:15 - 19/05/2026' },
+  { id: 'ORD-2403', customer: 'Le Van C', total: '320,000đ', status: 'Đã thanh toán', time: '09:45 - 19/05/2026' },
+  { id: 'ORD-2404', customer: 'Pham Thi D', total: '156,000đ', status: 'Đã hủy', time: '09:20 - 19/05/2026' },
+  { id: 'ORD-2405', customer: 'Hoang Van E', total: '278,000đ', status: 'Đã thanh toán', time: '08:55 - 19/05/2026' },
 ];
 
 interface KPICardProps {
@@ -38,16 +40,16 @@ interface KPICardProps {
   bgClass: string;
 }
 
-function KPICard({ icon, label, value, change, isPositive, colorClass, bgClass }: KPICardProps) {
+function KPICard({ icon, label, value, change, isPositive, bgClass }: KPICardProps) {
   return (
-    <div className="bg-white rounded-lg p-5 shadow-sm">
+    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
       <div className="flex items-start justify-between mb-3">
         <div className={`p-2 rounded-lg ${bgClass}`}>
           {icon}
         </div>
       </div>
       <div className="text-xs text-gray-600 mb-1">{label}</div>
-      <div className={`text-2xl font-bold mb-2 text-primary`}>{value}</div>
+      <div className="text-2xl font-bold mb-2 text-primary">{value}</div>
       <div className={`text-xs flex items-center gap-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
         {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
         <span>{change}</span>
@@ -57,115 +59,203 @@ function KPICard({ icon, label, value, change, isPositive, colorClass, bgClass }
 }
 
 export function Dashboard() {
+  const { language } = useLanguage();
+  const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
+
+  const [timeRange, setTimeRange] = useState<string>('today');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [customEndDate, setCustomEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const [stats, setStats] = useState<any>(null);
+
+  const fetchStats = () => {
+    let url = `/api/admin/dashboard/stats?range=${timeRange}`;
+    if (timeRange === 'custom') {
+      url += `&startDate=${customStartDate}&endDate=${customEndDate}`;
+    }
+    fetch(url)
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(err => console.error('Fetch stats error:', err));
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [timeRange, customStartDate, customEndDate]);
+
+  const formatRevenueValue = (val: number | undefined) => {
+    if (val === undefined) return '72.5M';
+    if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)}B`;
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    return val.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
+  };
+
+  const mapStatusToEnglish = (status: string) => {
+    if (status === 'PAID') return tText('Paid', 'Đã thanh toán');
+    if (status === 'PENDING') return tText('Pending', 'Chờ thanh toán');
+    if (status === 'CANCELLED') return tText('Cancelled', 'Đã hủy');
+    if (status === 'REFUNDED') return tText('Refunded', 'Đã hoàn tiền');
+    return status;
+  };
+
+  const revenueData = stats?.doanhThuTheoNgay || defaultRevenueData;
+  const topVouchers = (stats?.topVouchers || defaultTopVouchers).map((v: any) => ({
+    ...v,
+    displayName: tText(v.name, v.nameVi || v.name)
+  }));
+  const recentOrders = stats?.recentOrders || defaultRecentOrders;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <Button variant="default">
-            Hôm nay
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant={timeRange === 'today' ? 'default' : 'outline'}
+            onClick={() => setTimeRange('today')}
+          >
+            {tText('Today', 'Hôm nay')}
           </Button>
-          <Button variant="outline">
-            7 ngày
+          <Button 
+            variant={timeRange === '7days' ? 'default' : 'outline'}
+            onClick={() => setTimeRange('7days')}
+          >
+            {tText('7 Days', '7 ngày')}
           </Button>
-          <Button variant="outline">
-            30 ngày
+          <Button 
+            variant={timeRange === '30days' ? 'default' : 'outline'}
+            onClick={() => setTimeRange('30days')}
+          >
+            {tText('30 Days', '30 ngày')}
           </Button>
-          <Button variant="outline">
-            Tùy chọn
+          <Button 
+            variant={timeRange === 'custom' ? 'default' : 'outline'}
+            onClick={() => setTimeRange('custom')}
+          >
+            {tText('Custom', 'Tùy chọn')}
           </Button>
         </div>
+
+        {timeRange === 'custom' && (
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 border rounded-lg shadow-sm">
+            <input 
+              type="date" 
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary text-gray-700 bg-transparent"
+            />
+            <span className="text-gray-400 text-sm">{tText('to', 'đến')}</span>
+            <input 
+              type="date" 
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary text-gray-700 bg-transparent"
+            />
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <KPICard
           icon={<DollarSign size={20} className="text-primary" />}
-          label="Tổng doanh thu"
-          value="72,5M"
-          change="+12.5% so với hôm qua"
+          label={tText('Total Revenue', 'Tổng doanh thu')}
+          value={formatRevenueValue(stats?.tongDoanhThu)}
+          change={tText('+12.5% vs yesterday', '+12.5% so với hôm qua')}
           isPositive={true}
           colorClass="text-primary"
           bgClass="bg-primary/10"
         />
         <KPICard
           icon={<ShoppingCart size={20} className="text-emerald-500" />}
-          label="Tổng đơn hàng"
-          value="1,248"
-          change="+8.3% so với hôm qua"
+          label={tText('Total Orders', 'Tổng đơn hàng')}
+          value={stats?.tongDonHang?.toLocaleString() ?? '1,248'}
+          change={tText('+8.3% vs yesterday', '+8.3% so với hôm qua')}
           isPositive={true}
           colorClass="text-emerald-500"
           bgClass="bg-emerald-500/10"
         />
         <KPICard
           icon={<Users size={20} className="text-amber-500" />}
-          label="Khách hàng"
-          value="4,532"
-          change="+15.2% so với tuần trước"
+          label={tText('Customers', 'Khách hàng')}
+          value={stats?.tongKhachHang?.toLocaleString() ?? '4,532'}
+          change={tText('+15.2% vs last week', '+15.2% so với tuần trước')}
           isPositive={true}
           colorClass="text-amber-500"
           bgClass="bg-amber-500/10"
         />
         <KPICard
           icon={<Handshake size={20} className="text-violet-500" />}
-          label="Đối tác"
-          value="89"
-          change="+3 đối tác mới"
+          label={tText('Partners', 'Đối tác')}
+          value={stats?.tongDoiTac?.toLocaleString() ?? '89'}
+          change={tText('+3 new partners', '+3 đối tác mới')}
           isPositive={true}
           colorClass="text-violet-500"
           bgClass="bg-violet-500/10"
         />
         <KPICard
           icon={<Ticket size={20} className="text-pink-500" />}
-          label="Voucher"
-          value="234"
-          change="+18 voucher mới"
+          label={tText('Vouchers', 'Voucher')}
+          value={stats?.tongVoucher?.toLocaleString() ?? '234'}
+          change={tText('+18 new vouchers', '+18 voucher mới')}
           isPositive={true}
           colorClass="text-pink-500"
           bgClass="bg-pink-500/10"
         />
         <KPICard
           icon={<CheckCircle size={20} className="text-cyan-500" />}
-          label="Voucher đã bán"
-          value="8,945"
-          change="+22.1% so với hôm qua"
+          label={tText('Vouchers Sold', 'Voucher đã bán')}
+          value={stats?.tongVoucherDaBan?.toLocaleString() ?? '8,945'}
+          change={tText('+22.1% vs yesterday', '+22.1% so với hôm qua')}
           isPositive={true}
           colorClass="text-cyan-500"
           bgClass="bg-cyan-500/10"
         />
         <KPICard
           icon={<Send size={20} className="text-teal-500" />}
-          label="Mã đã phát hành"
-          value="12,340"
-          change="+890 mã mới"
+          label={tText('Issued Codes', 'Mã đã phát hành')}
+          value={stats?.tongMaPhatHanh?.toLocaleString() ?? '12,340'}
+          change={tText('+890 new codes', '+890 mã mới')}
           isPositive={true}
           colorClass="text-teal-500"
           bgClass="bg-teal-500/10"
         />
         <KPICard
           icon={<Award size={20} className="text-orange-500" />}
-          label="Mã đã sử dụng"
-          value="9,127"
-          change="74% tỷ lệ sử dụng"
+          label={tText('Used Codes', 'Mã đã sử dụng')}
+          value={stats?.tongMaSuDung?.toLocaleString() ?? '9,127'}
+          change={stats 
+            ? `${Math.round((stats.tongMaSuDung / (stats.tongMaPhatHanh || 1)) * 100)}% ${tText('usage rate', 'tỷ lệ sử dụng')}` 
+            : `74% ${tText('usage rate', 'tỷ lệ sử dụng')}`
+          }
           isPositive={true}
           colorClass="text-orange-500"
           bgClass="bg-orange-500/10"
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 bg-white rounded-lg p-6 shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Doanh thu theo ngày</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{tText('Daily Revenue', 'Doanh thu theo ngày')}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={(value: number) => `${(value / 1000000).toFixed(1)}M`}
+                formatter={(value: number) => {
+                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                  return value.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
+                }}
                 labelStyle={{ color: 'var(--color-primary)' }}
               />
               <Line
                 type="monotone"
                 dataKey="revenue"
+                name={tText("Revenue", "Doanh thu")}
                 stroke="var(--color-primary)"
                 strokeWidth={3}
                 dot={{ fill: 'var(--color-primary)', r: 4 }}
@@ -174,37 +264,37 @@ export function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Top 5 Voucher bán chạy</h3>
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{tText('Top 5 Best-Selling Vouchers', 'Top 5 Voucher bán chạy')}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topVouchers} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11 }} />
+              <YAxis dataKey="displayName" type="category" width={120} tick={{ fontSize: 10 }} />
               <Tooltip />
-              <Bar dataKey="sales" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="sales" name={tText("Sales", "Doanh số")} fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-lg font-semibold text-gray-800">Đơn hàng gần đây</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{tText('Recent Orders', 'Đơn hàng gần đây')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mã đơn</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Thời gian</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{tText('Order ID', 'Mã đơn')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{tText('Customer', 'Khách hàng')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{tText('Total', 'Tổng tiền')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{tText('Status', 'Trạng thái')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{tText('Time', 'Thời gian')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
-              {recentOrders.map((order, index) => (
+              {recentOrders.map((order: any) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.customer}</td>
@@ -212,19 +302,26 @@ export function Dashboard() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        order.status === 'Đã thanh toán'
+                        order.status === 'PAID'
                           ? 'bg-green-100 text-green-800'
-                          : order.status === 'Chờ thanh toán'
+                          : order.status === 'PENDING'
                           ? 'bg-yellow-100 text-yellow-800'
+                          : order.status === 'REFUNDED'
+                          ? 'bg-blue-100 text-blue-800'
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {order.status}
+                      {mapStatusToEnglish(order.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.time}</td>
                 </tr>
               ))}
+              {recentOrders.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-6 text-gray-500">{tText('No recent orders.', 'Chưa có đơn hàng nào.')}</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
