@@ -17,6 +17,8 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors()); // Allow requests from the React Frontend
 app.use(express.json()); // Parse incoming JSON payloads
+import path from 'path';
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Mount Routes
 // E.g., any request to /api/vouchers will be handled by voucherRoutes

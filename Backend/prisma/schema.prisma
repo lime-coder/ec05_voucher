@@ -19,7 +19,7 @@ model BaiViet {
   NoiDung   String?   @db.NVarChar(Max)
   TacGia    String?   @db.NVarChar(255)
   LuotXem   Int?      @default(0, map: "DF__BaiViet__LuotXem__7C1A6C5A")
-  TrangThai String?   @default("N'Nháp'", map: "DF__BaiViet__TrangTh__7D0E9093") @db.NVarChar(50)
+  TrangThai String?   @default("N'Nháp'", map: "DF_BaiViet_TrangThai_Fixed") @db.NVarChar(50)
   NgayTao   DateTime? @default(now(), map: "DF__BaiViet__NgayTao__7E02B4CC") @db.DateTime
 }
 
@@ -29,7 +29,7 @@ model Banner {
   HinhAnh   String?   @db.NVarChar(500)
   LinkURL   String?   @db.NVarChar(500)
   ViTri     String?   @db.NVarChar(100)
-  TrangThai String?   @default("N'Đang hiển thị'", map: "DF__Banner__TrangTha__756D6ECB") @db.NVarChar(50)
+  TrangThai String?   @default("N'Đang hiển thị'", map: "DF_Banner_TrangThai_Fixed") @db.NVarChar(50)
   ThuTu     Int?      @default(0, map: "DF__Banner__ThuTu__76619304")
   NgayTao   DateTime? @default(now(), map: "DF__Banner__NgayTao__7755B73D") @db.DateTime
 }
@@ -93,6 +93,7 @@ model DoiTac {
   LinhVucKinhDoanh  String?          @db.NVarChar(255)
   TrangThaiPheDuyet String?          @db.NVarChar(50)
   TrangThaiHoatDong String?          @db.NVarChar(50)
+  AvatarUrl         String?          @db.NVarChar(500)
   ChiNhanh          ChiNhanh[]
   NhanViens         NhanVienDoiTac[]
   Vouchers          Voucher[]
@@ -116,7 +117,7 @@ model FAQ {
   TraLoi     String? @db.NVarChar(Max)
   DanhMucFAQ String? @db.NVarChar(100)
   ThuTu      Int?    @default(0, map: "DF__FAQ__ThuTu__01D345B0")
-  TrangThai  String? @default("N'Hiển thị'", map: "DF__FAQ__TrangThai__02C769E9") @db.NVarChar(50)
+  TrangThai  String? @default("N'Hiển thị'", map: "DF_FAQ_TrangThai_Fixed") @db.NVarChar(50)
 }
 
 model GioHang {
@@ -167,6 +168,7 @@ model TaiKhoan {
   GioHang           GioHang?
   KhachHang         KhachHang?
   NhanVienDoiTacs   NhanVienDoiTac[]
+  SystemLog         SystemLog[]
 }
 
 model Voucher {
@@ -176,6 +178,8 @@ model Voucher {
   TenVoucher       String             @db.NVarChar(255)
   MoTaVoucher      String?            @db.NVarChar(Max)
   MoTaDieuKien     String?            @db.NVarChar(Max)
+  ChinhSachHoanTien String?           @db.NVarChar(Max)
+  HuongDanSuDung   String?            @db.NVarChar(Max)
   GiaGoc           Decimal            @db.Decimal(18, 2)
   GiaBan           Decimal            @db.Decimal(18, 2)
   ThoiGianBatDau   DateTime           @db.DateTime
@@ -183,6 +187,7 @@ model Voucher {
   SoLuongChoPhep   Int
   SoLuongDaBan     Int?               @default(0, map: "DF__Voucher__SoLuong__41EDCAC5")
   TrangThaiVoucher String?            @db.NVarChar(50)
+  ImageUrl         String?            @db.NVarChar(500)
   ChiTietDonHangs  ChiTietDonHang[]
   ChiTietGioHangs  ChiTietGioHang[]
   DanhGias         DanhGia[]
@@ -208,4 +213,16 @@ model sysdiagrams {
   definition   Bytes?
 
   @@unique([principal_id, name], map: "UK_principal_name")
+}
+
+model SystemLog {
+  MaLog      Int       @id(map: "PK__SystemLo__3B98D24A22489A5B") @default(autoincrement())
+  IDTaiKhoan Int?
+  HanhDong   String    @db.NVarChar(255)
+  DoiTuong   String?   @db.NVarChar(255)
+  ChiTiet    String?   @db.NVarChar(Max)
+  DiaChiIP   String?   @db.VarChar(50)
+  TrangThai  String?   @db.NVarChar(50)
+  ThoiGian   DateTime? @default(now(), map: "DF__SystemLog__ThoiG__0C50D423") @db.DateTime
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK__SystemLog__IDTai__0D44F85C")
 }

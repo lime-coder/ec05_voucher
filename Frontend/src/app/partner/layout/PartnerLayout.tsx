@@ -2,6 +2,7 @@ import { Outlet, useLocation, ScrollRestoration } from 'react-router';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
+import { useState, useEffect } from 'react';
 
 const screenTitleKeys: Record<string, string> = {
   '/partner': 'partner.nav.dashboard',
@@ -25,8 +26,26 @@ export function PartnerLayout() {
   const { t } = useLanguage();
   const titleKey = screenTitleKeys[location.pathname] || 'partner.nav.dashboard';
   
+  const [partnerName, setPartnerName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchPartnerName = async () => {
+      try {
+        const partnerId = localStorage.getItem('partnerId') || '1';
+        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`);
+        if (response.ok) {
+          const data = await response.json();
+          setPartnerName(data.businessName || '');
+        }
+      } catch (err) {
+        console.error("Failed to fetch partner profile", err);
+      }
+    };
+    fetchPartnerName();
+  }, []);
+
   const isDashboard = titleKey === 'partner.nav.dashboard';
-  const title = isDashboard ? t(titleKey) : t('partner.dash.greeting');
+  const title = isDashboard ? t(titleKey) : partnerName || t(titleKey);
 
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
