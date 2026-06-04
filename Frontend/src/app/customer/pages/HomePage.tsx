@@ -3,6 +3,8 @@ import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
 import { CategorySection } from "../components/home/CategorySection";
 import { FlashSaleSection } from "../components/home/FlashSaleSection";
+import { ArticleSection } from "../components/home/ArticleSection";
+import { FAQSection } from "../components/home/FAQSection";
 
 import { VoucherCard } from "../components/VoucherCard";
 
@@ -226,6 +228,9 @@ export function HomePage() {
             )}
           </div>
         </section>
+        <FlashSaleSection timeLeft={timeLeft} />
+        <ArticleSection />
+        <FAQSection />
       </main>
     </div>
   );
