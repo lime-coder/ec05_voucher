@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Shield, Camera, Save, Key } from 'lucide-react';
+import { User, Shield, Save, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
@@ -13,15 +13,14 @@ export function AdminProfile() {
   const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState('');
+
   
   const [profileData, setProfileData] = useState({
     username: 'admin01',
     fullName: 'System Administrator',
     email: 'admin@voucher.vn',
     phone: '0911111111',
-    role: 'System Admin',
-    address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'
+    role: 'System Admin'
   });
 
   useEffect(() => {
@@ -110,36 +109,13 @@ export function AdminProfile() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4">
           <div className="bg-white border rounded-xl p-6 flex flex-col items-center text-center shadow-sm">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md mb-4" />
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-primary/10 text-primary flex items-center justify-center text-4xl font-bold mb-4 border">
-                AD
-              </div>
-            )}
+            <div className="w-32 h-32 rounded-full bg-primary/10 text-primary flex items-center justify-center text-4xl font-bold mb-4 border">
+              AD
+            </div>
             <h2 className="text-xl font-bold mb-2">{profileData.fullName}</h2>
-            <Badge className="bg-primary text-primary-foreground hover:bg-primary mb-6 shadow-none">
+            <Badge className="bg-primary text-primary-foreground hover:bg-primary shadow-none">
               {profileData.role}
             </Badge>
-            <Button 
-              variant="outline" 
-              className="w-full gap-2 relative cursor-pointer"
-            >
-              <Camera className="w-4 h-4" />
-              {tText('Change Avatar', 'Thay đổi ảnh đại diện')}
-              <input 
-                type="file" 
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setAvatarUrl(URL.createObjectURL(file));
-                    toast.success(tText('Avatar changed!', 'Đã cập nhật ảnh đại diện!'));
-                  }
-                }}
-              />
-            </Button>
           </div>
         </div>
 
@@ -201,15 +177,7 @@ export function AdminProfile() {
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                 />
               </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase">{tText('Residential Address', 'Địa chỉ liên hệ')}</label>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  value={profileData.address}
-                  disabled={!isEditing}
-                  onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                />
-              </div>
+              {/* Address field removed since it's not stored in the database */}
             </div>
           </div>
 

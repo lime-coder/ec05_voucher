@@ -23,7 +23,7 @@ export function AdminLayout() {
     }
     if (pathname.includes('/admin/partners')) {
       return { 
-        title: tText('Partner Approval', 'Duyệt đối tác'), 
+        title: tText('Partner Management', 'Quản lý đối tác'), 
         subtitle: tText('Review and manage partner registration approval', 'Kiểm duyệt và quản lý đối tác đăng ký') 
       };
     }

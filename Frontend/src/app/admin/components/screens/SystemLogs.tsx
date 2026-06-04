@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
   Button,
@@ -35,6 +36,19 @@ const mapLogActionToEnglish = (action: string) => {
   return action;
 };
 
+const parseViDate = (timeStr: string): Date | null => {
+  const regex = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
+  const match = timeStr.match(regex);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const year = parseInt(match[3], 10);
+    return new Date(year, month, day);
+  }
+  const d = new Date(timeStr);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export function SystemLogs() {
   const { language } = useLanguage();
   const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
@@ -42,6 +56,7 @@ export function SystemLogs() {
   const [logs, setLogs] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -72,7 +87,20 @@ export function SystemLogs() {
     if (actionFilter === 'update' && (log.englishAction.toLowerCase().includes('update') || log.action.toLowerCase().includes('cập nhật'))) matchesAction = true;
     if (actionFilter === 'delete' && (log.englishAction.toLowerCase().includes('delete') || log.action.toLowerCase().includes('xóa'))) matchesAction = true;
 
-    return matchesSearch && matchesAction;
+    let matchesDate = true;
+    if (dateFilter) {
+      const logDate = parseViDate(log.time);
+      if (logDate) {
+        const [year, month, day] = dateFilter.split('-').map(num => parseInt(num, 10));
+        matchesDate = logDate.getFullYear() === year &&
+                      logDate.getMonth() === (month - 1) &&
+                      logDate.getDate() === day;
+      } else {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesAction && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -80,6 +108,47 @@ export function SystemLogs() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleExportReport = () => {
+    if (filteredLogs.length === 0) {
+      toast.error(tText("No data to export!", "Không có dữ liệu để xuất!"));
+      return;
+    }
+
+    const headers = [
+      tText("No.", "STT"),
+      tText("User", "Người dùng"),
+      tText("Action", "Hành động"),
+      tText("Target", "Đối tượng"),
+      tText("Time", "Thời gian"),
+      tText("Status", "Trạng thái")
+    ];
+
+    const rows = filteredLogs.map((log, index) => [
+      index + 1,
+      log.user,
+      tText(log.englishAction, log.action),
+      log.target,
+      log.time,
+      tText(log.englishStatus, log.status)
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `system_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(tText("Report exported successfully!", "Xuất báo cáo thành công!"));
+  };
 
   return (
     <div className="space-y-6">
@@ -110,10 +179,12 @@ export function SystemLogs() {
           </select>
           <Input
             type="date"
+            value={dateFilter}
+            onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
             className="w-auto bg-white shadow-sm border-gray-200"
           />
         </div>
-        <Button className="gap-2">
+        <Button onClick={handleExportReport} className="gap-2">
           <Download className="w-4 h-4" />
           {tText("Export Report", "Xuất báo cáo")}
         </Button>
@@ -127,7 +198,6 @@ export function SystemLogs() {
               <TableHead>{tText("User", "Người dùng")}</TableHead>
               <TableHead>{tText("Action", "Hành động")}</TableHead>
               <TableHead>{tText("Target", "Đối tượng")}</TableHead>
-              <TableHead>{tText("IP Address", "Địa chỉ IP")}</TableHead>
               <TableHead>{tText("Time", "Thời gian")}</TableHead>
               <TableHead>{tText("Status", "Trạng thái")}</TableHead>
             </TableRow>
@@ -143,7 +213,6 @@ export function SystemLogs() {
                   {tText(log.englishAction, log.action)}
                 </TableCell>
                 <TableCell className="text-gray-700">{log.target}</TableCell>
-                <TableCell className="text-gray-500 font-mono text-xs">{log.ip}</TableCell>
                 <TableCell className="text-gray-500">{log.time}</TableCell>
                 <TableCell>
                   <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
@@ -154,7 +223,7 @@ export function SystemLogs() {
             ))}
             {currentLogs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                   {tText("No activity logs found.", "Chưa có nhật ký hoạt động nào.")}
                 </TableCell>
               </TableRow>
