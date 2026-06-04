@@ -62,7 +62,7 @@ export function Dashboard() {
   const { language } = useLanguage();
   const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
 
-  const [timeRange, setTimeRange] = useState<string>('7days');
+  const [timeRange, setTimeRange] = useState<string>('today');
   const [customStartDate, setCustomStartDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);

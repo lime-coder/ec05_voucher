@@ -14,6 +14,7 @@ router.put('/partners/:id', A.updatePartner);
 router.delete('/partners/:id', A.deletePartner);
 router.patch('/partners/:id/approve', A.approvePartner);
 router.patch('/partners/:id/reject', A.rejectPartner);
+router.patch('/partners/:id/toggle', A.togglePartnerActive);
 
 // === Quản lý đơn hàng ===
 router.get('/orders', A.getAllOrders);
@@ -24,6 +25,7 @@ router.get('/vouchers', A.getAdminVouchers);
 
 // === System Logs ===
 router.get('/logs', A.getLogs);
+router.get('/notifications', A.getAdminNotifications);
 
 // === Thống kê Dashboard ===
 router.get('/dashboard/stats', A.getDashboardStats);

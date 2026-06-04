@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
@@ -115,21 +115,32 @@ export function PartnerManagement() {
     }
   };
 
-  const handleDeletePartner = async (id: number, name: string) => {
-    const confirmMsg = tText(
-      `Are you sure you want to delete partner "${name}"?`,
-      `Bạn có chắc chắn muốn xóa đối tác "${name}" không?`
-    );
+  const handleTogglePartner = async (id: number, name: string) => {
+    const partner = partners.find(p => p.id === id);
+    if (!partner) return;
+
+    const isLocking = partner.status === 'ACTIVE';
+    const confirmMsg = isLocking
+      ? tText(`Are you sure you want to lock partner "${name}"?`, `Bạn có chắc chắn muốn khóa đối tác "${name}" không?`)
+      : tText(`Are you sure you want to unlock partner "${name}"?`, `Bạn có chắc chắn muốn mở khóa đối tác "${name}" không?`);
+
     if (!confirm(confirmMsg)) return;
 
     try {
-      const res = await fetch(`/api/admin/partners/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/partners/${id}/toggle`, {
+        method: 'PATCH'
+      });
+
       if (res.ok) {
-        toast.success(tText('Deleted partner successfully!', 'Xóa đối tác thành công!'));
+        toast.success(
+          isLocking
+            ? tText(`Successfully locked partner "${name}"!`, `Đã khóa đối tác "${name}" thành công!`)
+            : tText(`Successfully unlocked partner "${name}"!`, `Đã mở khóa đối tác "${name}" thành công!`)
+        );
         fetchPartners();
       } else {
         const err = await res.json();
-        toast.error(err.error || tText('Failed to delete partner!', 'Xóa đối tác thất bại!'));
+        toast.error(err.error || tText('Failed to change partner status!', 'Thay đổi trạng thái đối tác thất bại!'));
       }
     } catch (e) {
       console.error(e);
@@ -257,6 +268,7 @@ export function PartnerManagement() {
                     variant={
                       partner.status === 'ACTIVE' ? 'default'
                       : partner.status === 'PENDING' ? 'outline'
+                      : partner.status === 'LOCKED' ? 'destructive'
                       : 'secondary'
                     }
                     className={
@@ -264,11 +276,14 @@ export function PartnerManagement() {
                         ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent'
                         : partner.status === 'PENDING'
                         ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 shadow-none border-transparent'
+                        : partner.status === 'LOCKED'
+                        ? 'bg-red-100 text-red-700 hover:bg-red-100 shadow-none border-transparent'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-100 shadow-none border-transparent'
                     }
                   >
                     {partner.status === 'ACTIVE' ? tText('Active', 'Hoạt động')
                      : partner.status === 'PENDING' ? tText('Pending', 'Chờ kích hoạt')
+                     : partner.status === 'LOCKED' ? tText('Locked', 'Bị khóa')
                      : tText('Inactive', 'Tạm dừng')}
                   </Badge>
                 </TableCell>
@@ -289,9 +304,29 @@ export function PartnerManagement() {
                       </>
                     )}
 
-                    <Button onClick={() => handleDeletePartner(partner.id, partner.name)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={tText('Delete', 'Xóa')}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {partner.status === 'ACTIVE' && (
+                      <Button
+                        onClick={() => handleTogglePartner(partner.id, partner.name)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title={tText('Lock partner', 'Khóa đối tác')}
+                      >
+                        <Lock className="w-4 h-4" />
+                      </Button>
+                    )}
+
+                    {partner.status === 'LOCKED' && (
+                      <Button
+                        onClick={() => handleTogglePartner(partner.id, partner.name)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        title={tText('Unlock partner', 'Mở khóa đối tác')}
+                      >
+                        <Unlock className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

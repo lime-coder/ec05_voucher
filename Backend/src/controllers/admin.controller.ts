@@ -543,12 +543,38 @@ export const deletePartner = async (req: Request, res: Response) => {
   }
 };
 
+export const togglePartnerActive = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const partner = await prisma.doiTac.findUnique({
+      where: { MaDoiTac: Number(id) }
+    });
+    if (!partner) {
+      return res.status(404).json({ error: 'Không tìm thấy đối tác' });
+    }
+    const nextStatus = partner.TrangThaiHoatDong === 'LOCKED' ? 'ACTIVE' : 'LOCKED';
+    const updated = await prisma.doiTac.update({
+      where: { MaDoiTac: Number(id) },
+      data: { TrangThaiHoatDong: nextStatus }
+    });
+    logActivity(
+      'admin@voucher.vn',
+      nextStatus === 'LOCKED' ? 'Khóa đối tác' : 'Mở khóa đối tác',
+      updated.TenDoanhNghiep || `ID: ${id}`,
+      req.ip || '127.0.0.1'
+    );
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const approvePartner = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const partner = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
-      data: { 
+      data: {
         TrangThaiPheDuyet: 'APPROVED',
         TrangThaiHoatDong: 'ACTIVE'
       }
@@ -753,8 +779,7 @@ export const getAdminProfile = async (req: Request, res: Response) => {
       fullName: admin.TaiKhoan?.HoTenNguoiDung || 'System Administrator',
       email: admin.TaiKhoan?.Email || 'admin@voucher.vn',
       phone: admin.SDT_Admin || '0911111111',
-      role: 'System Admin',
-      address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'
+      role: 'System Admin'
     });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -763,7 +788,7 @@ export const getAdminProfile = async (req: Request, res: Response) => {
 
 export const updateAdminProfile = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, phone, address } = req.body;
+    const { fullName, email, phone } = req.body;
     const admin = await prisma.admin.findFirst();
     if (!admin) {
       return res.status(404).json({ error: 'Không tìm thấy hồ sơ admin' });
@@ -813,6 +838,77 @@ export const updateAdminPassword = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', 'Đổi mật khẩu admin', admin.TaiKhoan.TenDangNhap, req.ip || '127.0.0.1');
 
     res.json({ message: 'Đổi mật khẩu thành công' });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// === Admin Notifications ===
+export const getAdminNotifications = async (req: Request, res: Response) => {
+  try {
+    const [pendingPartners, pendingVouchers, paidOrders] = await Promise.all([
+      // 1. Pending partners
+      prisma.doiTac.findMany({
+        where: { TrangThaiPheDuyet: 'PENDING' },
+        orderBy: { MaDoiTac: 'desc' },
+        take: 5
+      }),
+      // 2. Pending vouchers
+      prisma.voucher.findMany({
+        where: { TrangThaiVoucher: 'PENDING_APPROVAL' },
+        orderBy: { VoucherID: 'desc' },
+        take: 5
+      }),
+      // 3. Paid orders
+      prisma.donHang.findMany({
+        where: { TrangThaiThanhToan: 'PAID' },
+        orderBy: { ThoiGianThanhToan: 'desc' },
+        take: 5
+      })
+    ]);
+
+    const notifications: any[] = [];
+
+    // Map partners
+    pendingPartners.forEach(p => {
+      notifications.push({
+        id: `partner-${p.MaDoiTac}`,
+        type: 'alert',
+        titleVi: 'Yêu cầu duyệt đối tác mới',
+        titleEn: 'New Partner Registration',
+        messageVi: `Đối tác "${p.TenDoanhNghiep || 'Chưa rõ'}" đang chờ phê duyệt hồ sơ.`,
+        messageEn: `Partner "${p.TenDoanhNghiep || 'Unknown'}" is pending registration approval.`,
+        time: 'Gần đây'
+      });
+    });
+
+    // Map vouchers
+    pendingVouchers.forEach(v => {
+      notifications.push({
+        id: `voucher-${v.VoucherID}`,
+        type: 'info',
+        titleVi: 'Yêu cầu duyệt Voucher',
+        titleEn: 'New Voucher Approval Request',
+        messageVi: `Voucher "${v.TenVoucher}" đang chờ duyệt.`,
+        messageEn: `Voucher "${v.TenVoucher}" is pending approval.`,
+        time: 'Gần đây'
+      });
+    });
+
+    // Map orders
+    paidOrders.forEach(o => {
+      notifications.push({
+        id: `order-${o.MaDonHang}`,
+        type: 'order',
+        titleVi: 'Có đơn hàng mới',
+        titleEn: 'New Order Received',
+        messageVi: `Đơn hàng ORD-${o.MaDonHang} vừa được thanh toán thành công.`,
+        messageEn: `Order ORD-${o.MaDonHang} has been successfully paid.`,
+        time: 'Gần đây'
+      });
+    });
+
+    res.json(notifications);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

@@ -33,6 +33,7 @@ import { OrderManagement as AdminOrderManagement } from "./admin/components/scre
 import { ContentManagement } from "./admin/components/screens/ContentManagement";
 import { SystemLogs } from "./admin/components/screens/SystemLogs";
 import { BannerEdit } from "./admin/components/screens/BannerEdit";
+import { AdminProfile } from "./admin/components/screens/AdminProfile";
 
 // Shared Route Components
 import { NotificationsPage } from "./shared/pages/NotificationsPage";
@@ -82,6 +83,7 @@ export const router = createBrowserRouter([
       { path: "content", element: <ContentManagement /> },
       { path: "content/banner/:id", element: <BannerEdit /> },
       { path: "logs", element: <SystemLogs /> },
+      { path: "profile", element: <AdminProfile /> },
       { path: "notifications", element: <NotificationsPage /> },
     ],
   },

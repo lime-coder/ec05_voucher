@@ -18,7 +18,7 @@ export function Sidebar() {
   const menuItems = [
     { id: '/admin', label: tText('Dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: '/admin/users', label: tText('User Management', 'Quản lý người dùng'), icon: Users },
-    { id: '/admin/partners', label: tText('Partner Approval', 'Duyệt đối tác'), icon: Handshake },
+    { id: '/admin/partners', label: tText('Partner Management', 'Quản lý đối tác'), icon: Handshake },
     { id: '/admin/vouchers', label: tText('Voucher Approval', 'Duyệt voucher'), icon: BadgeCheck },
     { id: '/admin/orders', label: tText('Order Management', 'Quản lý đơn hàng'), icon: ShoppingBag },
     { id: '/admin/content', label: tText('Content Management', 'Quản lý nội dung'), icon: Layout },
