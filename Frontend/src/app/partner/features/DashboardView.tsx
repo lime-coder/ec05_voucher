@@ -66,7 +66,7 @@ export default function DashboardView() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
-          {t('partner.dash.greeting')}
+          {t('partner.dash.greeting', { name: (stats as any).partnerName || '...' })}
         </h1>
         <p className="text-gray-500">
           {t('partner.dash.overview')}
@@ -152,7 +152,9 @@ export default function DashboardView() {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h2 className="text-lg font-bold mb-6">{t('partner.dash.top_vouchers')}</h2>
         <div className="flex flex-col gap-6">
-          {stats.topVouchers.map((voucher, index) => (
+          {stats.topVouchers.map((voucher, index, arr) => {
+            const maxSold = Math.max(...arr.map(v => v.sold || 0), 1);
+            return (
             <div key={index}>
               <div className="flex flex-col sm:flex-row justify-between gap-4 mb-2">
                 <div className="flex gap-3 items-center min-w-0">
@@ -187,11 +189,12 @@ export default function DashboardView() {
                       ? 'bg-blue-500'
                       : 'bg-orange-500'
                   }`}
-                  style={{ width: `${(voucher.sold / 250) * 100}%` }}
+                  style={{ width: `${Math.min((voucher.sold / maxSold) * 100, 100)}%` }}
                 ></div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

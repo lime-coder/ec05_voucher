@@ -122,6 +122,7 @@ export const vi = {
   'verify.test_samples': 'Mã test mẫu:',
   'verify.test.valid': 'Hợp lệ',
   'verify.test.used': 'Đã sử dụng',
+  'verify.test.invalid': 'Không hợp lệ',
   'verify.qr_scanner': 'Máy quét QR',
   'verify.camera_scanning': 'Đang quét...',
   'verify.camera_desc': 'Hướng camera về phía mã QR để xác minh voucher.',
@@ -539,7 +540,7 @@ export const vi = {
   'partner.header.partner_user': 'Người Dùng Đối Tác',
 
   // Partner Dashboard
-  'partner.dash.greeting': 'Xin chào, Nhà hàng Biển Đông 👋',
+  'partner.dash.greeting': 'Xin chào, {name} 👋',
   'partner.dash.overview': 'Đây là tổng quan hoạt động kinh doanh voucher của bạn',
   'partner.dash.vs_last_month': 'so với tháng trước',
   'partner.dash.revenue_sales': 'Doanh thu & Số lượng bán ra',

@@ -124,6 +124,7 @@ export const en = {
   'verify.test_samples': 'Sample test codes:',
   'verify.test.valid': 'Valid',
   'verify.test.used': 'Used',
+  'verify.test.invalid': 'Invalid',
   'verify.qr_scanner': 'QR Scanner',
   'verify.camera_scanning': 'Scanning...',
   'verify.camera_desc': 'Point your camera at the QR code to verify the voucher.',
@@ -540,7 +541,7 @@ export const en = {
   'partner.header.partner_user': 'Partner User',
 
   // Partner Dashboard
-  'partner.dash.greeting': 'Hello, Biển Đông Restaurant 👋',
+  'partner.dash.greeting': 'Hello, {name} 👋',
   'partner.dash.overview': 'Here is the overview of your voucher business',
   'partner.dash.vs_last_month': 'vs last month',
   'partner.dash.revenue_sales': 'Revenue & Sales Volume',
