@@ -1,13 +1,20 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 
+/**
+ * Helper: extract and normalize IP from request.
+ */
+function extractIP(req: Request): string {
+  let ip = (req.ip || req.connection.remoteAddress || '').toString();
+  if (ip === '::1' || ip === '::ffff:127.0.0.1' || ip.includes('127.0.0.1') || ip === '::ffff::1') {
+    ip = '127.0.0.1';
+  }
+  return ip;
+}
+
 export const login = async (req: Request, res: Response) => {
   try {
-    let ip = (req.ip || req.connection.remoteAddress || '').toString();
-    // Normalize IPv6 localhost and IPv4-mapped localhost to 127.0.0.1
-    if (ip === '::1' || ip === '::ffff:127.0.0.1' || ip.includes('127.0.0.1') || ip === '::ffff::1') {
-      ip = '127.0.0.1';
-    }
+    const ip = extractIP(req);
     const credentials = { ...req.body, ip };
     const result = await AuthService.login(credentials);
     res.status(200).json(result);
@@ -18,7 +25,8 @@ export const login = async (req: Request, res: Response) => {
 
 export const registerCustomer = async (req: Request, res: Response) => {
   try {
-    const result = await AuthService.registerCustomer(req.body);
+    const ip = extractIP(req);
+    const result = await AuthService.registerCustomer(req.body, ip);
     res.status(201).json(result);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -31,7 +39,8 @@ export const registerCustomer = async (req: Request, res: Response) => {
 
 export const registerPartner = async (req: Request, res: Response) => {
   try {
-    const result = await AuthService.registerPartner(req.body);
+    const ip = extractIP(req);
+    const result = await AuthService.registerPartner(req.body, ip);
     res.status(201).json(result);
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -39,5 +48,16 @@ export const registerPartner = async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ message: 'Internal server error' });
     }
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const ip = extractIP(req);
+    await AuthService.logout(user.IDTaiKhoan, user.TenDangNhap, ip);
+    res.status(200).json({ message: 'Đăng xuất thành công' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
