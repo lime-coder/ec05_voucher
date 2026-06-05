@@ -62,9 +62,9 @@ export function Navbar({ isLoggedIn = false, cartCount = 0, showSearch = true }:
                 <div className="relative group">
                   <button className="flex items-center gap-2 text-foreground hover:text-primary transition-colors p-2">
                     <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                      {user?.username?.charAt(0).toUpperCase() || 'U'}
+                      {user?.TenDangNhap?.charAt(0).toUpperCase() || 'U'}
                     </div>
-                    <span className="hidden md:inline font-medium">{user?.username || t('nav.account')}</span>
+                    <span className="hidden md:inline font-medium">{user?.TenDangNhap || t('nav.account')}</span>
                   </button>
                   
                   {/* Dropdown Menu */}

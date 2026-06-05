@@ -29,6 +29,7 @@ export class AuthService {
         MatKhau: hashedPassword,
         Email: data.Email,
         HoTenNguoiDung: data.HoTenNguoiDung,
+        TrangThaiTaiKhoan: 'ACTIVE',
       },
     });
 
@@ -49,25 +50,87 @@ export class AuthService {
 
   // ── Registration ────────────────────────────────────────────────
 
-  static async registerCustomer(data: any, ip?: string) {
-    const { token, user } = await this._createAccountAndSign(data, 'customer');
-
-    await prisma.khachHang.create({
-      data: {
-        SDT_KH: data.SDT,
-        IDTaiKhoan: user.IDTaiKhoan,
-        NgaySinh: data.NgaySinh ? new Date(data.NgaySinh) : undefined,
-        GioiTinh: data.GioiTinh,
-        DiaChiKhachHang: data.DiaChi,
-      },
+  static async checkAvailability(username: string, email: string, phone: string) {
+    const existingUser = await prisma.taiKhoan.findFirst({
+      where: {
+        OR: [
+          { TenDangNhap: username },
+          { Email: email }
+        ]
+      }
     });
 
-    // Audit log: customer registration
+    if (existingUser) {
+      if (existingUser.TenDangNhap === username) {
+        throw new Error('Username is already taken');
+      }
+      if (existingUser.Email === email) {
+        throw new Error('Email is already registered');
+      }
+    }
+
+    if (phone) {
+      const existingPhone = await prisma.khachHang.findUnique({
+        where: { SDT_KH: phone }
+      });
+
+      if (existingPhone) {
+        throw new Error('Phone number is already registered');
+      }
+    }
+
+    return { available: true };
+  }
+
+  static async registerCustomer(data: any, ip?: string) {
+    const hashedPassword = await bcrypt.hash(data.MatKhau, 10);
+
+    // Atomic transaction: both TaiKhoan and KhachHang succeed or neither does
+    const { taiKhoan, khachHang } = await prisma.$transaction(async (tx) => {
+      const taiKhoan = await tx.taiKhoan.create({
+        data: {
+          TenDangNhap: data.TenDangNhap,
+          MatKhau: hashedPassword,
+          Email: data.Email,
+          HoTenNguoiDung: data.HoTenNguoiDung,
+          TrangThaiTaiKhoan: 'ACTIVE',
+        },
+      });
+
+      const khachHang = await tx.khachHang.create({
+        data: {
+          SDT_KH: data.SDT,
+          IDTaiKhoan: taiKhoan.IDTaiKhoan,
+          NgaySinh: data.NgaySinh ? new Date(data.NgaySinh) : undefined,
+          GioiTinh: data.GioiTinh,
+          DiaChiKhachHang: data.DiaChi,
+        },
+      });
+
+      return { taiKhoan, khachHang };
+    });
+
+    // JWT signing only happens AFTER transaction succeeds
+    const token = jwt.sign(
+      {
+        IDTaiKhoan: taiKhoan.IDTaiKhoan,
+        TenDangNhap: taiKhoan.TenDangNhap,
+        Email: taiKhoan.Email,
+        HoTenNguoiDung: taiKhoan.HoTenNguoiDung,
+        role: 'customer',
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    const user = { ...taiKhoan, role: 'customer' as const };
+
+    // Audit log: customer registration (non-critical, outside transaction)
     await LogService.createLog({
-      IDTaiKhoan: user.IDTaiKhoan,
+      IDTaiKhoan: taiKhoan.IDTaiKhoan,
       HanhDong: AUDIT_ACTIONS.DANG_KY_KHACH_HANG,
-      DoiTuong: user.TenDangNhap,
-      ChiTiet: `Khách hàng '${user.HoTenNguoiDung}' đã đăng ký tài khoản. Email: ${user.Email}`,
+      DoiTuong: taiKhoan.TenDangNhap,
+      ChiTiet: `Khách hàng '${taiKhoan.HoTenNguoiDung}' đã đăng ký tài khoản. Email: ${taiKhoan.Email}`,
       DiaChiIP: ip,
       TrangThai: LOG_STATUS.SUCCESS,
     });
@@ -76,38 +139,53 @@ export class AuthService {
   }
 
   static async registerPartner(data: any, ip?: string) {
-    const { token, user } = await this._createAccountAndSign(data, 'partner');
+    const hashedPassword = await bcrypt.hash(data.MatKhau, 10);
 
-    const doiTac = await prisma.doiTac.create({
-      data: {
-        TenDoanhNghiep: data.TenDoanhNghiep,
-        MaSoThue: data.MaSoThue,
-        CaNhanDaiDien: data.CaNhanDaiDien,
-        LinhVucKinhDoanh: data.LinhVucKinhDoanh,
-        TrangThaiPheDuyet: 'PENDING',
-        TrangThaiHoatDong: 'ACTIVE',
-      },
+    // Atomic transaction: TaiKhoan, DoiTac, and NhanVienDoiTac all succeed or none
+    const { taiKhoan, doiTac } = await prisma.$transaction(async (tx) => {
+      const taiKhoan = await tx.taiKhoan.create({
+        data: {
+          TenDangNhap: data.TenDangNhap,
+          MatKhau: hashedPassword,
+          Email: data.Email,
+          HoTenNguoiDung: data.TenDoanhNghiep,
+          TrangThaiTaiKhoan: 'PENDING',
+        },
+      });
+
+      const doiTac = await tx.doiTac.create({
+        data: {
+          TenDoanhNghiep: data.TenDoanhNghiep,
+          MaSoThue: data.MaSoThue,
+          CaNhanDaiDien: data.CaNhanDaiDien,
+          LinhVucKinhDoanh: data.LinhVucKinhDoanh,
+          TrangThaiPheDuyet: 'PENDING',
+          TrangThaiHoatDong: 'ACTIVE',
+        },
+      });
+
+      await tx.nhanVienDoiTac.create({
+        data: {
+          IDTaiKhoan: taiKhoan.IDTaiKhoan,
+          MaDoiTac: doiTac.MaDoiTac,
+          ChucVu: data.ChucVu,
+        },
+      });
+
+      return { taiKhoan, doiTac };
     });
 
-    await prisma.nhanVienDoiTac.create({
-      data: {
-        IDTaiKhoan: user.IDTaiKhoan,
-        MaDoiTac: doiTac.MaDoiTac,
-        ChucVu: 'Admin',
-      },
-    });
-
-    // Audit log: partner registration
+    // Audit log: partner registration (non-critical, outside transaction)
     await LogService.createLog({
-      IDTaiKhoan: user.IDTaiKhoan,
+      IDTaiKhoan: taiKhoan.IDTaiKhoan,
       HanhDong: AUDIT_ACTIONS.DANG_KY_DOI_TAC,
       DoiTuong: data.TenDoanhNghiep,
-      ChiTiet: `Đối tác '${data.TenDoanhNghiep}' đã đăng ký. MST: ${data.MaSoThue}. Người đại diện: ${data.CaNhanDaiDien || user.HoTenNguoiDung}`,
+      ChiTiet: `Đối tác '${data.TenDoanhNghiep}' đã đăng ký. MST: ${data.MaSoThue}. Người đại diện: ${data.CaNhanDaiDien || taiKhoan.HoTenNguoiDung}`,
       DiaChiIP: ip,
       TrangThai: LOG_STATUS.SUCCESS,
     });
 
-    return { token, user };
+    return { message: 'Partner registration submitted for review' };
   }
 
   // ── Login ───────────────────────────────────────────────────────
@@ -176,6 +254,22 @@ export class AuthService {
       // For now we just log it. Email integration can be added later.
 
       throw new Error('Invalid credentials');
+    }
+
+    // ── Handle: not ACTIVE account ──
+    if (user.TrangThaiTaiKhoan !== 'ACTIVE') {
+      const role = this._determineRole(user);
+
+      await LogService.createLog({
+        IDTaiKhoan: user.IDTaiKhoan,
+        HanhDong: AUDIT_ACTIONS.DANG_NHAP_THAT_BAI,
+        DoiTuong: username,
+        ChiTiet: `Tài khoản tồn tại: Có, Vai trò: ${role}. Đăng nhập thất bại do tài khoản không ở trạng thái ACTIVE (Trạng thái hiện tại: ${user.TrangThaiTaiKhoan}).`,
+        DiaChiIP: ip,
+        TrangThai: LOG_STATUS.FAILURE,
+      });
+
+      throw new Error('There has been a problem with your account, please contact customer support for further details');
     }
 
     // ── Handle: successful login ──

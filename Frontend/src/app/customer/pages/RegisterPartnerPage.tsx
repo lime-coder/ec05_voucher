@@ -1,18 +1,63 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, User, Briefcase, Building2, FileText, Info, CheckCircle2 } from "lucide-react";
-import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@voucherhub/ui";
+import { Mail, Lock, User, Briefcase, Building2, FileText, Info, CheckCircle2, Circle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { registerPartnerSchema, type RegisterPartnerInput } from "../../../lib/validations/auth";
+import api from "../../../lib/api";
 
 export function RegisterPartnerPage() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const [accountType, setAccountType] = useState<"customer" | "partner">("partner");
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSuccessDialogOpen(true);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterPartnerInput>({
+    resolver: zodResolver(registerPartnerSchema as any),
+  });
+
+  const passwordValue = watch("password", "");
+  const confirmPasswordValue = watch("confirmPassword", "");
+
+  const onRegisterSubmit = async (data: RegisterPartnerInput) => {
+    setIsSubmitting(true);
+    setRegisterError("");
+    try {
+      // 1. Check availability
+      await api.post('/auth/check-availability', {
+        username: data.username,
+        email: data.email,
+      });
+
+      // 2. Register
+      const payload = {
+        TenDangNhap: data.username,
+        MatKhau: data.password,
+        Email: data.email,
+        TenDoanhNghiep: data.companyName,
+        MaSoThue: data.taxId,
+        CaNhanDaiDien: data.legalRep,
+        LinhVucKinhDoanh: data.businessField,
+        ChucVu: data.jobPosition,
+      };
+      
+      await api.post('/auth/register/partner', payload);
+      
+      // 3. Show success
+      setIsSuccessDialogOpen(true);
+    } catch (error: any) {
+      setRegisterError(error.response?.data?.message || "Registration failed. Please check your information.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -22,19 +67,21 @@ export function RegisterPartnerPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary">
-      
       <main className="flex-1 px-6 py-12">
         <div className="max-w-[760px] mx-auto">
-          {/* Card */}
           <div className="bg-white rounded-xl shadow-lg p-8">
-            {/* Header */}
             <h2 className="text-3xl font-bold mb-2">{t('auth.partner_register_title')}</h2>
             <p className="text-muted mb-6">
               {t('auth.partner_register_desc')}
             </p>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit}>
+            {registerError && (
+              <div className="p-3 mb-4 text-sm text-destructive bg-destructive/10 rounded-md">
+                {registerError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onRegisterSubmit)}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column - Account Details */}
                 <div className="space-y-4">
@@ -53,25 +100,10 @@ export function RegisterPartnerPage() {
                         type="text"
                         placeholder={t('auth.username_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("username")}
                       />
                     </div>
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">
-                      {t('auth.partner_password')} <span className="text-destructive">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder={t('profile.new_password_ph')}
-                        className="pl-10 py-6 bg-input-background"
-                        required
-                      />
-                    </div>
+                    {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
                   </div>
 
                   {/* Email */}
@@ -85,25 +117,59 @@ export function RegisterPartnerPage() {
                         type="email"
                         placeholder="business@company.com"
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("email")}
                       />
                     </div>
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                   </div>
 
-                  {/* Full Name */}
+                  {/* Password */}
                   <div>
                     <label className="block text-sm font-semibold mb-2">
-                      {t('auth.partner_fullname')} <span className="text-destructive">*</span>
+                      {t('auth.partner_password')} <span className="text-destructive">*</span>
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
-                        type="text"
-                        placeholder={t('auth.fullname_ph')}
+                        type="password"
+                        placeholder={t('profile.new_password_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("password")}
                       />
                     </div>
+                    <ul className="mt-3 ml-4 space-y-1 text-xs">
+                      {[
+                        { test: passwordValue.length >= 8, label: t('auth.pwd_min_8') || "At least 8 characters" },
+                        { test: /[A-Z]/.test(passwordValue), label: t('auth.pwd_uppercase') || "At least one uppercase letter" },
+                        { test: /[a-z]/.test(passwordValue), label: t('auth.pwd_lowercase') || "At least one lowercase letter" },
+                        { test: /[0-9]/.test(passwordValue), label: t('auth.pwd_digit') || "At least one digit" },
+                      ].map((rule) => (
+                        <li key={rule.label} className={`flex items-center gap-1.5 ${rule.test ? "text-green-600" : (errors.password ? "text-red-500" : "text-muted-foreground")}`}>
+                          {rule.test ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
+                          {rule.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {t('auth.confirm_password') || "Confirm Password"} <span className="text-destructive">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="password"
+                        placeholder={t('auth.confirm_password_ph') || "Re-enter your password"}
+                        className={`pl-10 py-6 bg-input-background ${confirmPasswordValue && passwordValue !== confirmPasswordValue ? "border-red-500" : ""}`}
+                        {...register("confirmPassword")}
+                      />
+                    </div>
+                    {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+                    {!errors.confirmPassword && confirmPasswordValue && passwordValue !== confirmPasswordValue && (
+                      <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+                    )}
                   </div>
 
                   {/* Job Position */}
@@ -117,9 +183,10 @@ export function RegisterPartnerPage() {
                         type="text"
                         placeholder={t('auth.job_position_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("jobPosition")}
                       />
                     </div>
+                    {errors.jobPosition && <p className="text-red-500 text-xs mt-1">{errors.jobPosition.message}</p>}
                   </div>
                 </div>
 
@@ -140,9 +207,10 @@ export function RegisterPartnerPage() {
                         type="text"
                         placeholder={t('auth.company_name_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("companyName")}
                       />
                     </div>
+                    {errors.companyName && <p className="text-red-500 text-xs mt-1">{errors.companyName.message}</p>}
                   </div>
 
                   {/* Tax ID */}
@@ -156,9 +224,10 @@ export function RegisterPartnerPage() {
                         type="text"
                         placeholder={t('auth.tax_id_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("taxId")}
                       />
                     </div>
+                    {errors.taxId && <p className="text-red-500 text-xs mt-1">{errors.taxId.message}</p>}
                   </div>
 
                   {/* Legal Representative */}
@@ -172,9 +241,10 @@ export function RegisterPartnerPage() {
                         type="text"
                         placeholder={t('auth.legal_rep_ph')}
                         className="pl-10 py-6 bg-input-background"
-                        required
+                        {...register("legalRep")}
                       />
                     </div>
+                    {errors.legalRep && <p className="text-red-500 text-xs mt-1">{errors.legalRep.message}</p>}
                   </div>
 
                   {/* Business Field */}
@@ -183,18 +253,20 @@ export function RegisterPartnerPage() {
                       {t('auth.business_field')} <span className="text-destructive">*</span>
                     </label>
                     <select
-                      className="w-full px-4 py-3 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                      required
+                      {...register("businessField")}
+                      className={`w-full px-4 py-3 bg-input-background rounded-lg border ${errors.businessField ? 'border-red-500' : 'border-border'} focus:outline-none focus:ring-2 focus:ring-primary`}
                     >
-                      <option>{t('auth.biz_field.retail')}</option>
-                      <option>{t('auth.biz_field.food')}</option>
-                      <option>{t('auth.biz_field.travel')}</option>
-                      <option>{t('auth.biz_field.health')}</option>
-                      <option>{t('auth.biz_field.entertainment')}</option>
-                      <option>{t('auth.biz_field.auto')}</option>
-                      <option>{t('auth.biz_field.edu')}</option>
-                      <option>{t('auth.biz_field.other')}</option>
+                      <option value="">Select a field</option>
+                      <option value="retail">{t('auth.biz_field.retail')}</option>
+                      <option value="food">{t('auth.biz_field.food')}</option>
+                      <option value="travel">{t('auth.biz_field.travel')}</option>
+                      <option value="health">{t('auth.biz_field.health')}</option>
+                      <option value="entertainment">{t('auth.biz_field.entertainment')}</option>
+                      <option value="auto">{t('auth.biz_field.auto')}</option>
+                      <option value="edu">{t('auth.biz_field.edu')}</option>
+                      <option value="other">{t('auth.biz_field.other')}</option>
                     </select>
+                    {errors.businessField && <p className="text-red-500 text-xs mt-1">{errors.businessField.message}</p>}
                   </div>
 
                   {/* Info Box */}
@@ -210,9 +282,10 @@ export function RegisterPartnerPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full py-6 bg-primary hover:opacity-90 text-primary-foreground font-bold mt-8"
               >
-                {t('auth.submit_application')}
+                {isSubmitting ? "Submitting..." : t('auth.submit_application')}
               </Button>
 
               {/* Note */}

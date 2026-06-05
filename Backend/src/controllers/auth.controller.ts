@@ -29,11 +29,17 @@ export const registerCustomer = async (req: Request, res: Response) => {
     const result = await AuthService.registerCustomer(req.body, ip);
     res.status(201).json(result);
   } catch (error: any) {
-    if (error.code === 'P2002') {
-      res.status(409).json({ message: 'Username, Email, or Phone already exists' });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const checkAvailability = async (req: Request, res: Response) => {
+  try {
+    const { username, email, phone } = req.body;
+    const result = await AuthService.checkAvailability(username, email, phone);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -46,7 +52,7 @@ export const registerPartner = async (req: Request, res: Response) => {
     if (error.code === 'P2002') {
       res.status(409).json({ message: 'Username or Email already exists' });
     } else {
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(400).json({ message: error.message || 'Registration failed' });
     }
   }
 };

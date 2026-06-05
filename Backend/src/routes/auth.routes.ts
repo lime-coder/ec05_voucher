@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middlewares/validate.middleware';
-import { registerCustomer, registerPartner, login } from '../controllers/auth.controller';
+import { registerCustomer, registerPartner, login, checkAvailability } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -25,7 +25,15 @@ const registerCustomerSchema = z.object({
     Email: z.string().email(),
     HoTenNguoiDung: z.string().min(1),
     SDT: z.string().min(10),
-    NgaySinh: z.string().optional(),
+    NgaySinh: z.string().optional().refine((val) => {
+      if (!val) return true;
+      const dob = new Date(val);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      return age >= 13;
+    }, { message: 'You must be at least 13 years old to register' }),
     GioiTinh: z.string().optional(),
     DiaChi: z.string().optional(),
   }),
@@ -33,18 +41,27 @@ const registerCustomerSchema = z.object({
 
 const registerPartnerSchema = z.object({
   body: z.object({
-    TenDangNhap: z.string().min(3),
+    TenDangNhap: z.string().min(3).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
     MatKhau: passwordRule,
     Email: z.string().email(),
-    HoTenNguoiDung: z.string().min(1),
     TenDoanhNghiep: z.string().min(1),
-    MaSoThue: z.string().min(1),
-    CaNhanDaiDien: z.string().optional(),
-    LinhVucKinhDoanh: z.string().optional(),
+    MaSoThue: z.string().regex(/^\d{10}(\d{3})?$/, 'Tax ID must be 10 or 13 digits'),
+    CaNhanDaiDien: z.string().min(1),
+    LinhVucKinhDoanh: z.string().min(1),
+    ChucVu: z.string().min(1),
   }),
 });
 
+const checkAvailabilitySchema = z.object({
+  body: z.object({
+    username: z.string(),
+    email: z.string().email(),
+    phone: z.string().optional()
+  })
+});
+
 router.post('/login', validateRequest(loginSchema), login);
+router.post('/check-availability', validateRequest(checkAvailabilitySchema), checkAvailability);
 router.post('/register/customer', validateRequest(registerCustomerSchema), registerCustomer);
 router.post('/register/partner', validateRequest(registerPartnerSchema), registerPartner);
 

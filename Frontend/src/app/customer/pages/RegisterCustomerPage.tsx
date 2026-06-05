@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, User, Phone, Calendar, MapPin, CheckCircle } from "lucide-react";
+import { Mail, Lock, User, Phone, Calendar, MapPin, CheckCircle, Circle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@voucherhub/ui";
@@ -19,14 +19,19 @@ export function RegisterCustomerPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [registerError, setRegisterError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingRegistrationData, setPendingRegistrationData] = useState<RegisterCustomerInput | null>(null);
 
   const {
     register,
     handleSubmit: handleFormSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterCustomerInput>({
     resolver: zodResolver(registerCustomerSchema),
   });
+
+  const passwordValue = watch("password", "");
+  const confirmPasswordValue = watch("confirmPassword", "");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,34 +57,49 @@ export function RegisterCustomerPage() {
     setIsSubmitting(true);
     setRegisterError("");
     try {
-      const payload = {
-        TenDangNhap: data.username,
-        MatKhau: data.password,
-        Email: data.email,
-        HoTenNguoiDung: data.fullName,
-        SDT: data.phone,
-        NgaySinh: data.dob,
-        GioiTinh: data.gender,
-        DiaChi: data.address
-      };
-      await api.post('/auth/register/customer', payload);
+      await api.post('/auth/check-availability', {
+        username: data.username,
+        email: data.email,
+        phone: data.phone
+      });
+      setPendingRegistrationData(data);
       setStep("otp");
       generateAndSendOtp();
     } catch (error: any) {
-      setRegisterError(error.response?.data?.message || "Registration failed");
+      setRegisterError(error.response?.data?.message || "Registration failed. Please check your information.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp === generatedOtp) {
-      setStep("success");
-      setShowNotification(false);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+    if (otp === generatedOtp && pendingRegistrationData) {
+      setIsSubmitting(true);
+      setRegisterError("");
+      try {
+        const payload = {
+          TenDangNhap: pendingRegistrationData.username,
+          MatKhau: pendingRegistrationData.password,
+          Email: pendingRegistrationData.email,
+          HoTenNguoiDung: pendingRegistrationData.fullName,
+          SDT: pendingRegistrationData.phone,
+          NgaySinh: pendingRegistrationData.dob,
+          GioiTinh: pendingRegistrationData.gender,
+          DiaChi: pendingRegistrationData.address
+        };
+        await api.post('/auth/register/customer', payload);
+        setStep("success");
+        setShowNotification(false);
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } catch (error: any) {
+        setRegisterError(error.response?.data?.message || "Registration failed");
+        setStep("form");
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       setOtpError(t('auth.invalid_otp') || "Invalid OTP code. Please try again.");
     }
@@ -208,7 +228,39 @@ export function RegisterCustomerPage() {
                       {...register("password")}
                     />
                   </div>
-                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                  <ul className="mt-3 ml-4 space-y-1 text-xs">
+                    {[
+                      { test: passwordValue.length >= 8, label: t('auth.pwd_min_8') || "At least 8 characters" },
+                      { test: /[A-Z]/.test(passwordValue), label: t('auth.pwd_uppercase') || "At least one uppercase letter" },
+                      { test: /[a-z]/.test(passwordValue), label: t('auth.pwd_lowercase') || "At least one lowercase letter" },
+                      { test: /[0-9]/.test(passwordValue), label: t('auth.pwd_digit') || "At least one digit" },
+                    ].map((rule) => (
+                      <li key={rule.label} className={`flex items-center gap-1.5 ${rule.test ? "text-green-600" : (errors.password ? "text-red-500" : "text-muted-foreground")}`}>
+                        {rule.test ? <CheckCircle className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
+                        {rule.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    {t('auth.confirm_password') || "Confirm Password"}
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder={t('auth.confirm_password_ph') || "Re-enter your password"}
+                      className={`pl-10 py-6 bg-input-background ${confirmPasswordValue && passwordValue !== confirmPasswordValue ? "border-red-500" : ""}`}
+                      {...register("confirmPassword")}
+                    />
+                  </div>
+                  {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+                  {!errors.confirmPassword && confirmPasswordValue && passwordValue !== confirmPasswordValue && (
+                    <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+                  )}
                 </div>
 
                 {/* Full Name */}
@@ -267,7 +319,7 @@ export function RegisterCustomerPage() {
                 <label className="block text-sm font-semibold mb-2">{t('profile.gender')}</label>
                 <select 
                   {...register("gender")}
-                  className="w-full px-4 py-3 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                  className={`w-full px-4 py-3 bg-input-background rounded-lg border ${errors.gender ? 'border-red-500' : 'border-border'} focus:outline-none focus:ring-2 focus:ring-primary`}
                 >
                   <option value="">{t('auth.select_gender')}</option>
                   <option value="male">{t('profile.gender.male')}</option>

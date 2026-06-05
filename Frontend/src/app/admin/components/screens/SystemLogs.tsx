@@ -32,9 +32,19 @@ export function SystemLogs() {
       const response = await api.get('/logs', {
         params: { search: searchTerm, action: actionFilter }
       });
-      setLogs(response.data);
+      const responseData = response.data;
+      // Handle the new API format { data: [...], pagination: {...} }
+      if (responseData && Array.isArray(responseData.data)) {
+        setLogs(responseData.data);
+      } else if (Array.isArray(responseData)) {
+        setLogs(responseData);
+      } else {
+        console.error('Expected array from /logs, got:', responseData);
+        setLogs([]);
+      }
     } catch (error) {
       console.error('Error fetching logs:', error);
+      setLogs([]); // Reset to empty array on error
     } finally {
       setIsLoading(false);
     }
