@@ -1,128 +1,30 @@
 import { VoucherCard, Voucher } from "../components/VoucherCard";
-import { useState } from "react";
+import { useState, useEffect, } from "react";
 import { useSearchParams, Link } from "react-router";
 import { ChevronDown, Grid3x3, List, X, ChevronRight } from "lucide-react";
 import { Button, Input } from "@voucherhub/ui";
 import { PriceRangeSlider } from "../components/PriceRangeSlider";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
-const searchVouchers: Voucher[] = [
-  {
-    id: "1",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Grand Bliss Royal Massage & Hydro-Aromatherapy (90 Min)",
-    partner: "Ethereal Zen Wellness Spa",
-    price: 129,
-    originalPrice: 245,
-    discount: 47,
-    rating: 4.8,
-    reviews: 248,
-    flashDeal: true,
-  },
-  {
-    id: "2",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Rejuvenating Spa Day Package with Facial",
-    partner: "Tranquil Waters Spa",
-    price: 99,
-    originalPrice: 189,
-    discount: 48,
-    rating: 4.5,
-    reviews: 156,
-  },
-  {
-    id: "3",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Hot Stone Therapy & Deep Tissue Massage",
-    partner: "Serenity Spa & Wellness",
-    price: 149,
-    originalPrice: 279,
-    discount: 47,
-    rating: 4.9,
-    reviews: 312,
-  },
-  {
-    id: "4",
-    image: "https://images.unsplash.com/photo-1762742316793-b1845065429a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3RlbCUyMHJlc29ydCUyMHZhY2F0aW9uJTIwdHJhdmVsfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "TRAVEL",
-    name: "Luxury Resort Spa Package - 3 Days 2 Nights",
-    partner: "Paradise Beach Resort",
-    price: 399,
-    originalPrice: 799,
-    discount: 50,
-    rating: 4.7,
-    reviews: 189,
-  },
-  {
-    id: "5",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Couple's Romantic Spa Treatment",
-    partner: "Harmony Wellness Center",
-    price: 179,
-    originalPrice: 349,
-    discount: 49,
-    rating: 4.6,
-    reviews: 95,
-  },
-  {
-    id: "6",
-    image: "https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "FOOD",
-    name: "Premium Dining Experience with Wine Pairing",
-    partner: "The Elegant Table Restaurant",
-    price: 119,
-    originalPrice: 249,
-    discount: 52,
-    rating: 4.8,
-    reviews: 224,
-  },
-  {
-    id: "7",
-    image: "https://images.unsplash.com/photo-1584827386916-b5351d3ba34b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwZ3ltJTIwd29ya291dCUyMGV4ZXJjaXNlfGVufDF8fHx8MTc3OTM1OTU4OHww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "FITNESS",
-    name: "Yoga & Meditation Wellness Retreat",
-    partner: "Mindful Movement Studio",
-    price: 89,
-    originalPrice: 159,
-    discount: 44,
-    rating: 4.7,
-    reviews: 178,
-  },
-  {
-    id: "8",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "SPA",
-    name: "Organic Aromatherapy & Herbal Treatment",
-    partner: "Nature's Touch Spa",
-    price: 109,
-    originalPrice: 219,
-    discount: 50,
-    rating: 4.6,
-    reviews: 134,
-  },
-  {
-    id: "9",
-    image: "https://images.unsplash.com/photo-1630595633877-9918ee257288?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGElMjB3ZWxsbmVzcyUyMG1hc3NhZ2UlMjB0cmVhdG1lbnR8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "WELLNESS",
-    name: "Full Body Detox & Lymphatic Drainage",
-    partner: "Vitality Health Spa",
-    price: 139,
-    originalPrice: 269,
-    discount: 48,
-    rating: 4.8,
-    reviews: 201,
-  },
-];
+
 
 export function SearchResultsPage() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
-  const query = searchParams.get("q") || "Wellness & Spa";
-  const [sortBy, setSortBy] = useState("popular");
+  
+  const [vouchers, setVouchers] =
+    useState<Voucher[]>([]);
+
+  const [categories, setCategories] = useState<any[]>([]);
+
+  const [sortType, setSortType] =
+    useState("popular");
+
+  const [partners, setPartners] = useState<any[]>([]);
+
+  const [categoryName, setCategoryName] = useState("");
+  const query = searchParams.get("q") || categoryName || "Search";
+  const categoryId = searchParams.get("category");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isBrandsModalOpen, setIsBrandsModalOpen] = useState(false);
   const [priceRange, setPriceRange] = useState([10, 1000]);
@@ -133,7 +35,22 @@ export function SearchResultsPage() {
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [sliderResetKey, setSliderResetKey] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+
+
   const ITEMS_PER_PAGE = 6;
+  const totalPages =
+    Math.ceil(
+      vouchers.length /
+        ITEMS_PER_PAGE
+    );
+
+  const paginatedVouchers =
+    vouchers.slice(
+      (currentPage - 1) *
+        ITEMS_PER_PAGE,
+      currentPage *
+        ITEMS_PER_PAGE
+    );
 
   const handleClearAll = () => {
     setSelectedCategories([]);
@@ -146,11 +63,182 @@ export function SearchResultsPage() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(searchVouchers.length / ITEMS_PER_PAGE);
-  const paginatedVouchers = searchVouchers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  useEffect(() => {
+    // Reset category name
+    //setCategoryName("");
+
+    // =========================
+    // Lấy keyword search
+    // =========================
+    const query =
+      searchParams.get("q");
+
+    // API mặc định
+    let url =
+      "/api/vouchers";
+
+    // =========================
+    // Search từ navbar
+    // =========================
+    if (query) {
+      url =
+        `/api/vouchers/search?q=${encodeURIComponent(
+          query
+        )}`;
+    }
+
+    // =========================
+    // Click category
+    // =========================
+    if (categoryId) {
+      url =
+        `/api/vouchers?category=${categoryId}`;
+    }
+
+    // =========================
+    // Load categories thật
+    // =========================
+    fetch("/api/vouchers/categories")
+      .then((res) =>
+        res.json()
+      )
+      .then((categories) => {
+        // Sidebar categories
+        setCategories(
+          categories
+        );
+
+        // Tìm tên category
+        if (categoryId) {
+          const found =
+            categories.find(
+              (c: any) =>
+                c.id ===
+                Number(
+                  categoryId
+                )
+            );
+
+          if (found) {
+            setCategoryName(
+              found.name
+            );
+          }
+        }
+      })
+      .catch((err) =>
+        console.error(
+          "Fetch categories error:",
+          err
+        )
+      );
+
+    // Reset page
+    setCurrentPage(1);
+
+    // =========================
+    // Fetch vouchers thật
+    // =========================
+    fetch(url)
+      .then((res) =>
+        res.json()
+      )
+      .then((data) => {
+        if (
+          Array.isArray(data)
+        ) {
+          let sortedData = [
+            ...data,
+          ];
+
+          // =====================
+          // Sort giá thấp -> cao
+          // =====================
+          if (
+            sortType ===
+            "low-price"
+          ) {
+            sortedData.sort(
+              (a, b) =>
+                Number(
+                  a.salePrice
+                ) -
+                Number(
+                  b.salePrice
+                )
+            );
+          }
+
+          // =====================
+          // Sort giá cao -> thấp
+          // =====================
+          if (
+            sortType ===
+            "high-price"
+          ) {
+            sortedData.sort(
+              (a, b) =>
+                Number(
+                  b.salePrice
+                ) -
+                Number(
+                  a.salePrice
+                )
+            );
+          }
+
+          // =====================
+          // Voucher mới nhất
+          // =====================
+          if (
+            sortType ===
+            "newest"
+          ) {
+            sortedData.sort(
+              (a, b) =>
+                Number(b.id) -
+                Number(a.id)
+            );
+          }
+
+          // =====================
+          // Lấy partner thật
+          // =====================
+          const uniquePartners =
+            Array.from(
+              new Map(
+                sortedData.map(
+                  (v: any) => [
+                    v.partner?.id,
+                    v.partner,
+                  ]
+                )
+              ).values()
+            ).filter(Boolean);
+
+          setPartners(
+            uniquePartners
+          );
+
+          // =====================
+          // Set vouchers
+          // =====================
+          setVouchers(
+            sortedData
+          );
+        }
+      })
+      .catch((err) =>
+        console.error(
+          "Fetch vouchers error:",
+          err
+        )
+      );
+  }, [
+    categoryId,
+    searchParams,
+    sortType,
+  ]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -167,40 +255,109 @@ export function SearchResultsPage() {
         <h1 className="text-3xl font-bold mb-2">
           {t('search.results_for')} <span className="text-primary">"{query}"</span>
         </h1>
-        <p className="text-muted-foreground mb-6">{t('search.showing')}</p>
+
+        <p className="text-muted-foreground mb-6">
+          Showing{" "}
+          {vouchers.length === 0
+            ? 0
+            : (currentPage - 1) *
+                ITEMS_PER_PAGE +
+              1}
+          -
+          {Math.min(
+            currentPage *
+              ITEMS_PER_PAGE,
+            vouchers.length
+          )}{" "}
+          of {vouchers.length} vouchers
+          found
+        </p>
+
+
 
         {/* Sort Bar */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-border">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold">{t('search.sort_by')}</span>
             <Button
-              variant={sortBy === "popular" ? "default" : "secondary"}
-              onClick={() => setSortBy("popular")}
-              className={sortBy === "popular" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+              variant={
+                sortType === "popular"
+                  ? "default"
+                  : "secondary"
+              }
+              onClick={() =>
+                setSortType("popular")
+              }
+              className={
+                sortType === "popular"
+                  ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold"
+                  : "font-semibold"
+              }
             >
-              {t('search.sort.popular')}
+              {t("search.sort.popular")}
             </Button>
+
             <Button
-              variant={sortBy === "newest" ? "default" : "secondary"}
-              onClick={() => setSortBy("newest")}
-              className={sortBy === "newest" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+              variant={
+                sortType === "newest"
+                  ? "default"
+                  : "secondary"
+              }
+              onClick={() =>
+                setSortType("newest")
+              }
+              className={
+                sortType === "newest"
+                  ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold"
+                  : "font-semibold"
+              }
             >
-              {t('search.sort.newest')}
+              {t("search.sort.newest")}
             </Button>
+
             <Button
-              variant={sortBy === "price-low" ? "default" : "secondary"}
-              onClick={() => setSortBy("price-low")}
-              className={sortBy === "price-low" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+              variant={
+                sortType === "low-price"
+                  ? "default"
+                  : "secondary"
+              }
+              onClick={() =>
+                setSortType(
+                  "low-price"
+                )
+              }
+              className={
+                sortType ===
+                "low-price"
+                  ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold"
+                  : "font-semibold"
+              }
             >
-              {t('search.sort.price_low')}
+              {t("search.sort.price_low")}
             </Button>
+
             <Button
-              variant={sortBy === "price-high" ? "default" : "secondary"}
-              onClick={() => setSortBy("price-high")}
-              className={sortBy === "price-high" ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold" : "font-semibold"}
+              variant={
+                sortType ===
+                "high-price"
+                  ? "default"
+                  : "secondary"
+              }
+              onClick={() =>
+                setSortType(
+                  "high-price"
+                )
+              }
+              className={
+                sortType ===
+                "high-price"
+                  ? "bg-primary text-primary-foreground hover:opacity-90 font-semibold"
+                  : "font-semibold"
+              }
             >
-              {t('search.sort.price_high')}
+              {t("search.sort.price_high")}
             </Button>
+
           </div>
 
           <div className="flex items-center gap-4">
@@ -242,27 +399,50 @@ export function SearchResultsPage() {
               <div className="mb-6">
                 <h4 className="font-semibold mb-3 text-sm uppercase">{t('search.categories')}</h4>
                 <div className="space-y-2">
-                  {[
-                    { name: "Travel & Hotels", key: 'search.cat.travel', count: 24 },
-                    { name: "Food & Beverages", key: 'search.cat.food', count: 18 },
-                    { name: "Wellness & Spa", key: 'search.cat.wellness', count: 12 },
-                    { name: "Entertainment", key: 'search.cat.entertainment', count: 8 },
-                    { name: "Sports & Fitness", key: 'search.cat.sports', count: 15 },
-                  ].map((cat) => (
-                    <label key={cat.name} className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-border" 
-                        checked={selectedCategories.includes(cat.name)}
+                  {categories.map((cat) => (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-border"
+                        checked={
+                          selectedCategories.includes(
+                            String(cat.id)
+                          )
+                        }
                         onChange={(e) => {
-                          if (e.target.checked) setSelectedCategories([...selectedCategories, cat.name]);
-                          else setSelectedCategories(selectedCategories.filter(c => c !== cat.name));
+                          if (e.target.checked) {
+                            setSelectedCategories([
+                              ...selectedCategories,
+                              String(cat.id),
+                            ]);
+                          } else {
+                            setSelectedCategories(
+                              selectedCategories.filter(
+                                (c) =>
+                                  c !==
+                                  String(cat.id)
+                              )
+                            );
+                          }
                         }}
                       />
-                      <span className="text-sm">{t(cat.key)}</span>
-                      <span className="text-xs text-muted ml-auto">({cat.count})</span>
+
+                      <span className="text-sm">
+                        {cat.name}
+                      </span>
+
+                      <span className="text-xs text-muted ml-auto">
+                        (
+                        {cat.totalVouchers}
+                        )
+                      </span>
                     </label>
                   ))}
+
+
                 </div>
               </div>
 
@@ -272,25 +452,49 @@ export function SearchResultsPage() {
                   {t('search.brands')}
                 </h4>
                 <div className="space-y-2">
-                  {["Marriott Int.", "Starbucks", "Hilton Resorts", "Nike Store"].map(
-                    (brand) => (
-                      <label key={brand} className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="rounded border-border" 
-                          checked={selectedBrands.includes(brand)}
+                  {partners.map(
+                    (partner: any) => (
+                      <label
+                        key={partner.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-border"
+                          checked={selectedBrands.includes(
+                            String(partner.id)
+                          )}
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedBrands([...selectedBrands, brand]);
-                            else setSelectedBrands(selectedBrands.filter(b => b !== brand));
+                            if (
+                              e.target.checked
+                            ) {
+                              setSelectedBrands([
+                                ...selectedBrands,
+                                String(
+                                  partner.id
+                                ),
+                              ]);
+                            } else {
+                              setSelectedBrands(
+                                selectedBrands.filter(
+                                  (b) =>
+                                    b !==
+                                    String(
+                                      partner.id
+                                    )
+                                )
+                              );
+                            }
                           }}
                         />
-                        <span className="text-sm">{brand}</span>
+
+                        <span className="text-sm">
+                          {partner.name}
+                        </span>
                       </label>
                     )
                   )}
-                  <button onClick={() => setIsBrandsModalOpen(true)} className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
-                    {t('search.view_more')}
-                  </button>
+
                 </div>
               </div>
 
@@ -387,45 +591,32 @@ export function SearchResultsPage() {
 
           {/* Right - Voucher Grid */}
           <div className="flex-1">
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" : "flex flex-col gap-6 mb-8"}>
-              {paginatedVouchers.map((voucher) => (
-                <VoucherCard key={voucher.id} voucher={voucher} viewMode={viewMode} />
-              ))}
+
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+                  : "flex flex-col gap-6 mb-8"
+              }
+            >
+              {paginatedVouchers.map(
+                (voucher) => (
+                  <VoucherCard
+                    key={voucher.id}
+                    voucher={voucher}
+                    viewMode={viewMode}
+                  />
+                )
+              )}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <Button 
-                  variant="secondary" 
-                  className="px-3 py-2 disabled:opacity-50"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  &lt;
-                </Button>
-                
-                {[...Array(totalPages)].map((_, i) => (
-                  <Button 
-                    key={i}
-                    variant={currentPage === i + 1 ? "default" : "secondary"}
-                    className={`px-4 py-2 ${currentPage === i + 1 ? 'bg-primary text-primary-foreground font-semibold hover:opacity-90' : ''}`}
-                    onClick={() => setCurrentPage(i + 1)}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
-
-                <Button 
-                  variant="secondary" 
-                  className="px-3 py-2 disabled:opacity-50"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  &gt;
-                </Button>
+            {paginatedVouchers.length ===
+              0 && (
+              <div className="text-center py-20 text-muted-foreground">
+                No vouchers found
               </div>
             )}
+
           </div>
         </div>
 

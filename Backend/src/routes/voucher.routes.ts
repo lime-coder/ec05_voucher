@@ -8,7 +8,8 @@ import {
   getPendingVouchers,
   approveVoucher,
   rejectVoucher, 
-  getCategories
+  getCategories,
+  searchVouchers,
 } from '../controllers/voucher.controller';
 
 
@@ -19,6 +20,7 @@ router.get('/pending', getPendingVouchers);
 router.get('/', getAllVouchers);
 router.get('/partner/:partnerId', getVouchersByPartnerId);
 router.get('/categories', getCategories);
+router.get( '/search', searchVouchers );
 router.get('/:id', getVoucherById);
 router.post('/', createVoucher);
 router.patch('/:id/approve', approveVoucher);

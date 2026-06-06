@@ -8,90 +8,157 @@ import { logActivity } from './admin.controller';
  * It extracts data from 'req' and calls the appropriate Service function.
  */
 
+export const getAllVouchers =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const {
+        search,
+        category,
+        minPrice,
+        maxPrice,
+      } = req.query;
 
-export const getAllVouchers = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const {
-      search,
-      category,
-      minPrice,
-      maxPrice,
-    } = req.query;
+      const vouchers =
+        await prisma.voucher.findMany(
+          {
+            where: {
+              TrangThaiVoucher:
+                "ACTIVE",
 
-    const vouchers = await prisma.voucher.findMany({
-      where: {
-        TrangThaiVoucher: 'ACTIVE',
+              ...(search
+                ? {
+                    TenVoucher:
+                      {
+                        contains:
+                          String(
+                            search
+                          ),
+                      },
+                  }
+                : {}),
 
-        ...(search
-          ? {
-              TenVoucher: {
-                contains: String(search),
-              },
-            }
-          : {}),
+              ...(category
+                ? {
+                    MaDanhMuc:
+                      Number(
+                        category
+                      ),
+                  }
+                : {}),
 
-        ...(category
-          ? {
-              MaDanhMuc: Number(category),
-            }
-          : {}),
+              ...(minPrice ||
+              maxPrice
+                ? {
+                    GiaBan: {
+                      ...(minPrice
+                        ? {
+                            gte: Number(
+                              minPrice
+                            ),
+                          }
+                        : {}),
 
-        ...(minPrice || maxPrice
-          ? {
-              GiaBan: {
-                ...(minPrice
-                  ? {
-                      gte: Number(minPrice),
-                    }
-                  : {}),
+                      ...(maxPrice
+                        ? {
+                            lte: Number(
+                              maxPrice
+                            ),
+                          }
+                        : {}),
+                    },
+                  }
+                : {}),
+            },
 
-                ...(maxPrice
-                  ? {
-                      lte: Number(maxPrice),
-                    }
-                  : {}),
-              },
-            }
-          : {}),
-      },
-    });
+            include: {
+              DanhMuc: true,
+              DoiTac: true,
+            },
+          }
+        );
 
-    const mapped = vouchers.map((v: any) => ({
-      id: v.VoucherID,
+      const mapped =
+        vouchers.map(
+          (v: any) => ({
+            id:
+              v.VoucherID,
 
-      name: v.TenVoucher,
+            name:
+              v.TenVoucher,
 
-      description: v.MoTaVoucher,
+            description:
+              v.MoTaVoucher,
 
-      condition: v.MoTaDieuKien,
+            condition:
+              v.MoTaDieuKien,
 
-      originalPrice: v.GiaGoc,
+            originalPrice:
+              Number(
+                v.GiaGoc
+              ),
 
-      salePrice: v.GiaBan,
+            salePrice:
+              Number(
+                v.GiaBan
+              ),
 
-      image: v.HinhAnhVoucher,
+            image:
+              v.ImageUrl ||
+              v.HinhAnhVoucher,
 
-      quantity: v.SoLuong,
+            quantity:
+              v.SoLuong,
 
-      status: v.TrangThaiVoucher,
+            status:
+              v.TrangThaiVoucher,
 
-      categoryId: v.MaDanhMuc,
+            category:
+              v.DanhMuc
+                ? {
+                    id:
+                      v
+                        .DanhMuc
+                        .MaDanhMuc,
 
-      partnerId: v.MaDoiTac,
-    }));
+                    name:
+                      v
+                        .DanhMuc
+                        .TenDanhMuc,
+                  }
+                : null,
 
-    res.json(mapped);
-  } catch (error) {
-    console.error(error);
+            partner:
+              v.DoiTac
+                ? {
+                    id:
+                      v
+                        .DoiTac
+                        .MaDoiTac,
 
-    res.status(500).json({
-      message: 'Failed to fetch vouchers',
-    });
-  }
-};
+                    name:
+                      v
+                        .DoiTac
+                        .TenDoanhNghiep,
+                  }
+                : null,
+          })
+        );
+
+      res.json(mapped);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        message:
+          "Failed to fetch vouchers",
+      });
+    }
+  };
+
+
 
 
 export const getVoucherById = async (
@@ -437,3 +504,148 @@ export const getCategories = async (
     });
   }
 };
+
+
+export const searchVouchers =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      // =========================
+      // Lấy keyword search
+      // Ví dụ:
+      // /api/vouchers/search?q=coffee
+      // =========================
+      const q = String(
+        req.query.q || ""
+      ).trim();
+
+      // =========================
+      // Query tìm kiếm voucher
+      // =========================
+      const vouchers =
+        await prisma.voucher.findMany({
+          where: {
+            // Chỉ lấy voucher ACTIVE
+            TrangThaiVoucher:
+              "ACTIVE",
+
+            // OR:
+            // chỉ cần match 1 điều kiện
+            OR: [
+              // =====================
+              // Tìm theo tên voucher
+              // =====================
+              {
+                TenVoucher: {
+                  contains: q,
+                },
+              },
+
+              // =====================
+              // Tìm theo tên danh mục
+              // =====================
+              {
+                DanhMuc: {
+                  TenDanhMuc: {
+                    contains: q,
+                  },
+                },
+              },
+
+              // =====================
+              // Tìm theo tên đối tác
+              // =====================
+              {
+                DoiTac: {
+                  TenDoanhNghiep:
+                    {
+                      contains: q,
+                    },
+                },
+              },
+            ],
+          },
+
+          // Include dữ liệu liên quan
+          include: {
+            DanhMuc: true,
+            DoiTac: true,
+          },
+        });
+
+      // =========================
+      // Convert dữ liệu
+      // =========================
+      const mapped =
+        vouchers.map(
+          (v: any) => ({
+            id:
+              v.VoucherID,
+
+            name:
+              v.TenVoucher,
+
+            description:
+              v.MoTaVoucher,
+
+            originalPrice:
+              Number(
+                v.GiaGoc
+              ),
+
+            salePrice:
+              Number(
+                v.GiaBan
+              ),
+
+            image:
+              v.ImageUrl,
+
+            categoryId:
+              v.MaDanhMuc,
+
+            partnerId:
+              v.MaDoiTac,
+
+            category:
+              v.DanhMuc
+                ? {
+                    id:
+                      v.DanhMuc
+                        .MaDanhMuc,
+
+                    name:
+                      v.DanhMuc
+                        .TenDanhMuc,
+                  }
+                : null,
+
+            partner:
+              v.DoiTac
+                ? {
+                    id:
+                      v.DoiTac
+                        .MaDoiTac,
+
+                    name:
+                      v.DoiTac
+                        .TenDoanhNghiep,
+                  }
+                : null,
+          })
+        );
+
+      // Trả dữ liệu về frontend
+      res.json(mapped);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        message:
+          "Failed to search vouchers",
+      });
+    }
+  };
+

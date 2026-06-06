@@ -25,15 +25,14 @@ export interface Voucher {
 
   reviews?: number;
 
-  category?: {
-    id: number;
-    name: string;
-  };
+  category?: | { id: number; name: string; } | string;
 
   partner?: {
     id: number;
     name: string;
   };
+
+  categoryId?: number;
 }
 
 interface VoucherCardProps {
@@ -51,6 +50,33 @@ export function VoucherCard({
 
   const { t } =
     useLanguage();
+
+    const getCategoryName = (
+      categoryId?: number
+    ) => {
+      switch (categoryId) {
+        case 1:
+          return "Công nghệ";
+
+        case 2:
+          return "Travel & Hotels";
+
+        case 3:
+          return "Food & Beverages";
+
+        case 4:
+          return "Wellness & Spa";
+
+        case 5:
+          return "Entertainment";
+
+        case 6:
+          return "Sports & Fitness";
+
+        default:
+          return "";
+      }
+    };
 
   const discountPercent =
     Number(voucher.originalPrice) >
@@ -120,10 +146,13 @@ export function VoucherCard({
         }`}
       >
         {/* Category */}
-        <div className="w-fit px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wide mb-2">
-          {voucher.category
-            ?.name || "Category"}
-        </div>
+        {voucher.categoryId && (
+          <div className="w-fit px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wide mb-2">
+            {getCategoryName(
+              voucher.categoryId
+            )}
+          </div>
+        )}
 
         {/* Voucher Name */}
         <Link
