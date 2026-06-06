@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useCartStore } from "../../../store/useCartStore";
+import { useAuth } from "../../auth/AuthContext";
 import {
   Star,
   MapPin,
@@ -75,6 +77,8 @@ interface VoucherDetail {
 export function VoucherDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addItem, } = useCartStore();
   const { t } = useLanguage();
 
   const [voucher, setVoucher] = useState<VoucherDetail | null>( null ); 
@@ -85,43 +89,105 @@ export function VoucherDetailPage() {
   const [isAdding, setIsAdding] = useState(false);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
-  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAddToCart = (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+
+    if (!user) {
+
+      alert(
+        "Vui lòng đăng nhập trước khi thêm vào giỏ hàng"
+      );
+
+      navigate("/login");
+
+      return;
+    }
+
+    if (!voucher) return;
+
     if (isAdding) return;
+
     setIsAdding(true);
 
-    const button = e.currentTarget;
-    const rect = button.getBoundingClientRect();
-    
-    const flyingDot = document.createElement("div");
-    flyingDot.style.width = "24px";
-    flyingDot.style.height = "24px";
-    flyingDot.style.backgroundColor = "#F97316"; // Primary color
-    flyingDot.style.borderRadius = "50%";
-    flyingDot.style.position = "fixed";
-    flyingDot.style.left = `${rect.left + rect.width / 2}px`;
-    flyingDot.style.top = `${rect.top + rect.height / 2}px`;
-    flyingDot.style.zIndex = "9999";
-    flyingDot.style.boxShadow = "0 4px 12px rgba(249, 115, 22, 0.5)";
-    flyingDot.style.transition = "all 0.8s cubic-bezier(0.2, 1, 0.3, 1)";
-    
-    document.body.appendChild(flyingDot);
+    // =====================
+    // Add item thật
+    // =====================
+    addItem({
+      id: String(
+        voucher.id
+      ),
 
-    // Force reflow
-    flyingDot.getBoundingClientRect();
+      name:
+        voucher.name,
 
-    // Fly to top right (approximate position of cart icon in navbar)
-    flyingDot.style.left = "calc(100vw - 120px)";
-    flyingDot.style.top = "40px";
-    flyingDot.style.transform = "scale(0.3)";
-    flyingDot.style.opacity = "0";
+      description:
+        voucher.description ||
+        "",
+
+      price:
+        Number(
+          voucher.salePrice
+        ),
+
+      quantity,
+
+    });
+
+    // =====================
+    // Animation giữ nguyên
+    // =====================
+    const button =
+      e.currentTarget;
+
+    const rect =
+      button.getBoundingClientRect();
+
+    const clone =
+      button.cloneNode(
+        true
+      ) as HTMLElement;
+
+    clone.style.position =
+      "fixed";
+
+    clone.style.left =
+      `${rect.left}px`;
+
+    clone.style.top =
+      `${rect.top}px`;
+
+    clone.style.width =
+      `${rect.width}px`;
+
+    clone.style.zIndex =
+      "9999";
+
+    clone.style.transition =
+      "all 0.8s ease-in-out";
+
+    document.body.appendChild(
+      clone
+    );
 
     setTimeout(() => {
-      if (document.body.contains(flyingDot)) {
-        document.body.removeChild(flyingDot);
-      }
+      clone.style.transform =
+        "translate(1000px,-500px) scale(0.2)";
+
+      clone.style.opacity =
+        "0";
+    }, 50);
+
+    setTimeout(() => {
+      document.body.removeChild(
+        clone
+      );
+
       setIsAdding(false);
     }, 800);
   };
+
+
 
 
   
@@ -323,7 +389,52 @@ export function VoucherDetailPage() {
                 )}
               </Button>
               <Button
-                onClick={() => navigate("/cart")}
+                onClick={() => {
+                  // =====================
+                  // Chưa đăng nhập
+                  // =====================
+                  if (!user) {
+
+                    alert(
+                      "Vui lòng đăng nhập trước khi mua hàng"
+                    );
+
+                    navigate("/login");
+
+                    return;
+                  }
+                  if (!voucher) return;
+
+                  // =====================
+                  // Add item thật
+                  // =====================
+                  addItem({
+                    id: String(
+                      voucher.id
+                    ),
+
+                    name:
+                      voucher.name,
+
+                    description:
+                      voucher.description ||
+                      "",
+
+                    price:
+                      Number(
+                        voucher.salePrice
+                      ),
+
+                    quantity,
+
+                  });
+
+                  // =====================
+                  // Đi tới cart
+                  // =====================
+                  navigate("/cart");
+                }}
+
                 className="py-6 bg-primary text-foreground hover:opacity-90 transition-colors font-bold cursor-pointer"
               >
                 {t('voucher.buy_now')}

@@ -1,10 +1,14 @@
-import { Link } from "react-router";
+import { Link, useSearchParams  } from "react-router";
 import { CheckCircle2, Package, ArrowRight, Home } from "lucide-react";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
 export function ThankYouPage() {
   const { t } = useLanguage();
+
+  const [searchParams] =  useSearchParams();
+
+  const orderId =  searchParams.get("orderId") || "N/A";
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 bg-background">
@@ -25,7 +29,7 @@ export function ThankYouPage() {
         <div className="bg-secondary rounded-xl p-4 mb-8 flex items-center gap-4 text-left">
           <Package className="w-8 h-8 text-primary" />
           <div>
-            <p className="font-semibold text-foreground">{t('thanks.order_id').replace('{id}', '10023')}</p>
+            <p className="font-semibold text-foreground">{t('thanks.order_id').replace('{id}', orderId)}</p>
             <p className="text-sm text-muted-foreground">{t('thanks.view_details')}</p>
           </div>
         </div>

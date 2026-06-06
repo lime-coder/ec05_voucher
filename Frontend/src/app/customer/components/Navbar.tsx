@@ -3,19 +3,20 @@ import { Search, ShoppingCart, User, Diamond } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { useCartStore } from "../../../store/useCartStore";
 
 interface NavbarProps {
   isLoggedIn?: boolean;
-  cartCount?: number;
   showSearch?: boolean;
 }
 
-export function Navbar({ isLoggedIn = false, cartCount = 0, showSearch = true }: NavbarProps) {
+export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
-
+  const { items } = useCartStore(); 
+  const cartCount = items.reduce( ( total, item ) => total + item.quantity, 0 );
 
   const handleSearch = (
     e: React.FormEvent
