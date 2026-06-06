@@ -3,11 +3,14 @@ import {
   getAllVouchers, 
   getVoucherById, 
   createVoucher,
+  updateVoucher, 
+  getVouchersByPartnerId, 
   getPendingVouchers,
   approveVoucher,
-  rejectVoucher 
+  rejectVoucher, 
+  getCategories
 } from '../controllers/voucher.controller';
-import { getAllVouchers, getVoucherById, createVoucher, updateVoucher, getVouchersByPartnerId } from '../controllers/voucher.controller';
+
 
 const router = Router();
 
@@ -15,6 +18,7 @@ const router = Router();
 router.get('/pending', getPendingVouchers);
 router.get('/', getAllVouchers);
 router.get('/partner/:partnerId', getVouchersByPartnerId);
+router.get('/categories', getCategories);
 router.get('/:id', getVoucherById);
 router.post('/', createVoucher);
 router.patch('/:id/approve', approveVoucher);
