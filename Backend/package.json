@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/multer": "^2.1.0",
     "@voucherhub/types": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

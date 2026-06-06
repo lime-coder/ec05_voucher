@@ -2,7 +2,7 @@
 // Partner Domain Types
 // ============================================
 
-export type VoucherStatus = 'active' | 'pending' | 'paused' | 'expired';
+export type VoucherStatus = 'active' | 'pending' | 'paused' | 'expired' | 'draft' | 'rejected' | 'deleted';
 
 export interface PartnerVoucher {
   id: string;
@@ -17,6 +17,14 @@ export interface PartnerVoucher {
   validFrom: string;
   validTo: string;
   branches?: string[];
+  description?: string;
+  terms?: string;
+  categoryId?: number;
+  validStartDateRaw?: string;
+  validEndDateRaw?: string;
+  imageUrl?: string;
+  refundPolicy?: string;
+  usageInstructions?: string;
 }
 
 export interface StatusConfig {
@@ -91,6 +99,7 @@ export interface CreateVoucherFormData {
   validEndDate: string;
   isRefundable: boolean;
   refundPolicy: string;
+  usageInstructions: string;
   dateSetBy: 'partner' | 'admin' | 'system';
 }
 

@@ -56,8 +56,17 @@ export default function CreateVoucher() {
     const saved = localStorage.getItem('voucher_draft');
     if (saved) {
       try {
-        setFormData(JSON.parse(saved));
-      } catch (e) {}
+        const parsed = JSON.parse(saved);
+        setFormData(parsed);
+      } catch (e) { }
+    }
+    
+    const savedImages = localStorage.getItem('voucher_images_draft');
+    if (savedImages) {
+      try {
+        const parsedImages = JSON.parse(savedImages);
+        setImages(parsedImages);
+      } catch (e) { }
     }
   }, []);
 
@@ -66,9 +75,39 @@ export default function CreateVoucher() {
     localStorage.setItem('voucher_draft', JSON.stringify(formData));
   }, [formData]);
 
+  useEffect(() => {
+    localStorage.setItem('voucher_images_draft', JSON.stringify(images));
+  }, [images]);
+
   const handleChange = (field: keyof CreateVoucherFormData) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = event.target.value;
     setFormData((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleDateChange = (field: 'saleStartDate' | 'saleEndDate' | 'validStartDate' | 'validEndDate') => (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+
+    setFormData((current) => {
+      const newData = { ...current, [field]: value };
+
+      if (field === 'saleStartDate' || field === 'saleEndDate') {
+        if (newData.saleStartDate && newData.saleEndDate) {
+          if (new Date(newData.saleEndDate) < new Date(newData.saleStartDate)) {
+            toast.error('Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
+          }
+        }
+      }
+
+      if (field === 'validStartDate' || field === 'validEndDate') {
+        if (newData.validStartDate && newData.validEndDate) {
+          if (new Date(newData.validEndDate) < new Date(newData.validStartDate)) {
+            toast.error('Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
+          }
+        }
+      }
+
+      return newData;
+    });
   };
 
   const handleBranchToggle = (branch: string) => {
@@ -93,7 +132,7 @@ export default function CreateVoucher() {
     });
   };
 
-  const handleFiles = (files: FileList) => {
+  const handleFiles = async (files: FileList) => {
     let hasInvalid = false;
     const validFiles = Array.from(files).filter(file => {
       if (file.type === 'image/jpeg' || file.type === 'image/png') return true;
@@ -105,12 +144,32 @@ export default function CreateVoucher() {
       toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
     }
 
-    const newImages = validFiles.map(file => ({
-      id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-      url: URL.createObjectURL(file),
-      description: '',
-    }));
-    setImages(prev => [...prev, ...newImages]);
+    for (const file of validFiles) {
+      const uploadFormData = new FormData();
+      uploadFormData.append('image', file);
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/vouchers/upload-image`, {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const newImage = {
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            url: `http://localhost:5000${data.imageUrl}`,
+            description: '',
+          };
+          setImages(prev => [...prev, newImage]);
+        } else {
+          toast.error('Lỗi tải ảnh lên máy chủ.');
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error('Lỗi kết nối khi tải ảnh.');
+      }
+    }
   };
 
   const handleImageDescriptionChange = (id: string, description: string) => {
@@ -119,6 +178,14 @@ export default function CreateVoucher() {
 
   const handleRemoveImage = (id: string) => {
     setImages(images.filter(img => img.id !== id));
+  };
+
+  const handleClearDraft = () => {
+    setFormData(initialCreateVoucherForm);
+    setImages([]);
+    localStorage.removeItem('voucher_draft');
+    localStorage.removeItem('voucher_images_draft');
+    toast.success('Đã xóa bản nháp và làm mới form!');
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
@@ -142,26 +209,60 @@ export default function CreateVoucher() {
 
   const handleSubmit = (isDraft: boolean) => {
     if (!isDraft) {
-      if (!formData.name || !formData.originalPrice || !formData.salePrice || !formData.quantity) {
-        toast.error('Vui lòng nhập đầy đủ Tên, Giá và Số lượng!');
+      if (
+        !formData.name ||
+        !formData.categories?.length ||
+        !formData.branches?.length ||
+        !formData.originalPrice ||
+        !formData.salePrice ||
+        !formData.quantity ||
+        !formData.saleStartDate ||
+        !formData.saleEndDate ||
+        !formData.validStartDate ||
+        !formData.validEndDate ||
+        !formData.description ||
+        !formData.terms
+      ) {
+        toast.error('Vui lòng điền đầy đủ các trường bắt buộc (*)!');
+        return;
+      }
+
+      if (new Date(formData.saleEndDate!) < new Date(formData.saleStartDate!)) {
+        toast.error('Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
+        return;
+      }
+
+      if (new Date(formData.validEndDate!) < new Date(formData.validStartDate!)) {
+        toast.error('Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
         return;
       }
     }
+
+    if (formData.originalPrice && formData.salePrice) {
+      if (parseFloat(formData.salePrice) >= parseFloat(formData.originalPrice)) {
+        toast.error('Giá bán phải nhỏ hơn giá gốc!');
+        return;
+      }
+    }
+
     setSubmitModal({ isOpen: true, isDraft });
   };
 
   const executeSubmit = async () => {
     try {
       const status = submitModal.isDraft ? 'DRAFT' : 'PENDING_APPROVAL';
-      
+
       const selectedCategoryName = formData.categories && formData.categories.length > 0 ? formData.categories[0] : null;
       const categoryObj = voucherCategories.find(c => c.name === selectedCategoryName);
+      
+      const firstImageRelativePath = images.length > 0 ? images[0].url.replace('http://localhost:5000', '') : null;
 
       const payload = {
         ...formData,
         categoryId: categoryObj ? categoryObj.id : null,
         partnerId: parseInt(localStorage.getItem('partnerId') || '1', 10),
         status,
+        imageUrl: firstImageRelativePath,
         images // Optional: send images if the backend handles them
       };
 
@@ -177,24 +278,28 @@ export default function CreateVoucher() {
       });
 
       if (!response.ok) {
+        if (response.status === 404 || response.status === 500) {
+          throw new Error('404');
+        }
         throw new Error('Lỗi khi lưu Voucher');
       }
-      
+
       const data = await response.json();
 
       toast.success(submitModal.isDraft ? 'Đã lưu bản nháp thành công!' : 'Đã gửi duyệt Voucher thành công!');
       setSubmitModal({ isOpen: false, isDraft: false });
-      
-      if (submitModal.isDraft) {
-        // Cập nhật ID để lần save sau sẽ gọi PUT thay vì tạo mới
-        setFormData(prev => ({ ...prev, id: data.VoucherID }));
+
+      // Tự động reset lại toàn bộ màn hình khi thành công (cả Lưu Nháp và Gửi Duyệt)
+      setFormData(initialCreateVoucherForm);
+      setImages([]);
+      localStorage.removeItem('voucher_draft');
+      localStorage.removeItem('voucher_images_draft');
+    } catch (error: any) {
+      if (error.message.includes('404')) {
+        toast.error('Vui lòng nhấn "Xóa bản nháp" để tạo mới!');
       } else {
-        // Nộp xong thì clear form và localStorage
-        setFormData(initialCreateVoucherForm);
-        localStorage.removeItem('voucher_draft');
+        toast.error('Đã xảy ra lỗi khi lưu Voucher. Vui lòng thử lại!');
       }
-    } catch (error) {
-      toast.error('Đã xảy ra lỗi khi lưu Voucher. Vui lòng thử lại!');
     }
   };
 
@@ -260,9 +365,9 @@ export default function CreateVoucher() {
                     </label>
                   ))}
                 </div>
-                {formData.branches && formData.branches.length > 0 && (
+                {formData.branches && formData.branches.filter(b => partnerBranches.includes(b)).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {formData.branches.map((branch) => (
+                    {formData.branches.filter(b => partnerBranches.includes(b)).map((branch) => (
                       <Badge key={branch} variant="secondary">{branch}</Badge>
                     ))}
                   </div>
@@ -303,7 +408,9 @@ export default function CreateVoucher() {
                 <label className="text-sm font-medium">{t('partner.create.guide_label')}</label>
                 <textarea
                   className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder={t('partner.create.guide_ph')}
+                  value={formData.usageInstructions || ''}
+                  onChange={handleChange('usageInstructions')}
+                  placeholder={t('partner.create.guide_ph') || 'Nhập hướng dẫn sử dụng...'}
                 />
               </div>
             </div>
@@ -354,66 +461,43 @@ export default function CreateVoucher() {
             <h2 className="text-lg font-bold mb-6">{t('partner.create.time')}</h2>
 
             <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.create.who_set_time')}</label>
-                <select
-                  value={formData.dateSetBy}
-                  onChange={(e) => setFormData({ ...formData, dateSetBy: e.target.value as any })}
-                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="partner">{t('partner.create.time_partner')}</option>
-                  <option value="admin">{t('partner.create.time_admin')}</option>
-                  <option value="system">{t('partner.create.time_system')}</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('partner.create.sale_start_label')}</label>
+                  <Input
+                    type="date"
+                    value={formData.saleStartDate}
+                    onChange={handleDateChange('saleStartDate')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('partner.create.sale_end_label')}</label>
+                  <Input
+                    type="date"
+                    value={formData.saleEndDate}
+                    onChange={handleDateChange('saleEndDate')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('partner.create.valid_start_label')}</label>
+                  <Input
+                    type="date"
+                    value={formData.validStartDate}
+                    onChange={handleDateChange('validStartDate')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('partner.create.valid_end_label')}</label>
+                  <Input
+                    type="date"
+                    value={formData.validEndDate}
+                    onChange={handleDateChange('validEndDate')}
+                  />
+                </div>
               </div>
-
-              {formData.dateSetBy === 'partner' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.create.sale_start_label')}</label>
-                    <Input
-                      type="date"
-                      value={formData.saleStartDate}
-                      onChange={handleChange('saleStartDate')}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.create.sale_end_label')}</label>
-                    <Input
-                      type="date"
-                      value={formData.saleEndDate}
-                      onChange={handleChange('saleEndDate')}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.create.valid_start_label')}</label>
-                    <Input
-                      type="date"
-                      value={formData.validStartDate}
-                      onChange={handleChange('validStartDate')}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.create.valid_end_label')}</label>
-                    <Input
-                      type="date"
-                      value={formData.validEndDate}
-                      onChange={handleChange('validEndDate')}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {formData.dateSetBy !== 'partner' && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 text-sm">
-                  {formData.dateSetBy === 'admin'
-                    ? t('partner.create.admin_time_msg')
-                    : t('partner.create.system_time_msg')}
-                </div>
-              )}
             </div>
           </div>
 
@@ -504,6 +588,10 @@ export default function CreateVoucher() {
               <Button variant="outline" onClick={() => handleSubmit(true)} className="w-full gap-2" size="lg">
                 <Save className="w-4 h-4" />
                 {t('partner.create.save_draft')}
+              </Button>
+              <Button variant="ghost" onClick={handleClearDraft} className="w-full gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Trash2 className="w-4 h-4" />
+                Xóa bản nháp (Làm mới)
               </Button>
             </div>
           </div>
