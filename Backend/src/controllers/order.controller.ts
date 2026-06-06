@@ -427,3 +427,60 @@ export const getOrders =
       });
     }
   };
+
+export const getOrderDetailById =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const id =
+        Number(
+          req.params.id
+        );
+
+      // lấy theo VoucherID
+      const detail =
+        await prisma.chiTietDonHang.findFirst({
+
+          where: {
+            VoucherID: id,
+          },
+
+          include: {
+
+            Voucher: true,
+
+            MaVouchers: true,
+          },
+        });
+
+      if (!detail) {
+
+        return res
+          .status(404)
+          .json({
+            message:
+              "Không tìm thấy voucher",
+          });
+      }
+
+      return res.json(
+        detail
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      return res
+        .status(500)
+        .json({
+          message:
+            "Server error",
+        });
+    }
+  };
+

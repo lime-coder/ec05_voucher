@@ -5,13 +5,19 @@
   import { useLanguage } from "../../shared/contexts/LanguageContext";
   import { useAuth } from "../../auth/AuthContext";
 
-  interface Order {
-    id: string;
-    orderId: string;
-    paymentTime: string;
-    vouchers: string[];
-    total: number;
-  }
+interface VoucherItem {
+  voucherId: number;
+  orderDetailId: number;
+  name: string;
+}
+
+interface Order {
+  id: string;
+  orderId: string;
+  paymentTime: string;
+  vouchers: VoucherItem[];
+  total: number;
+}
 
   export function OrderHistoryPage() {
     const navigate = useNavigate();
@@ -75,8 +81,16 @@
                     (
                       order.ChiTietDonHangs || []
                     ).map(
-                      (detail: any) =>
-                        detail.Voucher?.TenVoucher || "Voucher"
+                      (detail: any) => ({
+                        voucherId:
+                          detail.Voucher?.VoucherID,
+
+                        orderDetailId:
+                          detail.MaCTDonHang,
+
+                        name:
+                          detail.Voucher?.TenVoucher || "Voucher",
+                      })
                     ),
 
                   total:
@@ -305,7 +319,7 @@
                     <TableCell>
                       {(order.vouchers || []).length === 1 ? (
                         <span className="text-sm font-semibold px-4 py-1.5 bg-secondary border border-transparent rounded-full inline-block">
-                          {(order.vouchers || [])[0]}
+                          {(order.vouchers || [])[0]?.name}
                         </span>
                       ) : (
                         <div className="relative inline-block w-auto min-w-[180px]">
@@ -321,7 +335,7 @@
                             <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-border overflow-hidden z-50 py-1">
                               {(order.vouchers || []).map((v, i) => (
                                 <div key={i} className="px-4 py-2 hover:bg-primary/5 text-sm text-left">
-                                  {v}
+                                  {v.name}
                                 </div>
                               ))}
                             </div>
