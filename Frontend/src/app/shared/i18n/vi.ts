@@ -559,6 +559,7 @@ export const vi = {
   'partner.vouchers.tab_inactive': 'Tạm ngưng',
   'partner.vouchers.tab_pending': 'Chờ duyệt',
   'partner.vouchers.tab_draft': 'Bản nháp',
+  'partner.vouchers.tab_deleted': 'Đã xóa',
   'partner.vouchers.search_ph': 'Tìm kiếm voucher...',
   'partner.vouchers.filter': 'Lọc',
   'partner.vouchers.col_name': 'STT & Tên voucher',
@@ -586,7 +587,7 @@ export const vi = {
   'partner.vouchers.total_req': 'Tổng số lượng *',
   'partner.vouchers.delete_title': 'Xóa voucher',
   'partner.vouchers.delete_confirm': 'Bạn có chắc chắn muốn xóa voucher',
-  'partner.vouchers.delete_warning': 'Hành động này không thể hoàn tác.',
+  'partner.vouchers.delete_warning': 'Sau khi xóa có thể khôi phục ở trạng thái nháp và cần được duyệt lại để bán.',
 
   // Create Voucher
   'partner.create.title': 'Tạo Voucher mới',

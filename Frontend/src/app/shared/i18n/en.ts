@@ -560,6 +560,7 @@ export const en = {
   'partner.vouchers.tab_inactive': 'Inactive',
   'partner.vouchers.tab_pending': 'Pending',
   'partner.vouchers.tab_draft': 'Draft',
+  'partner.vouchers.tab_deleted': 'Deleted',
   'partner.vouchers.search_ph': 'Search vouchers...',
   'partner.vouchers.filter': 'Filter',
   'partner.vouchers.col_name': 'No. & Name',
@@ -587,7 +588,7 @@ export const en = {
   'partner.vouchers.total_req': 'Total Quantity *',
   'partner.vouchers.delete_title': 'Delete Voucher',
   'partner.vouchers.delete_confirm': 'Are you sure you want to delete the voucher',
-  'partner.vouchers.delete_warning': 'This action cannot be undone.',
+  'partner.vouchers.delete_warning': 'Restored vouchers return to draft status and require re-approval to sell.',
 
   // Create Voucher
   'partner.create.title': 'Create New Voucher',
