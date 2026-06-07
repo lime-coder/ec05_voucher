@@ -4,48 +4,36 @@ import prisma from './config/db';
 dotenv.config();
 
 async function main() {
-  console.log("Checking database connection and records...");
   try {
-    const vouchersCount = await prisma.voucher.count();
-    console.log("Vouchers count:", vouchersCount);
+    const accounts = await prisma.taiKhoan.findMany({
+      include: {
+        KhachHang: true,
+        Admin: true,
+        NhanVienDoiTacs: { include: { DoiTac: true } }
+      }
+    });
 
-    const taiKhoanCount = await prisma.taiKhoan.count();
-    console.log("TaiKhoan count:", taiKhoanCount);
+    const mapped = accounts.map(u => {
+      const phone = u.KhachHang?.SDT_KH || u.Admin?.SDT_Admin || '';
 
-    const faqCount = await prisma.fAQ.count();
-    console.log("FAQ count:", faqCount);
+      // Chuẩn hóa: chỉ nhận ACTIVE | INACTIVE | PENDING
+      let status: 'ACTIVE' | 'INACTIVE' | 'PENDING' = 'ACTIVE';
+      if (u.TrangThaiTaiKhoan === 'LOCKED' || u.TrangThaiTaiKhoan === 'INACTIVE') status = 'INACTIVE';
+      else if (u.TrangThaiTaiKhoan === 'PENDING') status = 'PENDING';
 
-    const bannerCount = await prisma.banner.count();
-    console.log("Banner count:", bannerCount);
+      // Loại tài khoản
+      let accountType: 'Admin' | 'Partner' | 'Customer' = 'Customer';
+      if (u.Admin) accountType = 'Admin';
+      else if (u.NhanVienDoiTacs?.length > 0) accountType = 'Partner';
 
-    const baiVietCount = await prisma.baiViet.count();
-    console.log("BaiViet count:", baiVietCount);
+      const partnerStatus = u.NhanVienDoiTacs?.[0]?.DoiTac?.TrangThaiPheDuyet || null;
 
-    const doiTacCount = await prisma.doiTac.count();
-    console.log("DoiTac count:", doiTacCount);
-
-    const donHangCount = await prisma.donHang.count();
-    console.log("DonHang count:", donHangCount);
-
-    const chiTietDonHangCount = await prisma.chiTietDonHang.count();
-    console.log("ChiTietDonHang count:", chiTietDonHangCount);
-
-    const paidCount = await prisma.donHang.count({ where: { TrangThaiThanhToan: 'Đã thanh toán' } });
-    console.log("Paid orders count:", paidCount);
-
-    const pendingCount = await prisma.donHang.count({ where: { TrangThaiThanhToan: 'Chờ thanh toán' } });
-    console.log("Pending orders count:", pendingCount);
-
-    const oldestOrder = await prisma.donHang.findFirst({ orderBy: { MaDonHang: 'asc' } });
-    console.log("Oldest order:", oldestOrder ? oldestOrder.ThoiGianThanhToan : 'None');
-
-    const newestOrder = await prisma.donHang.findFirst({ orderBy: { MaDonHang: 'desc' } });
-    console.log("Newest order:", newestOrder ? newestOrder.ThoiGianThanhToan : 'None');
-
-    const sampleAccounts = await prisma.taiKhoan.findMany({ take: 3 });
-    console.log("Sample accounts:", sampleAccounts);
+      return { id: u.IDTaiKhoan, name: u.HoTenNguoiDung || u.TenDangNhap, email: u.Email, phone, status, accountType, partnerStatus, date: '15/03/2026' };
+    });
+    console.log("Mapped users output:");
+    console.dir(mapped, { depth: null });
   } catch (err) {
-    console.error("Error connecting to database:", err);
+    console.error("Error:", err);
   } finally {
     await prisma.$disconnect();
   }

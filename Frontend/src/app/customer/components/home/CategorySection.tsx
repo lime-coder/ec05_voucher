@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import {
-  UtensilsCrossed,
-  Plane,
-  Sparkles,
-  Tv,
-  Dumbbell,
-  BookOpen,
-  Tag,
-  ArrowRight
-} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../../shared/contexts/LanguageContext";
 
@@ -39,27 +30,32 @@ export function CategorySection() {
       .catch((err) => console.error('Fetch categories error:', err));
   }, []);
 
-  const getCategoryConfig = (name: string) => {
+  const getCategoryIconComponent = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[iconName];
+    return IconComponent || LucideIcons.Tag;
+  };
+
+  const getCategoryLabel = (name: string) => {
     const normalized = name.toLowerCase().trim();
     if (normalized === 'ẩm thực' || normalized === 'ăn uống' || normalized === 'food') {
-      return { icon: UtensilsCrossed, label: tText('Food & Dining', 'Ẩm thực') };
+      return tText('Food & Dining', 'Ẩm thực');
     }
     if (normalized === 'du lịch' || normalized === 'travel') {
-      return { icon: Plane, label: tText('Travel', 'Du lịch') };
+      return tText('Travel', 'Du lịch');
     }
     if (normalized === 'làm đẹp' || normalized === 'spa' || normalized === 'beauty' || normalized === 'sức khỏe') {
-      return { icon: Sparkles, label: tText('Spa & Beauty', 'Spa & Làm đẹp') };
+      return tText('Spa & Beauty', 'Spa & Làm đẹp');
     }
     if (normalized === 'giải trí' || normalized === 'entertainment') {
-      return { icon: Tv, label: tText('Entertainment', 'Giải trí') };
+      return tText('Entertainment', 'Giải trí');
     }
     if (normalized === 'thể thao' || normalized === 'thể hình' || normalized === 'fitness' || normalized === 'gym') {
-      return { icon: Dumbbell, label: tText('Fitness', 'Thể hình') };
+      return tText('Fitness', 'Thể hình');
     }
     if (normalized === 'giáo dục' || normalized === 'education' || normalized === 'học tập') {
-      return { icon: BookOpen, label: tText('Education', 'Giáo dục') };
+      return tText('Education', 'Giáo dục');
     }
-    return { icon: Tag, label: name };
+    return name;
   };
 
   return (
@@ -72,14 +68,14 @@ export function CategorySection() {
             onClick={() => navigate("/search")}
             className="text-primary hover:opacity-90 gap-1 p-0 h-auto font-normal text-base"
           >
-            {tText('Browse All', 'Xem tất cả')} <ArrowRight className="w-4 h-4" />
+            {tText('Browse All', 'Xem tất cả')} <LucideIcons.ArrowRight className="w-4 h-4" />
           </Button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {categories.map((category) => {
-            const config = getCategoryConfig(category.name);
-            const IconComponent = config.icon;
+            const IconComponent = getCategoryIconComponent(category.icon);
+            const label = getCategoryLabel(category.name);
             
             return (
               <button
@@ -91,7 +87,7 @@ export function CategorySection() {
                   <IconComponent className="w-8 h-8 text-primary" />
                 </div>
                 <span className="text-sm font-semibold text-center text-gray-800">
-                  {config.label}
+                  {label}
                 </span>
                 {category.vouchers > 0 && (
                   <span className="text-[10px] text-gray-400 font-medium">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Tag } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
@@ -22,6 +23,40 @@ import {
   DialogFooter,
   Input,
 } from '@voucherhub/ui';
+
+const PRESET_ICONS = [
+  // Ăn uống & Đồ uống
+  'UtensilsCrossed', 'Coffee', 'Wine', 'Pizza', 'Cake', 'IceCream', 'Soup',
+  'Beer', 'Milk', 'Salad', 'ChefHat', 'Sandwich', 'Cookie',
+  // Du lịch & Địa điểm
+  'Plane', 'Train', 'Bus', 'Ship', 'Car', 'Bike', 'MapPin', 'Globe',
+  'Compass', 'Tent', 'Hotel', 'Luggage', 'Map',
+  // Làm đẹp & Sức khỏe
+  'Sparkles', 'Heart', 'Stethoscope', 'Pill', 'FlaskConical', 'Activity',
+  'Leaf', 'Flower2', 'HandHeart', 'Scissors',
+  // Thể thao & Fitness
+  'Dumbbell', 'Bike', 'Footprints', 'Trophy', 'Target', 'Zap', 'Flame',
+  'Sword', 'ShieldCheck',
+  // Giải trí & Văn hóa
+  'Tv', 'Music', 'Music2', 'Film', 'Ticket', 'Gamepad2', 'Headphones',
+  'Mic', 'Star', 'Radio', 'Drama',
+  // Mua sắm & Thời trang
+  'ShoppingBag', 'ShoppingCart', 'Tag', 'Gift', 'Package', 'Gem',
+  'Watch', 'Shirt', 'Crown',
+  // Nhiếp ảnh & Sáng tạo
+  'Camera', 'Palette', 'Brush', 'Pen', 'BookOpen', 'Image',
+  // Giáo dục & Công nghệ
+  'GraduationCap', 'Laptop', 'Smartphone', 'Cpu', 'Code2', 'Brain',
+  'Microscope', 'Calculator',
+  // Nhà cửa & Dịch vụ
+  'Home', 'Building2', 'Wrench', 'Hammer', 'Sofa', 'Lamp', 'KeyRound',
+  // Trẻ em & Gia đình
+  'Baby', 'Dog', 'Cat', 'BirdIcon', 'Smile',
+  // Tài chính & Kinh doanh
+  'Banknote', 'CreditCard', 'Briefcase', 'PieChart', 'TrendingUp',
+  // Khác
+  'Leaf', 'Sun', 'Cloud', 'Umbrella', 'Snowflake', 'Rainbow',
+];
 
 export function ContentManagement() {
   const navigate = useNavigate();
@@ -52,8 +87,57 @@ export function ContentManagement() {
   const [currentCategory, setCurrentCategory] = useState<any | null>(null);
   const [categoryForm, setCategoryForm] = useState({
     TenDanhMuc: '',
-    MoTa: ''
+    MoTa: '',
+    Icon: 'Tag'
   });
+  const [iconSearch, setIconSearch] = useState('');
+
+  // Preview Article Modal state
+  const [showViewArticleModal, setShowViewArticleModal] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<any | null>(null);
+
+  // Preview FAQ Modal state
+  const [showViewFaqModal, setShowViewFaqModal] = useState(false);
+  const [previewFaq, setPreviewFaq] = useState<any | null>(null);
+
+  // Preview Banner Modal state
+  const [showViewBannerModal, setShowViewBannerModal] = useState(false);
+  const [previewBanner, setPreviewBanner] = useState<any | null>(null);
+
+  const handleViewBanner = (banner: any) => {
+    setPreviewBanner(banner);
+    setShowViewBannerModal(true);
+  };
+
+  const handleViewFaq = (faq: any) => {
+    setPreviewFaq(faq);
+    setShowViewFaqModal(true);
+  };
+
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      }
+    });
+  };
 
   // Article Modal state
   const [showArticleModal, setShowArticleModal] = useState(false);
@@ -67,19 +151,19 @@ export function ContentManagement() {
 
   // Load content from API
   const fetchAllContent = () => {
-    fetch('/api/admin/content')
+    fetch(`/api/admin/content?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        setBanners(Array.isArray(data.banners) ? data.banners : []);
-        setArticles(Array.isArray(data.articles) ? data.articles : []);
-        setFaqs(Array.isArray(data.faqs) ? data.faqs : []);
+        if (Array.isArray(data.banners)) setBanners(data.banners);
+        if (Array.isArray(data.articles)) setArticles(data.articles);
+        if (Array.isArray(data.faqs)) setFaqs(data.faqs);
       })
       .catch(err => console.error('Fetch content error:', err));
 
-    fetch('/api/content/categories')
+    fetch(`/api/content/categories?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
-        setCategories(Array.isArray(data) ? data : []);
+        if (Array.isArray(data)) setCategories(data);
       })
       .catch(err => console.error('Fetch categories error:', err));
   };
@@ -89,77 +173,99 @@ export function ContentManagement() {
   }, []);
 
   // --- Deletion operations ---
-  const handleDeleteBanner = async (id: number, title: string) => {
-    if (!confirm(tText(`Are you sure you want to delete banner: ${title}?`, `Xác nhận xoá banner: ${title}?`))) return;
-    try {
-      const res = await fetch(`/api/admin/content/${id}?type=banner`, { method: 'DELETE' });
-      if (res.ok) {
-        toast.success(tText('Banner deleted successfully!', 'Đã xóa banner thành công!'));
-        setBanners(prev => prev.filter(b => b.MaBanner !== id));
-      } else {
-        toast.error(tText('Failed to delete banner!', 'Xóa banner thất bại!'));
+  const handleDeleteBanner = (id: number, title: string) => {
+    triggerConfirm(
+      tText('Delete Banner', 'Xóa Banner'),
+      tText(`Are you sure you want to delete banner: ${title}?`, `Xác nhận xoá banner: ${title}?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/content/${id}?type=banner`, { method: 'DELETE' });
+          if (res.ok) {
+            toast.success(tText('Banner deleted successfully!', 'Đã xóa banner thành công!'));
+            setBanners(prev => prev.filter(b => b.MaBanner !== id));
+          } else {
+            toast.error(tText('Failed to delete banner!', 'Xóa banner thất bại!'));
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+    );
   };
 
-  const handleDeleteArticle = async (id: number, title: string) => {
-    if (!confirm(tText(`Are you sure you want to delete article: ${title}?`, `Xác nhận xoá bài viết: ${title}?`))) return;
-    try {
-      const res = await fetch(`/api/admin/content/${id}?type=article`, { method: 'DELETE' });
-      if (res.ok) {
-        toast.success(tText('Article deleted successfully!', 'Đã xóa bài viết thành công!'));
-        setArticles(prev => prev.filter(a => a.MaBaiViet !== id));
-      } else {
-        toast.error(tText('Failed to delete article!', 'Xóa bài viết thất bại!'));
+  const handleDeleteArticle = (id: number, title: string) => {
+    triggerConfirm(
+      tText('Delete Article', 'Xóa Bài Viết'),
+      tText(`Are you sure you want to delete article: ${title}?`, `Xác nhận xoá bài viết: ${title}?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/content/${id}?type=article`, { method: 'DELETE' });
+          if (res.ok) {
+            toast.success(tText('Article deleted successfully!', 'Đã xóa bài viết thành công!'));
+            setArticles(prev => prev.filter(a => a.MaBaiViet !== id));
+          } else {
+            toast.error(tText('Failed to delete article!', 'Xóa bài viết thất bại!'));
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+    );
   };
 
-  const handleDeleteFAQ = async (id: number, question: string) => {
-    if (!confirm(tText(`Are you sure you want to delete FAQ: ${question}?`, `Xác nhận xoá FAQ: ${question}?`))) return;
-    try {
-      const res = await fetch(`/api/admin/content/${id}?type=faq`, { method: 'DELETE' });
-      if (res.ok) {
-        toast.success(tText('FAQ deleted successfully!', 'Đã xóa FAQ thành công!'));
-        setFaqs(prev => prev.filter(f => f.MaFAQ !== id));
-      } else {
-        toast.error(tText('Failed to delete FAQ!', 'Xóa FAQ thất bại!'));
+  const handleDeleteFAQ = (id: number, question: string) => {
+    triggerConfirm(
+      tText('Delete FAQ', 'Xóa FAQ'),
+      tText(`Are you sure you want to delete FAQ: ${question}?`, `Xác nhận xoá FAQ: ${question}?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/content/${id}?type=faq`, { method: 'DELETE' });
+          if (res.ok) {
+            toast.success(tText('FAQ deleted successfully!', 'Đã xóa FAQ thành công!'));
+            setFaqs(prev => prev.filter(f => f.MaFAQ !== id));
+          } else {
+            toast.error(tText('Failed to delete FAQ!', 'Xóa FAQ thất bại!'));
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+    );
   };
 
   // --- Category Actions ---
-  const handleDeleteCategory = async (id: number, name: string) => {
-    if (!confirm(tText(`Are you sure you want to delete category: ${name}?`, `Xác nhận xoá danh mục: ${name}?`))) return;
-    try {
-      const res = await fetch(`/api/content/categories/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        toast.success(tText('Category deleted successfully!', 'Đã xóa danh mục thành công!'));
-        fetchAllContent();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
+  const handleDeleteCategory = (id: number, name: string) => {
+    triggerConfirm(
+      tText('Delete Category', 'Xóa Danh Mục'),
+      tText(`Are you sure you want to delete category: ${name}?`, `Xác nhận xoá danh mục: ${name}?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/content/categories/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            toast.success(tText('Category deleted successfully!', 'Đã xóa danh mục thành công!'));
+            setCategories(prev => prev.filter(c => c.id !== id));
+            fetchAllContent();
+          } else {
+            const data = await res.json();
+            toast.error(data.error || tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+    );
   };
 
   const handleAddCategory = () => {
     setCurrentCategory(null);
     setCategoryForm({
       TenDanhMuc: '',
-      MoTa: ''
+      MoTa: '',
+      Icon: 'Tag'
     });
     setShowCategoryModal(true);
   };
@@ -168,7 +274,8 @@ export function ContentManagement() {
     setCurrentCategory(cat);
     setCategoryForm({
       TenDanhMuc: cat.name || '',
-      MoTa: cat.moTa || ''
+      MoTa: cat.moTa || '',
+      Icon: cat.icon || 'Tag'
     });
     setShowCategoryModal(true);
   };
@@ -247,7 +354,8 @@ export function ContentManagement() {
         setShowFaqModal(false);
         fetchAllContent();
       } else {
-        toast.error(tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
       }
     } catch (err) {
       console.error(err);
@@ -256,6 +364,11 @@ export function ContentManagement() {
   };
 
   // --- Article Actions ---
+  const handleViewArticle = (art: any) => {
+    setPreviewArticle(art);
+    setShowViewArticleModal(true);
+  };
+
   const handleAddArticle = () => {
     setCurrentArticle(null);
     setArticleForm({
@@ -279,8 +392,8 @@ export function ContentManagement() {
   };
 
   const handleSaveArticle = async () => {
-    if (!articleForm.TieuDe.trim()) {
-      toast.error(tText('Please enter the article title', 'Vui lòng nhập tiêu đề bài viết'));
+    if (!articleForm.TieuDe.trim() || !articleForm.NoiDung.trim()) {
+      toast.error(tText('Please enter the article title and content', 'Vui lòng nhập tiêu đề và nội dung bài viết'));
       return;
     }
 
@@ -298,7 +411,8 @@ export function ContentManagement() {
         setShowArticleModal(false);
         fetchAllContent();
       } else {
-        toast.error(tText('Failed to save article!', 'Lưu bài viết thất bại!'));
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || tText('Failed to save article!', 'Lưu bài viết thất bại!'));
       }
     } catch (err) {
       console.error(err);
@@ -402,7 +516,7 @@ export function ContentManagement() {
                         <TableCell>{banner.NgayTao ? new Date(banner.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') : ''}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button onClick={() => navigate(`/admin/content/banner/${banner.MaBanner}`)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View', 'Xem')}>
+                            <Button onClick={() => handleViewBanner(banner)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View', 'Xem')}>
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button onClick={() => navigate(`/admin/content/banner/${banner.MaBanner}`)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Edit', 'Sửa')}>
@@ -441,38 +555,47 @@ export function ContentManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="text-2xl">{category.icon}</TableCell>
-                        <TableCell className="font-medium text-gray-900">
-                          {category.name === 'Ăn uống' ? tText('Food & Dining', 'Ăn uống')
-                           : category.name === 'Giải trí' ? tText('Entertainment', 'Giải trí')
-                           : category.name === 'Du lịch' ? tText('Travel', 'Du lịch')
-                           : category.name === 'Làm đẹp' ? tText('Beauty', 'Làm đẹp')
-                           : category.name}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate" title={category.moTa}>{category.moTa || tText('No description provided', 'Không có mô tả')}</TableCell>
-                        <TableCell>{category.vouchers}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={category.status === 'Hiển thị' ? 'default' : 'secondary'}
-                            className={category.status === 'Hiển thị' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent' : 'shadow-none border-transparent'}
-                          >
-                            {category.status === 'Hiển thị' ? tText('Visible', 'Hiển thị') : tText('Hidden', 'Ẩn')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button onClick={() => handleEditCategory(category)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Edit', 'Sửa')}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button onClick={() => handleDeleteCategory(category.id, category.name)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={tText('Delete', 'Xóa')}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {categories.map((category) => {
+                      const IconComponent = (LucideIcons as any)[category.icon] || LucideIcons.Tag;
+                      return (
+                        <TableRow key={category.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <IconComponent className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium text-gray-900">
+                            {category.name === 'Ăn uống' ? tText('Food & Dining', 'Ăn uống')
+                             : category.name === 'Giải trí' ? tText('Entertainment', 'Giải trí')
+                             : category.name === 'Du lịch' ? tText('Travel', 'Du lịch')
+                             : category.name === 'Làm đẹp' ? tText('Beauty', 'Làm đẹp')
+                             : category.name}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate" title={category.moTa}>{category.moTa || tText('No description provided', 'Không có mô tả')}</TableCell>
+                          <TableCell>{category.vouchers}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={category.status === 'Hiển thị' ? 'default' : 'secondary'}
+                              className={category.status === 'Hiển thị' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent' : 'shadow-none border-transparent'}
+                            >
+                              {category.status === 'Hiển thị' ? tText('Visible', 'Hiển thị') : tText('Hidden', 'Ẩn')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button onClick={() => handleEditCategory(category)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Edit', 'Sửa')}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button onClick={() => handleDeleteCategory(category.id, category.name)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={tText('Delete', 'Xóa')}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -510,7 +633,7 @@ export function ContentManagement() {
                         <TableCell>{article.NgayTao ? new Date(article.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') : ''}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button onClick={() => alert(`${tText('View Article', 'Xem bài viết')}: ${article.TieuDe}\n${tText('Content', 'Nội dung')}: ${article.NoiDung || tText('Empty', 'Trống')}`)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View', 'Xem')}>
+                            <Button onClick={() => handleViewArticle(article)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View', 'Xem')}>
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button onClick={() => handleEditArticle(article)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Edit', 'Sửa')}>
@@ -569,6 +692,9 @@ export function ContentManagement() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button onClick={() => handleViewFaq(faq)} variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={tText('View', 'Xem')}>
+                              <Eye className="w-4 h-4" />
+                            </Button>
                             <Button onClick={() => handleEditFaq(faq)} variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={tText('Edit', 'Sửa')}>
                               <Edit2 className="w-4 h-4" />
                             </Button>
@@ -743,10 +869,161 @@ export function ContentManagement() {
                 rows={4}
               />
             </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">{tText('Category Icon', 'Icon danh mục')}</label>
+                {(() => {
+                  const SelectedIconComponent = (LucideIcons as any)[categoryForm.Icon] || LucideIcons.Tag;
+                  return (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/10 text-xs text-primary font-semibold border border-primary/20">
+                      <span>{tText('Selected:', 'Đã chọn:')}</span>
+                      <SelectedIconComponent className="w-3.5 h-3.5" />
+                      <span>{categoryForm.Icon}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="grid grid-cols-5 gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50 max-h-36 overflow-y-auto">
+                {PRESET_ICONS.map((iconName) => {
+                  const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Tag;
+                  const isSelected = categoryForm.Icon === iconName;
+                  return (
+                    <button
+                      key={iconName}
+                      type="button"
+                      onClick={() => setCategoryForm(prev => ({ ...prev, Icon: iconName }))}
+                      className={`flex flex-col items-center justify-center p-2 rounded-md border transition-all ${
+                        isSelected
+                          ? 'bg-primary/10 border-primary text-primary shadow-sm font-medium'
+                          : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100/50'
+                      }`}
+                      title={iconName}
+                    >
+                      <IconComponent className="w-5 h-5" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCategoryModal(false)}>{tText('Cancel', 'Hủy')}</Button>
             <Button onClick={handleSaveCategory}>{tText('Save', 'Lưu lại')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- View Banner Dialog --- */}
+      <Dialog open={showViewBannerModal} onOpenChange={setShowViewBannerModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold">
+              {previewBanner?.TieuDe}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4 text-sm">
+            {previewBanner?.HinhAnh && (
+              <div className="border rounded-lg overflow-hidden bg-gray-50">
+                <img
+                  src={previewBanner.HinhAnh}
+                  alt={previewBanner.TieuDe || 'Banner'}
+                  className="w-full max-h-64 object-cover"
+                />
+              </div>
+            )}
+            <div className="space-y-3">
+              <div className="flex justify-between border-b pb-2 gap-4">
+                <span className="text-gray-500 font-medium">{tText('Position:', 'Vị trí:')}</span>
+                <span className="font-semibold text-gray-900 text-right">{previewBanner?.ViTri || '-'}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2 gap-4">
+                <span className="text-gray-500 font-medium">{tText('Status:', 'Trạng thái:')}</span>
+                <span className="font-semibold text-gray-900 text-right">{previewBanner?.TrangThai || '-'}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2 gap-4">
+                <span className="text-gray-500 font-medium">{tText('Created Date:', 'Ngày tạo:')}</span>
+                <span className="font-semibold text-gray-900 text-right">
+                  {previewBanner?.NgayTao ? new Date(previewBanner.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') : '-'}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-gray-500 font-medium block">{tText('Destination Link:', 'Đường dẫn đích:')}</span>
+                <p className="text-gray-700 bg-gray-50 p-2.5 rounded border border-gray-100 break-all">
+                  {previewBanner?.LinkURL || tText('No link.', 'Không có đường dẫn.')}
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowViewBannerModal(false)}>{tText('Close', 'Đóng')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- View Article Dialog --- */}
+      <Dialog open={showViewArticleModal} onOpenChange={setShowViewArticleModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold">
+              {previewArticle?.TieuDe}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3 text-sm">
+            <div className="flex justify-between text-xs text-gray-500 border-b pb-2">
+              <span>{tText('Author:', 'Tác giả:')} <strong className="text-gray-700">{previewArticle?.TacGia}</strong></span>
+              <span>{tText('Status:', 'Trạng thái:')} <strong className="text-gray-700">{previewArticle?.TrangThai}</strong></span>
+            </div>
+            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto pt-2">
+              {previewArticle?.NoiDung || tText('No content.', 'Không có nội dung.')}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowViewArticleModal(false)}>{tText('Close', 'Đóng')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- View FAQ Dialog --- */}
+      <Dialog open={showViewFaqModal} onOpenChange={setShowViewFaqModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold">
+              {previewFaq?.CauHoi}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3 text-sm">
+            <div className="flex justify-between text-xs text-gray-500 border-b pb-2">
+              <span>{tText('Category:', 'Danh mục:')} <strong className="text-gray-700">{previewFaq?.DanhMucFAQ}</strong></span>
+              <span>{tText('Display Order:', 'Thứ tự hiển thị:')} <strong className="text-gray-700">{previewFaq?.ThuTu}</strong></span>
+            </div>
+            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto pt-2">
+              {previewFaq?.TraLoi || tText('No answer.', 'Không có câu trả lời.')}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowViewFaqModal(false)}>{tText('Close', 'Đóng')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 font-bold text-lg">
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+              {tText('Cancel', 'Hủy')}
+            </Button>
+            <Button onClick={confirmDialog.onConfirm} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">
+              {tText('Confirm', 'Xác nhận')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
