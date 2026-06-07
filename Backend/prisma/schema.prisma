@@ -161,7 +161,7 @@ model TaiKhoan {
   MatKhau           String           @db.VarChar(255)
   Email             String           @unique(map: "UQ__TaiKhoan__A9D1053492A35299") @db.VarChar(255)
   HoTenNguoiDung    String?          @db.NVarChar(255)
-  TrangThaiTaiKhoan String?          @db.NVarChar(50)
+  TrangThaiTaiKhoan String           @default("N'PENDING'", map: "DF_TaiKhoan_TrangThaiTaiKhoan") @db.NVarChar(50)
   Admin             Admin?
   DanhGias          DanhGia[]
   DonHangs          DonHang[]
@@ -203,6 +203,18 @@ model Voucher_ChiNhanh {
   TrangThaiApDung String?   @db.NVarChar(50)
   ChiNhanh        ChiNhanh? @relation(fields: [MaChiNhanh], references: [MaChiNhanh], onDelete: NoAction, onUpdate: NoAction, map: "FK_VoucherChiNhanh_ChiNhanh")
   Voucher         Voucher?  @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_VoucherChiNhanh_Voucher")
+}
+
+model SystemLog {
+  MaLog      Int       @id(map: "PK__SystemLo__3B98D24A22489A5B") @default(autoincrement())
+  IDTaiKhoan Int?
+  HanhDong   String    @db.NVarChar(255)
+  DoiTuong   String?   @db.NVarChar(255)
+  ChiTiet    String?   @db.NVarChar(Max)
+  DiaChiIP   String?   @db.VarChar(50)
+  TrangThai  String?   @db.NVarChar(50)
+  ThoiGian   DateTime? @default(now(), map: "DF__SystemLog__ThoiG__2180FB33") @db.DateTime
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK__SystemLog__IDTai__0D44F85C")
 }
 
 model sysdiagrams {

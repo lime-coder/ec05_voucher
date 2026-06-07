@@ -14,6 +14,7 @@ export function LoginPage() {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot_password">("login");
   const [loginError, setLoginError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
   const {
@@ -37,16 +38,22 @@ export function LoginPage() {
     setForgotSuccess(true);
   };
 
-  const onLoginSubmit = (data: LoginInput) => {
+  const onLoginSubmit = async (data: LoginInput) => {
     setLoginError("");
+    setIsSubmitting(true);
 
-    const success = login(data.username, data.password);
-    if (success) {
-      if (data.username === "admin") navigate("/admin");
-      else if (data.username === "partner") navigate("/partner");
-      else if (data.username === "customer") navigate("/");
+    const result = await login(data.username, data.password);
+    setIsSubmitting(false);
+
+    if (result.success && result.user) {
+      if (result.user.role === "admin") navigate("/admin");
+      else if (result.user.role === "partner") navigate("/partner");
+      else navigate("/");
     } else {
-      setLoginError(t('auth.invalid_credentials'));
+      const errorMessage = result.error === "Invalid credentials" 
+        ? "Incorrect email address or password" 
+        : (result.error || "Incorrect email address or password");
+      setLoginError(errorMessage);
     }
   };
 
@@ -120,11 +127,7 @@ export function LoginPage() {
             {/* Login Form */}
             {activeTab === "login" && (
               <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
-                {loginError && (
-                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                    {loginError}
-                  </div>
-                )}
+
                 {/* Username/Email Field */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">
@@ -165,17 +168,20 @@ export function LoginPage() {
                       {...registerLogin("password")}
                     />
                   </div>
-                  {loginErrors.password && (
-                    <p className="text-red-500 text-xs mt-1">{loginErrors.password.message}</p>
+                  {(loginErrors.password || loginError) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {loginErrors.password?.message || loginError}
+                    </p>
                   )}
                 </div>
 
                 {/* Submit Button */}
                 <Button
                   type="submit"
+                  disabled={isSubmitting}
                   className="w-full py-6 text-primary-foreground font-bold mt-6 hover:opacity-90"
                 >
-                  {t('auth.sign_in')}
+                  {isSubmitting ? "Loading..." : t('auth.sign_in')}
                 </Button>
               </form>
             )}

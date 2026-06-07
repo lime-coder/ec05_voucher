@@ -35,6 +35,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/logs', require('./routes/log.routes').default);
 app.use('/api/content', contentRoutes);
 app.use('/api/admin', adminRoutes);
 

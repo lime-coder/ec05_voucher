@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, Loader2 } from 'lucide-react';
+import api from '../../../../lib/api';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
@@ -14,6 +15,9 @@ import {
   TableCell,
 } from '@voucherhub/ui';
 
+export function SystemLogs() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 const mapLogActionToEnglish = (action: string) => {
   if (action.includes('Khóa tài khoản')) return 'Lock Account';
   if (action.includes('Mở khóa tài khoản')) return 'Unlock Account';
@@ -61,6 +65,33 @@ export function SystemLogs() {
   const itemsPerPage = 10;
 
   useEffect(() => {
+    fetchLogs();
+  }, [actionFilter, searchTerm]);
+
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    try {
+      // Backend filtering is supported, so we pass the params
+      const response = await api.get('/logs', {
+        params: { search: searchTerm, action: actionFilter }
+      });
+      const responseData = response.data;
+      // Handle the new API format { data: [...], pagination: {...} }
+      if (responseData && Array.isArray(responseData.data)) {
+        setLogs(responseData.data);
+      } else if (Array.isArray(responseData)) {
+        setLogs(responseData);
+      } else {
+        console.error('Expected array from /logs, got:', responseData);
+        setLogs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      setLogs([]); // Reset to empty array on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
     fetch('/api/admin/logs')
       .then(res => res.json())
       .then(data => setLogs(Array.isArray(data) ? data : []))
@@ -103,12 +134,16 @@ export function SystemLogs() {
     return matchesSearch && matchesAction && matchesDate;
   });
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const currentLogs = filteredLogs.slice(
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
+  const currentLogs = logs.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN');
   const handleExportReport = () => {
     if (filteredLogs.length === 0) {
       toast.error(tText("No data to export!", "Không có dữ liệu để xuất!"));
@@ -203,11 +238,38 @@ export function SystemLogs() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentLogs.map((log, index) => (
-              <TableRow key={log.id} className="hover:bg-gray-50/50">
-                <TableCell className="text-gray-500">
-                  {(currentPage - 1) * itemsPerPage + index + 1}
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
                 </TableCell>
+              </TableRow>
+            ) : currentLogs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                  Không tìm thấy nhật ký hệ thống nào.
+                </TableCell>
+              </TableRow>
+            ) : (
+              currentLogs.map((log, index) => (
+                <TableRow key={log.MaLog} className="hover:bg-gray-50/50">
+                  <TableCell className="text-gray-500">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </TableCell>
+                  <TableCell className="text-gray-700">{log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống'}</TableCell>
+                  <TableCell className="font-medium text-gray-900">{log.HanhDong}</TableCell>
+                  <TableCell className="text-gray-700">{log.DoiTuong || log.ChiTiet || '-'}</TableCell>
+                  <TableCell className="text-gray-500 font-mono text-xs">{log.DiaChiIP || '-'}</TableCell>
+                  <TableCell className="text-gray-500">{formatDate(log.ThoiGian)}</TableCell>
+                  <TableCell>
+                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
+                      {log.TrangThai || 'Thành công'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
                 <TableCell className="text-gray-700">{log.user}</TableCell>
                 <TableCell className="font-medium text-gray-900">
                   {tText(log.englishAction, log.action)}
@@ -234,6 +296,8 @@ export function SystemLogs() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
             <div className="text-sm text-gray-500">
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{' '}
+              {Math.min(currentPage * itemsPerPage, logs.length)} / {logs.length}
               {tText(
                 `Showing ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} of ${filteredLogs.length}`,
                 `Hiển thị ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} trên ${filteredLogs.length}`
