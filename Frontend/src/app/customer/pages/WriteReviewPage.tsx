@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ChevronLeft, Star, Check, Info } from "lucide-react";
 import { Button } from "@voucherhub/ui";
@@ -12,17 +12,118 @@ export function WriteReviewPage() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [review, setReview] = useState("");
 
+  const [voucher, setVoucher] =
+    useState<any>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+    useEffect(() => {
+
+    const fetchVoucher =
+      async () => {
+
+        try {
+
+          const response = await fetch( `/api/orders/order-details/${id}` );
+          const data =
+            await response.json();
+
+          setVoucher(data);
+
+        } catch (error) {
+
+          console.error(error);
+
+        } finally {
+
+          setLoading(false);
+        }
+      };
+
+    fetchVoucher();
+
+  }, [id]);
+
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowSuccessModal(true);
-  };
+  const handleSubmit =
+    async (
+      e: React.FormEvent
+    ) => {
+
+      e.preventDefault();
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/reviews",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                voucherId:
+                  voucher?.Voucher?.VoucherID,
+
+                orderDetailId:
+                  voucher?.MaCTDonHang,
+
+                rating,
+
+                comment:
+                  review,
+              }),
+            }
+          );
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Review failed"
+          );
+        }
+
+        setShowSuccessModal(
+          true
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Không thể gửi đánh giá"
+        );
+      }
+    };
 
   const handleCloseModal = () => {
     setShowSuccessModal(false);
     navigate("/orders");
   };
+
+  if (loading) {
+    return (
+      <div className="p-10">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!voucher) {
+
+  return (
+    <div className="p-10">
+      Không tìm thấy voucher
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary">
@@ -51,9 +152,11 @@ export function WriteReviewPage() {
               {/* Thumbnail */}
               <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0">
                 <img
-                  src="https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="Voucher"
-                  className="w-full h-full object-cover"
+                  src={
+                    voucher?.Voucher?.HinhAnh ||
+                    "https://placehold.co/120x120"
+                  }
+                  alt=""
                 />
               </div>
 
@@ -65,18 +168,27 @@ export function WriteReviewPage() {
 
                 {/* Provider */}
                 <p className="text-sm text-muted mb-1">
-                  The Grand Waterfront Hotel — Marina Bay
+                  {voucher?.Voucher?.TenNhaCungCap || "The Grand Waterfront Hotel — Marina Bay"}
                 </p>
 
                 {/* Voucher Name */}
                 <h3 className="font-bold mb-2">
-                  Premium Weekend Seafood Buffet for Two
+                  {voucher?.Voucher?.TenVoucher}
                 </h3>
 
                 {/* Redemption Info */}
                 <div className="flex items-center gap-2 text-sm text-primary">
                   <Check className="w-4 h-4" />
-                  <span>{t('review.redeemed_on')}</span>
+                  <span>
+                    {t('review.redeemed_on')}{" "}
+                    {
+                      voucher?.NgayTao
+                        ? new Date(
+                            voucher.NgayTao
+                          ).toLocaleDateString()
+                        : "N/A"
+                    }
+                  </span>
                 </div>
               </div>
             </div>

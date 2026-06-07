@@ -3,25 +3,39 @@ import { Search, ShoppingCart, User, Diamond } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { useCartStore } from "../../../store/useCartStore";
 
 interface NavbarProps {
   isLoggedIn?: boolean;
-  cartCount?: number;
   showSearch?: boolean;
 }
 
-export function Navbar({ isLoggedIn = false, cartCount = 0, showSearch = true }: NavbarProps) {
+export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
+  const { items } = useCartStore(); 
+  const cartCount = items.reduce( ( total, item ) => total + item.quantity, 0 );
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
+
+    const keyword =
+      searchQuery.trim();
+
+    if (!keyword) return;
+
+    navigate(
+      `/search?q=${encodeURIComponent(
+        keyword
+      )}`
+    );
   };
+
+
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
@@ -42,6 +56,15 @@ export function Navbar({ isLoggedIn = false, cartCount = 0, showSearch = true }:
                   placeholder={t('nav.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch(
+                        e as any
+                      );
+                    }
+                  }}
+
                   className="flex-1 px-4 py-2 bg-input-background rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <button

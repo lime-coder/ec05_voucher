@@ -27,7 +27,7 @@ export function RegisterCustomerPage() {
     watch,
     formState: { errors },
   } = useForm<RegisterCustomerInput>({
-    resolver: zodResolver(registerCustomerSchema),
+    resolver: zodResolver(registerCustomerSchema as any),
   });
 
   const passwordValue = watch("password", "");

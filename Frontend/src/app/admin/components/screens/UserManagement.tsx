@@ -1,169 +1,176 @@
-import { useState } from 'react';
-import { Search, Eye, Lock, Unlock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Eye, Lock, Unlock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../../../shared/contexts/LanguageContext';
 import {
-  Button,
-  Badge,
-  Input,
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Button, Badge, Input, Table, TableHeader, TableRow, TableHead,
+  TableBody, TableCell, Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogFooter,
 } from '@voucherhub/ui';
 
-const mockUsers = [
-  { id: 1, name: 'Nguyễn Văn A', email: 'nguyenvana@gmail.com', phone: '0901234567', status: 'Hoạt động', date: '15/03/2026' },
-  { id: 2, name: 'Trần Thị B', email: 'tranthib@gmail.com', phone: '0912345678', status: 'Hoạt động', date: '12/03/2026' },
-  { id: 3, name: 'Lê Văn C', email: 'levanc@gmail.com', phone: '0923456789', status: 'Bị khóa', date: '08/03/2026' },
-  { id: 4, name: 'Phạm Thị D', email: 'phamthid@gmail.com', phone: '0934567890', status: 'Hoạt động', date: '05/03/2026' },
-  { id: 5, name: 'Hoàng Văn E', email: 'hoangvane@gmail.com', phone: '0945678901', status: 'Hoạt động', date: '02/03/2026' },
-  { id: 6, name: 'Vũ Thị F', email: 'vuthif@gmail.com', phone: '0956789012', status: 'Hoạt động', date: '28/02/2026' },
-  { id: 7, name: 'Đỗ Văn G', email: 'dovang@gmail.com', phone: '0967890123', status: 'Bị khóa', date: '25/02/2026' },
-  { id: 8, name: 'Bùi Thị H', email: 'buithih@gmail.com', phone: '0978901234', status: 'Hoạt động', date: '20/02/2026' },
-  { id: 9, name: 'Đinh Văn I', email: 'dinhvani@gmail.com', phone: '0989012345', status: 'Hoạt động', date: '18/02/2026' },
-  { id: 10, name: 'Mai Thị K', email: 'maithik@gmail.com', phone: '0990123456', status: 'Hoạt động', date: '15/02/2026' },
-];
-
 export function UserManagement() {
-  const [users, setUsers] = useState(mockUsers);
+  const { language } = useLanguage();
+  const t = (en: string, vi: string) => (language === 'vi' ? vi : en);
+
+  const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<typeof mockUsers[0] | null>(null);
+
+  // Modal khóa
+  const [showLockModal, setShowLockModal] = useState(false);
   const [lockReason, setLockReason] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+
+  // Modal cảnh báo partner PENDING
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
+  // Modal xem chi tiết
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const fetchUsers = () => {
+    fetch(`/api/admin/users?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setUsers(data);
+      })
+      .catch(err => console.error(err));
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
+
+  const filteredUsers = users.filter(u => {
+    const matchSearch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      || (u.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = statusFilter === 'all'
+      || (statusFilter === 'active' && u.status === 'ACTIVE')
+      || (statusFilter === 'inactive' && u.status === 'INACTIVE')
+      || (statusFilter === 'pending' && u.status === 'PENDING');
+    return matchSearch && matchStatus;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const currentUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const currentUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleLockUser = (user: typeof mockUsers[0]) => {
-    setSelectedUser(user);
-    setShowModal(true);
-    setLockReason('');
-  };
-
-  const confirmLockUser = () => {
-    if (!lockReason.trim()) {
-      toast.error('Vui lòng nhập lý do khóa tài khoản');
+  const handleLockClick = (user: any) => {
+    // Chặn khóa partner đang PENDING → hiện warning modal thay vì lock modal
+    if (user.accountType === 'Partner' && user.partnerStatus === 'PENDING') {
+      setSelectedUser(user);
+      setShowWarningModal(true);
       return;
     }
-
-    if (selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id ? { ...u, status: 'Bị khóa' } : u
-        )
-      );
-      toast.success(`Đã khóa tài khoản ${selectedUser.name}`);
-      setShowModal(false);
-      setSelectedUser(null);
-      setLockReason('');
-    }
+    setSelectedUser(user);
+    setLockReason('');
+    setShowLockModal(true);
   };
 
-  const handleUnlockUser = (user: typeof mockUsers[0]) => {
-    setUsers(users.map((u) => (u.id === user.id ? { ...u, status: 'Hoạt động' } : u)));
-    toast.success(`Đã kích hoạt lại tài khoản ${user.name}`);
+  const confirmLock = async () => {
+    if (!lockReason.trim()) {
+      toast.error(t('Please enter a lock reason', 'Vui lòng nhập lý do khóa'));
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}/toggle`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: lockReason })
+      });
+      if (res.ok) {
+        toast.success(t(`Locked account: ${selectedUser.name}`, `Đã khóa tài khoản: ${selectedUser.name}`));
+        setShowLockModal(false);
+        setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'INACTIVE' } : u));
+      } else {
+        const err = await res.json();
+        toast.error(err.error || t('Failed!', 'Thất bại!'));
+      }
+    } catch { toast.error(t('Error occurred', 'Có lỗi xảy ra')); }
+  };
+
+  const handleUnlock = async (user: any) => {
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/toggle`, { method: 'PATCH' });
+      if (res.ok) {
+        toast.success(t(`Unlocked: ${user.name}`, `Đã mở khóa: ${user.name}`));
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'ACTIVE' } : u));
+      } else {
+        const err = await res.json();
+        toast.error(err.error || t('Failed!', 'Thất bại!'));
+      }
+    } catch { toast.error(t('Error occurred', 'Có lỗi xảy ra')); }
+  };
+
+  const statusBadge = (status: string) => {
+    if (status === 'ACTIVE') return <Badge className="bg-green-100 text-green-700 shadow-none border-transparent">{t('Active', 'Hoạt động')}</Badge>;
+    if (status === 'INACTIVE') return <Badge className="bg-red-100 text-red-700 shadow-none border-transparent">{t('Locked', 'Bị khóa')}</Badge>;
+    return <Badge className="bg-yellow-100 text-yellow-800 shadow-none border-transparent">{t('Pending', 'Chờ duyệt')}</Badge>;
+  };
+
+  const accountTypeBadge = (type: string) => {
+    if (type === 'Admin') return <Badge className="bg-purple-100 text-purple-700 shadow-none border-transparent">Admin</Badge>;
+    if (type === 'Partner') return <Badge className="bg-blue-100 text-blue-700 shadow-none border-transparent">{t('Partner', 'Đối tác')}</Badge>;
+    return <Badge className="bg-gray-100 text-gray-600 shadow-none border-transparent">{t('Customer', 'Khách hàng')}</Badge>;
   };
 
   return (
     <div className="space-y-6">
+      {/* Search + Filter */}
       <div className="flex gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <Input
-            type="text"
-            placeholder="Tìm kiếm theo tên hoặc email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white shadow-sm border-gray-200"
-          />
+          <Input value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            placeholder={t('Search by name or email...', 'Tìm kiếm theo tên hoặc email...')}
+            className="pl-10 bg-white shadow-sm border-gray-200" />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-10 py-0 pl-4 pr-8 border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-[length:16px_16px] bg-[position:right_8px_center] bg-no-repeat cursor-pointer"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="Hoạt động">Hoạt động</option>
-          <option value="Bị khóa">Bị khóa</option>
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+          className="h-10 pl-4 pr-8 border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="all">{t('All Statuses', 'Tất cả trạng thái')}</option>
+          <option value="active">{t('Active', 'Hoạt động')}</option>
+          <option value="inactive">{t('Locked', 'Bị khóa')}</option>
+          <option value="pending">{t('Pending', 'Chờ duyệt')}</option>
         </select>
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50/50">
-              <TableHead>STT</TableHead>
-              <TableHead>Tên</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>SĐT</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Ngày đăng ký</TableHead>
-              <TableHead className="text-right">Hành động</TableHead>
+              <TableHead>{t('No.', 'STT')}</TableHead>
+              <TableHead>{t('Name', 'Họ tên')}</TableHead>
+              <TableHead>{t('Email', 'Email')}</TableHead>
+              <TableHead>{t('Phone', 'SĐT')}</TableHead>
+              <TableHead>{t('Account Type', 'Loại tài khoản')}</TableHead>
+              <TableHead>{t('Status', 'Trạng thái')}</TableHead>
+              <TableHead className="text-right">{t('Actions', 'Hành động')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentUsers.map((user, index) => (
+            {currentUsers.map((user, idx) => (
               <TableRow key={user.id} className="hover:bg-gray-50/50">
-                <TableCell className="text-gray-500">
-                  {(currentPage - 1) * itemsPerPage + index + 1}
-                </TableCell>
+                <TableCell className="text-gray-500">{(currentPage - 1) * itemsPerPage + idx + 1}</TableCell>
                 <TableCell className="font-medium text-gray-900">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{user.phone}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={user.status === 'Hoạt động' ? 'default' : 'destructive'}
-                    className={
-                      user.status === 'Hoạt động'
-                        ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent'
-                        : 'bg-red-100 text-red-700 hover:bg-red-100 shadow-none border-transparent'
-                    }
-                  >
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-gray-500">{user.date}</TableCell>
+                <TableCell>{user.phone || t('N/A', 'Chưa cung cấp')}</TableCell>
+                {/* Loại tài khoản */}
+                <TableCell>{accountTypeBadge(user.accountType)}</TableCell>
+                <TableCell>{statusBadge(user.status)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                    <Button onClick={() => { setSelectedUser(user); setShowDetailModal(true); }}
+                      variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
                       <Eye className="w-4 h-4" />
                     </Button>
-                    {user.status === 'Hoạt động' ? (
-                      <Button
-                        variant="ghost" size="icon"
-                        onClick={() => handleLockUser(user)}
-                        className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
+                    {user.status === 'ACTIVE' && (
+                      <Button onClick={() => handleLockClick(user)} variant="ghost" size="icon"
+                        className="h-8 w-8 text-red-600 hover:bg-red-50">
                         <Lock className="w-4 h-4" />
                       </Button>
-                    ) : (
-                      <Button
-                        variant="ghost" size="icon"
-                        onClick={() => handleUnlockUser(user)}
-                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
+                    )}
+                    {user.status === 'INACTIVE' && (
+                      <Button onClick={() => handleUnlock(user)} variant="ghost" size="icon"
+                        className="h-8 w-8 text-green-600 hover:bg-green-50">
                         <Unlock className="w-4 h-4" />
                       </Button>
                     )}
@@ -171,77 +178,85 @@ export function UserManagement() {
                 </TableCell>
               </TableRow>
             ))}
+            {currentUsers.length === 0 && (
+              <TableRow><TableCell colSpan={7} className="text-center py-6 text-gray-500">{t('No users found.', 'Không tìm thấy người dùng.')}</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
-
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-            <div className="text-sm text-gray-500">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{' '}
-              {Math.min(currentPage * itemsPerPage, filteredUsers.length)} / {filteredUsers.length}
-            </div>
+          <div className="px-6 py-4 border-t flex items-center justify-between">
+            <span className="text-sm text-gray-500">{t(`${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, filteredUsers.length)} of ${filteredUsers.length}`, `${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, filteredUsers.length)} trên ${filteredUsers.length}`)}</span>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Trước
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Sau
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>{t('Previous', 'Trước')}</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>{t('Next', 'Sau')}</Button>
             </div>
           </div>
         )}
       </div>
 
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      {/* Modal khóa tài khoản */}
+      <Dialog open={showLockModal} onOpenChange={setShowLockModal}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-primary">Xác nhận khóa tài khoản</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="text-primary">{t('Confirm Account Lock', 'Xác nhận khóa tài khoản')}</DialogTitle></DialogHeader>
           <div className="py-4">
-            <p className="text-gray-700 mb-4">
-              Bạn có chắc chắn muốn khóa tài khoản <strong>{selectedUser?.name}</strong>?
-            </p>
+            <p className="text-gray-700 mb-4">{t('Lock account of', 'Khóa tài khoản của')} <strong>{selectedUser?.name}</strong>?</p>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Lý do khóa <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={lockReason}
-                onChange={(e) => setLockReason(e.target.value)}
-                placeholder="Nhập lý do khóa tài khoản..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-                rows={4}
-              />
+              <label className="text-sm font-medium">{t('Reason', 'Lý do')} <span className="text-red-500">*</span></label>
+              <textarea value={lockReason} onChange={e => setLockReason(e.target.value)}
+                placeholder={t('Enter reason...', 'Nhập lý do...')}
+                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm" rows={4} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)}>
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={confirmLockUser}>
-              Xác nhận khóa
-            </Button>
+            <Button variant="outline" onClick={() => setShowLockModal(false)}>{t('Cancel', 'Hủy')}</Button>
+            <Button variant="destructive" onClick={confirmLock}>{t('Confirm Lock', 'Xác nhận khóa')}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal cảnh báo partner PENDING */}
+      <Dialog open={showWarningModal} onOpenChange={setShowWarningModal}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="text-orange-500 flex items-center gap-2"><AlertTriangle className="w-5 h-5" />{t('Cannot Lock Account', 'Không thể khóa tài khoản')}</DialogTitle></DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              {t(
+                `Account "${selectedUser?.name}" belongs to a Partner currently in PENDING status. Please process the partner approval first before locking.`,
+                `Tài khoản "${selectedUser?.name}" thuộc về Đối tác đang ở trạng thái Chờ duyệt (PENDING). Vui lòng xử lý phê duyệt đối tác trước khi thực hiện khóa.`
+              )}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowWarningModal(false)}>{t('Understood', 'Đã hiểu')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal xem chi tiết */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="text-primary">{t('User Details', 'Chi tiết người dùng')}</DialogTitle></DialogHeader>
+          {selectedUser && (
+            <div className="py-4 space-y-3 text-sm">
+              {[
+                [t('Full Name', 'Họ và tên'), selectedUser.name],
+                ['Email', selectedUser.email],
+                [t('Phone', 'Số điện thoại'), selectedUser.phone || t('N/A', 'Chưa cung cấp')],
+                [t('Account Type', 'Loại tài khoản'), selectedUser.accountType],
+                [t('Registration Date', 'Ngày đăng ký'), selectedUser.date],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between border-b pb-2">
+                  <span className="text-gray-500 font-medium">{label}:</span>
+                  <span className="font-semibold text-gray-900">{value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{t('Status', 'Trạng thái')}:</span>
+                {statusBadge(selectedUser.status)}
+              </div>
+            </div>
+          )}
+          <DialogFooter><Button className="w-full" onClick={() => setShowDetailModal(false)}>{t('Close', 'Đóng')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

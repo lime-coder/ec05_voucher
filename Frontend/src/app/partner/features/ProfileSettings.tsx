@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { ChangeEvent } from 'react';
 import {
   Edit2,
@@ -31,13 +32,37 @@ export default function ProfileSettings() {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const defaultTab = searchParams.get('tab') || 'business';
-  
+
   const [currentTab, setCurrentTab] = useState(defaultTab);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [avatarSuccess, setAvatarSuccess] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [formData, setFormData] = useState<BusinessProfile>(initialBusinessProfile);
+
+  // Security Tab States
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const partnerId = localStorage.getItem('partnerId') || '1';
+        const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`);
+        if (res.ok) {
+          const data = await res.json();
+          setFormData(prev => ({ ...prev, ...data }));
+          if (data.avatarUrl) {
+            setAvatarUrl(data.avatarUrl);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -55,9 +80,24 @@ export default function ProfileSettings() {
     setFormData({ ...formData, [field]: event.target.value });
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    alert(t('partner.settings.business.save_success'));
+  const handleSave = async () => {
+    try {
+      const partnerId = localStorage.getItem('partnerId') || '1';
+      const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        toast.success(t('partner.settings.business.save_success'));
+      } else {
+        alert(t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(t('toast.voucher.connection_error') || 'Lỗi kết nối.');
+    }
   };
 
   return (
@@ -112,8 +152,8 @@ export default function ProfileSettings() {
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 mb-6">
                     {t('partner.settings.business.verified')}
                   </Badge>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full gap-2 z-10"
                     onClick={() => setIsUploadModalOpen(true)}
                   >
@@ -257,17 +297,44 @@ export default function ProfileSettings() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t('partner.settings.security.pwd_current')}</label>
-                    <Input type="password" placeholder={t('partner.settings.security.pwd_current_ph')} />
+                    <Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder={t('partner.settings.security.pwd_current_ph')} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t('partner.settings.security.pwd_new')}</label>
-                    <Input type="password" placeholder={t('partner.settings.security.pwd_new_ph')} />
+                    <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={t('partner.settings.security.pwd_new_ph')} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t('partner.settings.security.pwd_confirm')}</label>
-                    <Input type="password" placeholder={t('partner.settings.security.pwd_confirm_ph')} />
+                    <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t('partner.settings.security.pwd_confirm_ph')} />
                   </div>
-                  <Button className="w-full mt-4">
+                  <Button className="w-full mt-4" onClick={async () => {
+                    if (newPassword !== confirmPassword) {
+                      return alert(t('toast.partner.profile.pwd_mismatch') || 'Mật khẩu mới không khớp.');
+                    }
+                    if (!currentPassword || !newPassword) {
+                      return alert(t('toast.partner.profile.pwd_missing') || 'Vui lòng điền đủ thông tin mật khẩu.');
+                    }
+                    try {
+                      const partnerId = localStorage.getItem('partnerId') || '1';
+                      const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/password`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ currentPassword, newPassword })
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        toast.success(data.message);
+                        setCurrentPassword("");
+                        setNewPassword("");
+                        setConfirmPassword("");
+                      } else {
+                        alert(data.message || t('toast.partner.profile.pwd_error') || 'Lỗi cập nhật mật khẩu.');
+                      }
+                    } catch (e) {
+                      console.error(e);
+                      alert(t('toast.voucher.connection_error') || 'Lỗi kết nối.');
+                    }
+                  }}>
                     {t('partner.settings.security.pwd_update_btn')}
                   </Button>
                 </div>
@@ -279,7 +346,7 @@ export default function ProfileSettings() {
                   <p className="text-sm text-gray-500 mb-6">
                     {t('partner.settings.security.2fa_desc')}
                   </p>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => alert(t('partner.settings.security.2fa_dev') || 'Tính năng 2FA đang trong quá trình phát triển.')}>
                     {t('partner.settings.security.2fa_enable_btn')}
                   </Button>
                 </div>
@@ -301,7 +368,7 @@ export default function ProfileSettings() {
                         <p className="font-semibold">{t('partner.settings.security.session_safari')}</p>
                         <p className="text-sm text-gray-500">{t('partner.settings.security.session_safari_ip')}</p>
                       </div>
-                      <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => alert(t('partner.settings.security.session_dev') || 'Tính năng Quản lý phiên đang trong quá trình phát triển.')}>
                         {t('partner.settings.security.session_logout')}
                       </Button>
                     </div>
@@ -318,7 +385,7 @@ export default function ProfileSettings() {
                   <Globe className="w-5 h-5 text-primary" /> {t('settings.language')}
                 </h2>
                 <div className="space-y-4">
-                  <div 
+                  <div
                     onClick={() => setLanguage('en')}
                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${language === 'en' ? 'bg-secondary border-primary' : 'hover:bg-secondary'}`}
                   >
@@ -328,7 +395,7 @@ export default function ProfileSettings() {
                     </div>
                     <div className={`w-4 h-4 rounded-full ${language === 'en' ? 'border-4 border-primary' : 'border border-border'}`}></div>
                   </div>
-                  <div 
+                  <div
                     onClick={() => setLanguage('vi')}
                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${language === 'vi' ? 'bg-secondary border-primary' : 'hover:bg-secondary'}`}
                   >
@@ -367,15 +434,33 @@ export default function ProfileSettings() {
         </div>
       </div>
 
-      <ImageUploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-        onUpload={(file) => {
-          const url = URL.createObjectURL(file);
-          setAvatarUrl(url);
-          setIsUploadModalOpen(false);
-          setAvatarSuccess(true);
-        }} 
+      <ImageUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={async (file) => {
+          try {
+            const partnerId = localStorage.getItem('partnerId') || '1';
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/upload-avatar`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              setAvatarUrl(data.avatarUrl);
+              setIsUploadModalOpen(false);
+              setAvatarSuccess(true);
+            } else {
+              alert(t('toast.voucher.image_upload_error') || 'Lỗi tải ảnh lên máy chủ.');
+            }
+          } catch (error) {
+            console.error('Error uploading avatar:', error);
+            alert(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
+          }
+        }}
       />
 
       {avatarSuccess && (
@@ -387,7 +472,7 @@ export default function ProfileSettings() {
             <h3 className="font-bold text-xl mb-2">
               {t('partner.settings.business.avatar_success')}
             </h3>
-            <Button 
+            <Button
               onClick={() => setAvatarSuccess(false)}
               className="w-full py-3 mt-4"
             >

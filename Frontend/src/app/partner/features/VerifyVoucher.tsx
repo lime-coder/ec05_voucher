@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   QrCode,
   CheckCircle,
@@ -7,9 +7,9 @@ import {
   History,
   AlertCircle,
 } from 'lucide-react';
-import { recentVerifications, voucherCodeLookup } from '../data/mockData';
-import type { VoucherCode } from '@voucherhub/types';
+import type { VoucherCode, RecentVerification } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
+import { toast } from 'sonner';
 
 import {
   Button,
@@ -31,14 +31,55 @@ export default function VerifyVoucher() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
-  const handleVerify = () => {
-    setIsVerifying(true);
+  const [recentHistory, setRecentHistory] = useState<RecentVerification[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const partnerId = parseInt(localStorage.getItem('partnerId') || '1', 10);
 
-    setTimeout(() => {
+  useEffect(() => {
+    fetchHistory();
+    fetchBranches();
+  }, []);
+
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/branches/partner/${partnerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBranches(data);
+        if (data.length > 0) {
+          setSelectedBranchId(data[0].MaChiNhanh.toString());
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch branches', error);
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/vouchers/verify/history/partner/${partnerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentHistory(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch history', error);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!voucherCode.trim()) return;
+    setIsVerifying(true);
+    setVerificationResult(null);
+
+    try {
       const cleanCode = voucherCode.trim();
-      const knownVoucher = voucherCodeLookup[cleanCode];
-      if (knownVoucher) {
-        setVerificationResult(knownVoucher);
+      const res = await fetch(`http://localhost:5000/api/vouchers/verify/${cleanCode}?partnerId=${partnerId}`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setVerificationResult(data);
       } else {
         setVerificationResult({
           code: cleanCode,
@@ -52,18 +93,44 @@ export default function VerifyVoucher() {
           status: 'invalid',
         });
       }
+    } catch (error) {
+      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
+    } finally {
       setIsVerifying(false);
-    }, 1000);
+    }
   };
 
   const handleConfirmUse = () => {
     setConfirmModalOpen(true);
   };
 
-  const confirmUsageAction = () => {
-    setVerificationResult(null);
-    setVoucherCode('');
-    setConfirmModalOpen(false);
+  const confirmUsageAction = async () => {
+    if (!verificationResult) return;
+    if (!selectedBranchId) {
+      toast.error(t('toast.voucher.select_branch_error') || 'Vui lòng chọn chi nhánh áp dụng');
+      return;
+    }
+    
+    try {
+      const res = await fetch(`http://localhost:5000/api/vouchers/verify/${verificationResult.code}/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerId, branchId: selectedBranchId })
+      });
+      
+      if (res.ok) {
+        toast.success(t('toast.voucher.confirm_use_success') || 'Xác nhận sử dụng voucher thành công!');
+        setConfirmModalOpen(false);
+        setVerificationResult(null);
+        setVoucherCode('');
+        fetchHistory();
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.message || t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
+      }
+    } catch (error) {
+      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
+    }
   };
 
   return (
@@ -128,6 +195,14 @@ export default function VerifyVoucher() {
                           <p className="text-sm">{t('verify.used.desc', { date: verificationResult.usedDate || '' })}</p>
                         </div>
                       </div>
+                    ) : verificationResult.status === 'expired' ? (
+                      <div className="bg-orange-50 text-orange-800 rounded-lg p-4 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="font-bold mb-1">Voucher đã hết hạn</h3>
+                          <p className="text-sm">Voucher này đã hết hạn sử dụng vào ngày {new Date(verificationResult.validUntil).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                      </div>
                     ) : (
                       <div className="bg-green-50 text-green-800 rounded-lg p-4 flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -175,7 +250,7 @@ export default function VerifyVoucher() {
                       </div>
                     </div>
 
-                    {verificationResult.status !== 'used' && (
+                    {verificationResult.status === 'valid' && (
                       <Button
                         size="lg"
                         className="w-full bg-green-500 hover:bg-green-600 text-white gap-2 h-14 text-lg"
@@ -207,11 +282,11 @@ export default function VerifyVoucher() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentVerifications.map((item, index) => (
+                {recentHistory.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-semibold">{item.code}</TableCell>
                     <TableCell>{item.voucherName}</TableCell>
-                    <TableCell className="text-gray-500">{item.time}</TableCell>
+                    <TableCell className="text-gray-500">{new Date(item.time).toLocaleString('vi-VN')}</TableCell>
                     <TableCell>{item.branch || '-'}</TableCell>
                     <TableCell>
                       <Badge
@@ -255,8 +330,10 @@ export default function VerifyVoucher() {
           <div className="bg-gray-50 rounded-xl border border-gray-100 p-6">
             <h3 className="font-bold mb-4">{t('verify.test_samples')}</h3>
             <div className="flex flex-col gap-2">
-              <Badge variant="outline" className="w-fit">VC001-ABC123 ({t('verify.test.valid')})</Badge>
-              <Badge variant="outline" className="w-fit">VC002-USED ({t('verify.test.used')})</Badge>
+              <Badge variant="outline" className="w-fit">TESTVALID1 ({t('verify.test.valid')})</Badge>
+              <Badge variant="outline" className="w-fit">TESTUSED12 ({t('verify.test.used')})</Badge>
+              <Badge variant="outline" className="w-fit">TESTEXPIRE (Đã hết hạn)</Badge>
+              <Badge variant="outline" className="w-fit">XYZ-999 ({t('verify.test.invalid')})</Badge>
             </div>
           </div>
         </div>
@@ -295,9 +372,29 @@ export default function VerifyVoucher() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="font-bold text-xl mb-2">{t('verify.confirm_use')}!</h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 {t('verify.guide.step3.desc')}
               </p>
+
+              {/* Branch Selection */}
+              <div className="text-left mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('verify.select_branch_label') || 'Chi nhánh áp dụng'} <span className="text-red-500">*</span>
+                </label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-primary focus:border-primary outline-none bg-white text-gray-900 text-sm"
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                >
+                  <option value="" disabled>-- {t('verify.select_branch_ph') || 'Chọn chi nhánh'} --</option>
+                  {branches.map((b: any) => (
+                    <option key={b.MaChiNhanh} value={b.MaChiNhanh.toString()}>
+                      {b.TenChiNhanh}
+                    </option>
+                  ))}
+                </select>
+                {!selectedBranchId && <p className="text-xs text-red-500 mt-1">{t('verify.select_branch_req') || 'Vui lòng chọn chi nhánh xác nhận.'}</p>}
+              </div>
             </div>
             <div className="flex gap-4">
               <button 
@@ -308,7 +405,8 @@ export default function VerifyVoucher() {
               </button>
               <button 
                 onClick={confirmUsageAction}
-                className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors"
+                disabled={!selectedBranchId}
+                className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('common.confirm') || 'OK'}
               </button>

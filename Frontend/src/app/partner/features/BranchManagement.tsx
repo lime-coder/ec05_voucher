@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Edit2,
   Trash2,
   Store,
 } from 'lucide-react';
-import { branches } from '../data/mockData';
+import { toast } from 'sonner';
 
 import {
   Button,
@@ -27,19 +27,113 @@ import { useLanguage } from '../../shared/contexts/LanguageContext';
 
 export default function BranchManagement() {
   const { t } = useLanguage();
+  const [branches, setBranches] = useState<any[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<any>(null);
 
+  // Form states
+  const [tenChiNhanh, setTenChiNhanh] = useState('');
+  const [sdt, setSdt] = useState('');
+  const [diaChi, setDiaChi] = useState('');
+
+  const PARTNER_ID = localStorage.getItem('partnerId') || '1';
+
+  const fetchBranches = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/branches/partner/${PARTNER_ID}`);
+      if (response.ok) {
+        const data = await response.json();
+        setBranches(data);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách chi nhánh', error);
+      toast.error(t('toast.branch.fetch_error') || 'Lỗi lấy danh sách chi nhánh');
+    }
+  };
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  const resetForm = () => {
+    setTenChiNhanh('');
+    setSdt('');
+    setDiaChi('');
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setOpenDialog(true);
+  };
+
+  const handleCreate = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/branches/partner/${PARTNER_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
+      });
+      if (response.ok) {
+        toast.success(t('toast.branch.add_success') || 'Thêm chi nhánh thành công');
+        setOpenDialog(false);
+        fetchBranches();
+      } else {
+        toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
+      }
+    } catch (error) {
+      toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
+    }
+  };
+
   const handleEdit = (branch: any) => {
     setSelectedBranch(branch);
+    setTenChiNhanh(branch.TenChiNhanh || '');
+    setSdt(branch.SDT_CN || '');
+    setDiaChi(branch.DiaChiChiNhanh || '');
     setEditDialogOpen(true);
   };
 
-  const handleDelete = (branch: any) => {
+  const handleUpdate = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/branches/${selectedBranch.MaChiNhanh}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
+      });
+      if (response.ok) {
+        toast.success(t('toast.branch.update_success') || 'Cập nhật chi nhánh thành công');
+        setEditDialogOpen(false);
+        fetchBranches();
+      } else {
+        toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
+      }
+    } catch (error) {
+      toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
+    }
+  };
+
+  const handleDeletePrompt = (branch: any) => {
     setSelectedBranch(branch);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/branches/${selectedBranch.MaChiNhanh}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success(t('toast.branch.delete_success') || 'Xóa chi nhánh thành công');
+        setDeleteDialogOpen(false);
+        fetchBranches();
+      } else {
+        toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
+      }
+    } catch (error) {
+      toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
+    }
   };
 
   return (
@@ -52,7 +146,7 @@ export default function BranchManagement() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
           <h2 className="text-lg font-bold">{t('partner.branch.list_title')}</h2>
-          <Button onClick={() => setOpenDialog(true)} className="gap-2">
+          <Button onClick={handleOpenAdd} className="gap-2">
             <Plus className="w-4 h-4" />
             {t('partner.branch.add_btn')}
           </Button>
@@ -65,29 +159,26 @@ export default function BranchManagement() {
                 <TableHead>{t('partner.branch.col_name')}</TableHead>
                 <TableHead>{t('partner.branch.col_address')}</TableHead>
                 <TableHead>{t('partner.branch.col_phone')}</TableHead>
-                <TableHead>{t('partner.branch.col_status')}</TableHead>
                 <TableHead className="text-right">{t('partner.branch.col_actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {branches.map((branch) => (
-                <TableRow key={branch.id}>
+              {branches.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+                    {t('partner.branch.empty') || 'Chưa có chi nhánh nào.'}
+                  </TableCell>
+                </TableRow>
+              ) : branches.map((branch) => (
+                <TableRow key={branch.MaChiNhanh}>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Store className="w-4 h-4 text-primary" />
-                      <span className="font-semibold">{branch.name}</span>
+                      <span className="font-semibold">{branch.TenChiNhanh}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{branch.address}</TableCell>
-                  <TableCell>{branch.phone}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={branch.status === 'active' ? 'default' : 'secondary'}
-                      className={branch.status === 'active' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none' : 'shadow-none'}
-                    >
-                      {branch.status === 'active' ? t('partner.branch.status_active') : t('partner.branch.status_inactive')}
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{branch.DiaChiChiNhanh}</TableCell>
+                  <TableCell>{branch.SDT_CN}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button 
@@ -101,7 +192,7 @@ export default function BranchManagement() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleDelete(branch)}
+                        onClick={() => handleDeletePrompt(branch)}
                         className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -115,6 +206,7 @@ export default function BranchManagement() {
         </div>
       </div>
 
+      {/* Dialog Thêm Mới */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -124,26 +216,30 @@ export default function BranchManagement() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('partner.branch.name_label')}</label>
-              <Input placeholder={t('partner.branch.name_ph')} />
+              <Input 
+                placeholder={t('partner.branch.name_ph')} 
+                value={tenChiNhanh}
+                onChange={(e) => setTenChiNhanh(e.target.value)}
+              />
             </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('partner.branch.address_label')}</label>
               <textarea 
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder={t('partner.branch.address_ph')}
+                value={diaChi}
+                onChange={(e) => setDiaChi(e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.branch.phone_label')}</label>
-                <Input placeholder={t('partner.branch.phone_ph')} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.branch.email_label')}</label>
-                <Input placeholder={t('partner.branch.email_ph')} />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('partner.branch.phone_label')}</label>
+              <Input 
+                placeholder={t('partner.branch.phone_ph')} 
+                value={sdt}
+                onChange={(e) => setSdt(e.target.value)}
+              />
             </div>
           </div>
 
@@ -151,64 +247,59 @@ export default function BranchManagement() {
             <Button variant="outline" onClick={() => setOpenDialog(false)}>
               {t('partner.branch.cancel')}
             </Button>
-            <Button onClick={() => setOpenDialog(false)}>
+            <Button onClick={handleCreate}>
               {t('partner.branch.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Sửa */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>{t('partner.branch.edit_title')}</DialogTitle>
           </DialogHeader>
           
-          {selectedBranch && (
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.branch.name_label')}</label>
-                <Input defaultValue={selectedBranch.name} />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.branch.address_label')}</label>
-                <textarea 
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  defaultValue={selectedBranch.address}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.branch.phone_label')}</label>
-                  <Input defaultValue={selectedBranch.phone} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.branch.status_label')}</label>
-                  <select 
-                    className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    defaultValue={selectedBranch.status}
-                  >
-                    <option value="active">{t('partner.branch.status_active')}</option>
-                    <option value="inactive">{t('partner.branch.status_inactive')}</option>
-                  </select>
-                </div>
-              </div>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('partner.branch.name_label')}</label>
+              <Input 
+                value={tenChiNhanh}
+                onChange={(e) => setTenChiNhanh(e.target.value)}
+              />
             </div>
-          )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('partner.branch.address_label')}</label>
+              <textarea 
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={diaChi}
+                onChange={(e) => setDiaChi(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('partner.branch.phone_label')}</label>
+              <Input 
+                value={sdt}
+                onChange={(e) => setSdt(e.target.value)}
+              />
+            </div>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               {t('partner.branch.cancel')}
             </Button>
-            <Button onClick={() => setEditDialogOpen(false)} className="ml-3">
+            <Button onClick={handleUpdate} className="ml-3">
               {t('partner.branch.update')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Xóa */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -219,7 +310,7 @@ export default function BranchManagement() {
           </DialogHeader>
           <div className="py-4">
             <p>
-              {t('partner.branch.delete_confirm')} <span className="font-bold">{selectedBranch?.name}</span>?
+              {t('partner.branch.delete_confirm')} <span className="font-bold">{selectedBranch?.TenChiNhanh}</span>?
             </p>
             <p className="text-sm text-muted-foreground mt-2">{t('partner.branch.delete_warning')}</p>
           </div>
@@ -227,7 +318,7 @@ export default function BranchManagement() {
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               {t('partner.branch.cancel')}
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600 text-white shadow-none" onClick={() => setDeleteDialogOpen(false)}>
+            <Button className="bg-red-500 hover:bg-red-600 text-white shadow-none" onClick={handleDelete}>
               {t('partner.branch.delete_btn')}
             </Button>
           </DialogFooter>

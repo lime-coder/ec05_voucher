@@ -3,6 +3,8 @@ import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
 import { CategorySection } from "../components/home/CategorySection";
 import { FlashSaleSection } from "../components/home/FlashSaleSection";
+import { ArticleSection } from "../components/home/ArticleSection";
+import { FAQSection } from "../components/home/FAQSection";
 
 export function HomePage() {
   const [timeLeft, setTimeLeft] = useState({
@@ -42,6 +44,8 @@ export function HomePage() {
         <HowItWorksSection />
         <CategorySection />
         <FlashSaleSection timeLeft={timeLeft} />
+        <ArticleSection />
+        <FAQSection />
       </main>
     </div>
   );

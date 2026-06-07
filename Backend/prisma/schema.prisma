@@ -226,3 +226,15 @@ model sysdiagrams {
 
   @@unique([principal_id, name], map: "UK_principal_name")
 }
+
+model SystemLog {
+  MaLog      Int       @id(map: "PK__SystemLo__3B98D24A22489A5B") @default(autoincrement())
+  IDTaiKhoan Int?
+  HanhDong   String    @db.NVarChar(255)
+  DoiTuong   String?   @db.NVarChar(255)
+  ChiTiet    String?   @db.NVarChar(Max)
+  DiaChiIP   String?   @db.VarChar(50)
+  TrangThai  String?   @db.NVarChar(50)
+  ThoiGian   DateTime? @default(now(), map: "DF__SystemLog__ThoiG__2180FB33") @db.DateTime
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK__SystemLog__IDTai__0D44F85C")
+}

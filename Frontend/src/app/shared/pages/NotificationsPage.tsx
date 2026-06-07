@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, CheckCircle2, ShoppingBag, Info, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface Notification {
@@ -12,56 +13,58 @@ interface Notification {
 }
 
 export function NotificationsPage() {
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
-
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'success',
-      title: language === 'vi' ? 'Voucher đã được duyệt' : 'Voucher Approved',
-      message: language === 'vi' ? 'Voucher "Buffet Hải sản cao cấp" của bạn đã được admin duyệt và đang hiển thị.' : 'Your recent voucher "Buffet Hải sản cao cấp" has been approved by the admin and is now live.',
-      time: language === 'vi' ? '2 giờ trước' : '2 hours ago',
-      isRead: false,
-    },
-    {
-      id: '2',
-      type: 'order',
-      title: language === 'vi' ? 'Có đơn hàng mới' : 'New Order Received',
-      message: language === 'vi' ? 'Đơn hàng #12345 vừa được đặt cho "Buffet Hải sản cao cấp".' : 'Order #12345 was placed for "Buffet Hải sản cao cấp".',
-      time: language === 'vi' ? '5 giờ trước' : '5 hours ago',
-      isRead: false,
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: language === 'vi' ? 'Cập nhật hệ thống' : 'System Update',
-      message: language === 'vi' ? 'Chúng tôi sẽ bảo trì hệ thống đêm nay từ 2:00 sáng đến 4:00 sáng.' : 'We will be undergoing scheduled maintenance tonight from 2:00 AM to 4:00 AM.',
-      time: language === 'vi' ? '1 ngày trước' : '1 day ago',
-      isRead: true,
-    },
-    {
-      id: '4',
-      type: 'alert',
-      title: language === 'vi' ? 'Yêu cầu hành động' : 'Action Required',
-      message: language === 'vi' ? 'Hồ sơ đối tác của bạn còn thiếu thông tin. Vui lòng cập nhật số đăng ký kinh doanh.' : 'Your partner profile is missing some details. Please update your business registration number.',
-      time: language === 'vi' ? '2 ngày trước' : '2 days ago',
-      isRead: true,
-    },
-  ];
+  const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const fetchNotifications = () => {
+    fetch('/api/admin/notifications')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const readIds = JSON.parse(localStorage.getItem('admin_read_notifs') || '[]');
+          const mapped = data.map((n: any) => ({
+            ...n,
+            isRead: readIds.includes(n.id)
+          }));
+          setNotifications(mapped);
+        }
+      })
+      .catch(err => console.error('Fetch page notifications error:', err));
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const filteredNotifications = notifications.filter(
     (n) => activeFilter === 'all' || !n.isRead
   );
 
   const markAllAsRead = () => {
+    const ids = notifications.map(n => n.id);
+    localStorage.setItem('admin_read_notifs', JSON.stringify(ids));
     setNotifications(notifications.map(n => ({ ...n, isRead: true })));
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    const readIds = JSON.parse(localStorage.getItem('admin_read_notifs') || '[]');
+    if (!readIds.includes(id)) {
+      const nextRead = [...readIds, id];
+      localStorage.setItem('admin_read_notifs', JSON.stringify(nextRead));
+      setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    }
+
+    if (id.startsWith('partner-')) {
+      navigate('/admin/partners');
+    } else if (id.startsWith('voucher-')) {
+      navigate('/admin/vouchers');
+    } else if (id.startsWith('order-')) {
+      navigate('/admin/orders');
+    }
   };
 
   const getIcon = (type: string) => {
@@ -133,14 +136,14 @@ export function NotificationsPage() {
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-1">
                     <h3 className={`font-semibold ${!notif.isRead ? 'text-foreground' : 'text-gray-700'}`}>
-                      {t(`notification.${notif.id}.title`)}
+                      {language === 'vi' ? notif.titleVi : notif.titleEn}
                     </h3>
                     <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
-                      {t(`notification.${notif.id}.time`)}
+                      {tText('Recent', 'Gần đây')}
                     </span>
                   </div>
                   <p className={`text-sm ${!notif.isRead ? 'text-gray-700' : 'text-gray-500'}`}>
-                    {t(`notification.${notif.id}.message`)}
+                    {language === 'vi' ? notif.messageVi : notif.messageEn}
                   </p>
                 </div>
                 {!notif.isRead && (

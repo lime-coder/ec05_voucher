@@ -42,8 +42,9 @@ export const initialCreateVoucherForm: CreateVoucherFormData = {
   validEndDate: '',
   
   
-  isRefundable: true,
+  isRefundable: false,
   refundPolicy: '',
+  usageInstructions: '',
   dateSetBy: 'partner',
 };
 
@@ -125,6 +126,9 @@ export const voucherStatusConfig: Record<VoucherStatus, StatusConfig> = {
   pending: { label: 'Chờ duyệt', color: 'warning' },
   paused: { label: 'Tạm dừng', color: 'default' },
   expired: { label: 'Hết hạn', color: 'error' },
+  draft: { label: 'Bản nháp', color: 'default' },
+  rejected: { label: 'Bị từ chối', color: 'error' },
+  deleted: { label: 'Đã xóa', color: 'error' },
 };
 
 export const dashboardStats = [

@@ -1,30 +1,39 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Ticket, ChevronDown, ChevronUp, QrCode, MessageSquare, Search } from "lucide-react";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
 interface VoucherCode {
-  code: string;
-  price: number;
-  expirationDate: string;
-  status: "unused" | "used";
+  MaVoucher: number;
+
+  SoMaVoucher: string;
+
+  TrangThaiSuDung: string;
+
+  NgayHetHan?: string;
 }
 
 interface VoucherItem {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  expirationDate: string;
-  status: "unused" | "used";
-  code?: string;
-  codes?: VoucherCode[];
+  MaCTDonHang: number;
+
+  VoucherID: number;
+
+  SoLuongMua: number;
+
+  DonGia: number;
+
+  Voucher: {
+    TenVoucher: string;
+  };
+
+  MaVouchers: VoucherCode[];
 }
 
 export function OrderDetailPage() {
   const { t } = useLanguage();
   const { orderId } = useParams();
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [expandedVouchers, setExpandedVouchers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,57 +45,35 @@ export function OrderDetailPage() {
     );
   };
 
-  const vouchers: VoucherItem[] = [
-    {
-      id: "1",
-      name: "50% Off Arabica Coffee",
-      quantity: 1,
-      unitPrice: 12.0,
-      totalPrice: 12.0,
-      expirationDate: "2024-12-31",
-      status: "unused",
-      code: "COFFEE2024",
-    },
-    {
-      id: "2",
-      name: "Buy 1 Get 1 Croissant",
-      quantity: 3,
-      unitPrice: 5.5,
-      totalPrice: 16.5,
-      expirationDate: "2024-11-15",
-      status: "unused",
-      codes: [
-        {
-          code: "BAKERYBOGO1",
-          price: 5.5,
-          expirationDate: "2024-11-15",
-          status: "unused",
-        },
-        {
-          code: "BAKERYBOGO2",
-          price: 5.5,
-          expirationDate: "2024-11-15",
-          status: "unused",
-        },
-        {
-          code: "BAKERYBOGO3",
-          price: 5.5,
-          expirationDate: "2024-11-15",
-          status: "unused",
-        },
-      ],
-    },
-    {
-      id: "3",
-      name: "$5 Off Specialty Tea",
-      quantity: 1,
-      unitPrice: 5.0,
-      totalPrice: 5.0,
-      expirationDate: "2023-12-01",
-      status: "used",
-      code: "TEATIME5",
-    },
-  ];
+  useEffect(() => {
+    const fetchOrder =
+      async () => {
+
+        try {
+
+          const response =
+            await fetch(
+              `/api/orders/${orderId}`
+            );
+
+          const data =
+            await response.json();
+
+          setOrder(data);
+
+        } catch (error) {
+
+          console.error(error);
+
+        } finally {
+
+          setLoading(false);
+        }
+      };
+
+    fetchOrder();
+
+  }, [orderId]);
 
   const StatusBadge = ({ status }: { status: "unused" | "used" }) => {
     const styles =
@@ -101,11 +88,43 @@ export function OrderDetailPage() {
     );
   };
 
-  const filteredVouchers = vouchers.filter(v => 
-    v.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (v.code && v.code.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const vouchers =
+  order?.ChiTietDonHangs || [];
 
+  const filteredVouchers =
+    vouchers.filter(
+      (v: any) => {
+
+        const voucherName =
+          v.Voucher?.TenVoucher || "";
+
+        const voucherCode =
+          v.MaVouchers?.[0]
+            ?.SoMaVoucher || "";
+
+        return (
+          voucherName
+            .toLowerCase()
+            .includes(
+              searchQuery.toLowerCase()
+            ) ||
+
+          voucherCode
+            .toLowerCase()
+            .includes(
+              searchQuery.toLowerCase()
+            )
+        );
+      }
+    );
+    
+  if (loading) {
+    return (
+      <div className="p-10">
+        Loading...
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex flex-col bg-background">
       
@@ -123,7 +142,8 @@ export function OrderDetailPage() {
           </div>
           <div className="text-left md:text-right">
             <p className="text-sm text-muted mb-1">{t('order.purchase_date')}</p>
-            <p className="font-bold text-lg">2023-10-27</p>
+              <p className="font-bold text-lg">{new Date(order.ThoiGianThanhToan).toLocaleDateString()}
+            </p>
           </div>
         </div>
 
@@ -152,24 +172,29 @@ export function OrderDetailPage() {
 
         {/* Voucher Items */}
         <div className="space-y-4 mb-6">
-          {filteredVouchers.map((voucher) => {
-            const isExpanded = expandedVouchers.includes(voucher.id);
-            const isGrouped = voucher.quantity > 1;
+          {filteredVouchers.map((voucher: VoucherItem) => {
+            const isExpanded =
+              expandedVouchers.includes(
+                String(
+                  voucher.MaCTDonHang || voucher.MaCTDonHang
+                )
+              );
+            const isGrouped = voucher.SoLuongMua > 1;
 
-            if (isGrouped && voucher.codes) {
+            if (isGrouped && voucher.MaVouchers) {
               // Grouped Voucher (Collapsible)
               return (
-                <div key={voucher.id} className="border border-border rounded-lg bg-white overflow-hidden">
+                <div key={voucher.MaCTDonHang} className="border border-border rounded-lg bg-white overflow-hidden">
                   {/* Parent Row */}
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
                       <Ticket className="w-10 h-10 text-muted" />
                       <div>
-                        <Link to={`/voucher/${voucher.id}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
-                          {voucher.name}
+                        <Link to={`/voucher/${voucher.VoucherID}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
+                          {voucher.Voucher.TenVoucher}
                         </Link>
                         <p className="text-sm text-muted">
-                          {t('order.total_vouchers', { count: voucher.quantity })}
+                          {t('order.total_vouchers', { count: voucher.SoLuongMua })}
                         </p>
                       </div>
                     </div>
@@ -177,11 +202,15 @@ export function OrderDetailPage() {
                       <div className="text-right mr-4">
                         <p className="text-sm text-muted">{t('order.total_price')}</p>
                         <p className="font-bold text-lg">
-                          ${voucher.totalPrice.toFixed(2)}
+                          ${Number(voucher.DonGia || 0).toFixed(2)}
                         </p>
                       </div>
                       <button
-                        onClick={() => toggleExpand(voucher.id)}
+                        onClick={() =>
+                          toggleExpand(
+                            String(voucher.MaCTDonHang)
+                          )
+                        }
                         className="text-primary hover:underline flex items-center gap-1 font-semibold"
                       >
                         {isExpanded ? (
@@ -197,7 +226,7 @@ export function OrderDetailPage() {
                         )}
                       </button>
                       <span className="px-3 py-1 bg-secondary text-foreground rounded text-base font-bold ml-2">
-                        x{voucher.quantity}
+                        x{voucher.SoLuongMua}
                       </span>
                     </div>
                   </div>
@@ -205,30 +234,36 @@ export function OrderDetailPage() {
                   {/* Sub Rows (Expanded) */}
                   {isExpanded && (
                     <div className="bg-[#F9FAFB] border-t border-border">
-                      {voucher.codes.map((codeItem, index) => (
+                      {voucher.MaVouchers.map((codeItem, index) => (
                         <div
                           key={index}
                           className="px-8 py-4 flex items-center justify-between border-b border-border last:border-b-0"
                         >
                           <div className="flex-1">
                             <p className="font-mono text-sm text-muted mb-1">
-                              {t('order.code_label')}{codeItem.code}
+                              {t('order.code_label')}{codeItem.SoMaVoucher}
                             </p>
                             <p className="text-xs text-muted">
-                              {t('order.expires')} {codeItem.expirationDate}
+                              {t('order.expires')} {codeItem.NgayHetHan || "N/A"}
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
-                            <p className="font-semibold">${codeItem.price.toFixed(2)}</p>
-                            <StatusBadge status={codeItem.status} />
+                            <p className="font-semibold">${Number(voucher.DonGia || 0).toFixed(2)}</p>
+                            <StatusBadge
+                              status={
+                                codeItem.TrangThaiSuDung === "USED"
+                                  ? "used"
+                                  : "unused"
+                              }
+                            />
                             <button 
-                              onClick={() => setQrModal({ isOpen: true, code: codeItem.code })}
+                              onClick={() => setQrModal({ isOpen: true, code: codeItem.SoMaVoucher })}
                               className="px-3 py-2 border border-border rounded hover:bg-white transition-colors text-sm font-semibold flex items-center gap-1"
                             >
                               <QrCode className="w-4 h-4" /> {t('order.view_qr')}
                             </button>
                             <button
-                              onClick={() => navigate(`/review/${voucher.id}`)}
+                              onClick={() => navigate(`/review/${voucher.MaCTDonHang}`)}
                               className="px-3 py-2 border border-border rounded hover:bg-white transition-colors text-sm font-semibold flex items-center gap-1"
                             >
                               <MessageSquare className="w-4 h-4" /> {t('order.review')}
@@ -244,16 +279,16 @@ export function OrderDetailPage() {
             } else {
               // Single Voucher
               return (
-                <div key={voucher.id} className="border border-border rounded-lg p-4 bg-white">
+                <div key={voucher.MaCTDonHang} className="border border-border rounded-lg p-4 bg-white">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 flex-1">
                       <Ticket className="w-10 h-10 text-muted-foreground" />
                       <div>
-                        <Link to={`/voucher/${voucher.id}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
-                          {voucher.name}
+                        <Link to={`/voucher/${voucher.MaCTDonHang}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
+                          {voucher.Voucher.TenVoucher}
                         </Link>
                         <p className="font-mono text-sm text-muted-foreground">
-                          {t('order.code_label')}{voucher.code}
+                          {t('order.code_label')}{voucher.MaVouchers[0]?.SoMaVoucher || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -262,7 +297,7 @@ export function OrderDetailPage() {
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground uppercase">{t('order.unit_price')}</p>
                         <p className="font-semibold">
-                          ${voucher.unitPrice.toFixed(2)}
+                          ${Number(voucher.DonGia || 0 ).toFixed(2)}
                         </p>
                       </div>
 
@@ -270,20 +305,23 @@ export function OrderDetailPage() {
                         <p className="text-xs text-muted-foreground uppercase">
                           {t('order.expiration_date')}
                         </p>
-                        <p className="font-semibold">{voucher.expirationDate}</p>
+                        <p className="font-semibold">{voucher.MaVouchers[0]?.NgayHetHan || 'N/A'}</p>
                       </div>
 
-                      <StatusBadge status={voucher.status} />
+                      <StatusBadge status={voucher.MaVouchers?.[0]
+                                            ?.TrangThaiSuDung === "USED"
+                                            ? "used"
+                                            : "unused"} />
 
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => setQrModal({ isOpen: true, code: voucher.code || '' })}
+                          onClick={() => setQrModal({ isOpen: true, code:voucher.MaVouchers?.[0]?.SoMaVoucher || '' })}
                           className="px-3 py-2 border border-border rounded hover:bg-secondary transition-colors text-sm font-semibold flex items-center gap-1"
                         >
                           <QrCode className="w-4 h-4" /> {t('order.view_qr')}
                         </button>
                         <button
-                          onClick={() => navigate(`/review/${voucher.id}`)}
+                          onClick={() => navigate(`/review/${voucher.MaCTDonHang}`)}
                           className="px-3 py-2 border border-border rounded hover:bg-secondary transition-colors text-sm font-semibold flex items-center gap-1"
                         >
                           <MessageSquare className="w-4 h-4" /> {t('order.review')}
@@ -291,7 +329,7 @@ export function OrderDetailPage() {
                       </div>
 
                       <span className="px-3 py-1 ml-2 bg-secondary text-foreground rounded text-base font-bold">
-                        x{voucher.quantity}
+                        x{voucher.SoLuongMua}
                       </span>
                     </div>
                   </div>
