@@ -32,11 +32,29 @@ export default function VerifyVoucher() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   const [recentHistory, setRecentHistory] = useState<RecentVerification[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const partnerId = parseInt(localStorage.getItem('partnerId') || '1', 10);
 
   useEffect(() => {
     fetchHistory();
+    fetchBranches();
   }, []);
+
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/branches/partner/${partnerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBranches(data);
+        if (data.length > 0) {
+          setSelectedBranchId(data[0].MaChiNhanh.toString());
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch branches', error);
+    }
+  };
 
   const fetchHistory = async () => {
     try {
@@ -76,7 +94,7 @@ export default function VerifyVoucher() {
         });
       }
     } catch (error) {
-      toast.error('Lỗi kết nối máy chủ');
+      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
     } finally {
       setIsVerifying(false);
     }
@@ -88,26 +106,30 @@ export default function VerifyVoucher() {
 
   const confirmUsageAction = async () => {
     if (!verificationResult) return;
+    if (!selectedBranchId) {
+      toast.error(t('toast.voucher.select_branch_error') || 'Vui lòng chọn chi nhánh áp dụng');
+      return;
+    }
     
     try {
       const res = await fetch(`http://localhost:5000/api/vouchers/verify/${verificationResult.code}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerId })
+        body: JSON.stringify({ partnerId, branchId: selectedBranchId })
       });
       
       if (res.ok) {
-        toast.success('Xác nhận sử dụng voucher thành công!');
+        toast.success(t('toast.voucher.confirm_use_success') || 'Xác nhận sử dụng voucher thành công!');
+        setConfirmModalOpen(false);
         setVerificationResult(null);
         setVoucherCode('');
-        setConfirmModalOpen(false);
-        fetchHistory(); // Refresh history
+        fetchHistory();
       } else {
         const errorData = await res.json();
-        toast.error(errorData.message || 'Lỗi khi xác nhận voucher');
+        toast.error(errorData.message || t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
       }
     } catch (error) {
-      toast.error('Lỗi kết nối máy chủ');
+      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
     }
   };
 
@@ -350,9 +372,29 @@ export default function VerifyVoucher() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="font-bold text-xl mb-2">{t('verify.confirm_use')}!</h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 {t('verify.guide.step3.desc')}
               </p>
+
+              {/* Branch Selection */}
+              <div className="text-left mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('verify.select_branch_label') || 'Chi nhánh áp dụng'} <span className="text-red-500">*</span>
+                </label>
+                <select 
+                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-primary focus:border-primary outline-none bg-white text-gray-900 text-sm"
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                >
+                  <option value="" disabled>-- {t('verify.select_branch_ph') || 'Chọn chi nhánh'} --</option>
+                  {branches.map((b: any) => (
+                    <option key={b.MaChiNhanh} value={b.MaChiNhanh.toString()}>
+                      {b.TenChiNhanh}
+                    </option>
+                  ))}
+                </select>
+                {!selectedBranchId && <p className="text-xs text-red-500 mt-1">{t('verify.select_branch_req') || 'Vui lòng chọn chi nhánh xác nhận.'}</p>}
+              </div>
             </div>
             <div className="flex gap-4">
               <button 
@@ -363,7 +405,8 @@ export default function VerifyVoucher() {
               </button>
               <button 
                 onClick={confirmUsageAction}
-                className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors"
+                disabled={!selectedBranchId}
+                className="flex-1 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('common.confirm') || 'OK'}
               </button>

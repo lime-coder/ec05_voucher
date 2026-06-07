@@ -112,13 +112,17 @@ export const verifyVoucher = async (req: Request, res: Response) => {
 export const confirmVoucher = async (req: Request, res: Response) => {
   try {
     const { code } = req.params;
-    const { partnerId } = req.body;
+    const { partnerId, branchId } = req.body;
     
     if (!partnerId) {
       return res.status(400).json({ message: "Thiếu thông tin partnerId" });
     }
 
-    const result = await VoucherService.confirmVoucherUsage(code, parseInt(partnerId, 10));
+    const result = await VoucherService.confirmVoucherUsage(
+      code, 
+      parseInt(partnerId, 10),
+      branchId ? parseInt(branchId, 10) : undefined
+    );
     res.status(200).json(result);
   } catch (error: any) {
     console.error(error);

@@ -336,74 +336,6 @@ export class PartnerService {
       }
     ];
 
-    const revenueData = [];
-    if (timeRange === 'week' || timeRange === 'month') {
-      const days = timeRange === 'week' ? 7 : 30;
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dayStr = `${d.getDate()}/${d.getMonth() + 1}`;
-        const dayOrders = currentStats.orders.filter((o: any) => {
-          if (!o.DonHang?.ThoiGianThanhToan) return false;
-          const od = new Date(o.DonHang.ThoiGianThanhToan);
-          return od.getDate() === d.getDate() && od.getMonth() === d.getMonth();
-        });
-        const rev = dayOrders.reduce((sum: number, o: any) => sum + Number(o.ThanhTien || 0), 0);
-        revenueData.push({
-          month: dayStr,
-          revenue: Number((rev / 1000000).toFixed(2)),
-          target: Number(((rev * 1.2) / 1000000).toFixed(2)) || 5
-        });
-      }
-    } else {
-      const months = timeRange === 'quarter' ? 3 : 12;
-      for (let i = months - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const monthStr = `T${d.getMonth() + 1}`;
-        const monthOrders = currentStats.orders.filter((o: any) => {
-          if (!o.DonHang?.ThoiGianThanhToan) return false;
-          const od = new Date(o.DonHang.ThoiGianThanhToan);
-          return od.getMonth() === d.getMonth() && od.getFullYear() === d.getFullYear();
-        });
-        const rev = monthOrders.reduce((sum: number, o: any) => sum + Number(o.ThanhTien || 0), 0);
-        revenueData.push({
-          month: monthStr,
-          revenue: Number((rev / 1000000).toFixed(2)),
-          target: Number(((rev * 1.1) / 1000000).toFixed(2)) || 20
-        });
-      }
-    }
-
-    const customerMap = new Map<number, { spent: number, purchases: number }>();
-    currentStats.orders.forEach((o: any) => {
-      const accId = o.DonHang?.IDTaiKhoan;
-      if (accId) {
-        if (!customerMap.has(accId)) {
-          customerMap.set(accId, { spent: 0, purchases: 0 });
-        }
-        const cust = customerMap.get(accId)!;
-        cust.spent += Number(o.ThanhTien || 0);
-        cust.purchases += Number(o.SoLuongMua || 0);
-      }
-    });
-
-    const sortedCustomers = Array.from(customerMap.entries())
-      .sort((a, b) => b[1].spent - a[1].spent)
-      .slice(0, 5);
-
-    const topCustomers = await Promise.all(sortedCustomers.map(async ([accId, data]) => {
-      const acc = await prisma.taiKhoan.findUnique({
-        where: { IDTaiKhoan: accId },
-        select: { HoTenNguoiDung: true }
-      });
-      return {
-        name: acc?.HoTenNguoiDung || `Khách hàng #${accId}`,
-        purchases: data.purchases,
-        spent: data.spent
-      };
-    }));
-
     // Đọc mục tiêu do partner tự đặt (lưu trong file JSON trên server)
     const savedTarget = getTarget(partnerId, timeRange);
 
@@ -439,6 +371,74 @@ export class PartnerService {
         ? Math.round((yearRevenue / 365) * periodDays)
         : Math.round((10_000_000 / 30) * periodDays);
     }
+
+    const revenueData = [];
+    if (timeRange === 'week' || timeRange === 'month') {
+      const days = timeRange === 'week' ? 7 : 30;
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayStr = `${d.getDate()}/${d.getMonth() + 1}`;
+        const dayOrders = currentStats.orders.filter((o: any) => {
+          if (!o.DonHang?.ThoiGianThanhToan) return false;
+          const od = new Date(o.DonHang.ThoiGianThanhToan);
+          return od.getDate() === d.getDate() && od.getMonth() === d.getMonth();
+        });
+        const rev = dayOrders.reduce((sum: number, o: any) => sum + Number(o.ThanhTien || 0), 0);
+        revenueData.push({
+          month: dayStr,
+          revenue: Number((rev / 1000000).toFixed(2)),
+          target: Number((targetGoal / days / 1000000).toFixed(2))
+        });
+      }
+    } else {
+      const months = timeRange === 'quarter' ? 3 : 12;
+      for (let i = months - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const monthStr = `T${d.getMonth() + 1}`;
+        const monthOrders = currentStats.orders.filter((o: any) => {
+          if (!o.DonHang?.ThoiGianThanhToan) return false;
+          const od = new Date(o.DonHang.ThoiGianThanhToan);
+          return od.getMonth() === d.getMonth() && od.getFullYear() === d.getFullYear();
+        });
+        const rev = monthOrders.reduce((sum: number, o: any) => sum + Number(o.ThanhTien || 0), 0);
+        revenueData.push({
+          month: monthStr,
+          revenue: Number((rev / 1000000).toFixed(2)),
+          target: Number((targetGoal / months / 1000000).toFixed(2))
+        });
+      }
+    }
+
+    const customerMap = new Map<number, { spent: number, purchases: number }>();
+    currentStats.orders.forEach((o: any) => {
+      const accId = o.DonHang?.IDTaiKhoan;
+      if (accId) {
+        if (!customerMap.has(accId)) {
+          customerMap.set(accId, { spent: 0, purchases: 0 });
+        }
+        const cust = customerMap.get(accId)!;
+        cust.spent += Number(o.ThanhTien || 0);
+        cust.purchases += Number(o.SoLuongMua || 0);
+      }
+    });
+
+    const sortedCustomers = Array.from(customerMap.entries())
+      .sort((a, b) => b[1].spent - a[1].spent)
+      .slice(0, 5);
+
+    const topCustomers = await Promise.all(sortedCustomers.map(async ([accId, data]) => {
+      const acc = await prisma.taiKhoan.findUnique({
+        where: { IDTaiKhoan: accId },
+        select: { HoTenNguoiDung: true }
+      });
+      return {
+        name: acc?.HoTenNguoiDung || `Khách hàng #${accId}`,
+        purchases: data.purchases,
+        spent: data.spent
+      };
+    }));
 
     // Doanh thu thực của toàn bộ kỳ đang xem
     const currentRevenue = currentStats.revenue;

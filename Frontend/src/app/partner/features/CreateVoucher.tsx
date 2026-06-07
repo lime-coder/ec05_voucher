@@ -93,7 +93,7 @@ export default function CreateVoucher() {
       if (field === 'saleStartDate' || field === 'saleEndDate') {
         if (newData.saleStartDate && newData.saleEndDate) {
           if (new Date(newData.saleEndDate) < new Date(newData.saleStartDate)) {
-            toast.error('Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
+            toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
           }
         }
       }
@@ -101,7 +101,7 @@ export default function CreateVoucher() {
       if (field === 'validStartDate' || field === 'validEndDate') {
         if (newData.validStartDate && newData.validEndDate) {
           if (new Date(newData.validEndDate) < new Date(newData.validStartDate)) {
-            toast.error('Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
+            toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
           }
         }
       }
@@ -141,7 +141,7 @@ export default function CreateVoucher() {
     });
 
     if (hasInvalid) {
-      toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+      toast.error(t('toast.voucher.image_format_error') || 'Chỉ chấp nhận định dạng JPEG và PNG');
     }
 
     for (const file of validFiles) {
@@ -163,11 +163,11 @@ export default function CreateVoucher() {
           };
           setImages(prev => [...prev, newImage]);
         } else {
-          toast.error('Lỗi tải ảnh lên máy chủ.');
+          toast.error(t('toast.voucher.image_upload_error') || 'Lỗi tải ảnh lên máy chủ.');
         }
       } catch (error) {
         console.error('Error uploading image:', error);
-        toast.error('Lỗi kết nối khi tải ảnh.');
+        toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
       }
     }
   };
@@ -185,7 +185,7 @@ export default function CreateVoucher() {
     setImages([]);
     localStorage.removeItem('voucher_draft');
     localStorage.removeItem('voucher_images_draft');
-    toast.success('Đã xóa bản nháp và làm mới form!');
+    toast.success(t('toast.voucher.draft_cleared') || 'Đã xóa bản nháp và làm mới form!');
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
@@ -223,24 +223,24 @@ export default function CreateVoucher() {
         !formData.description ||
         !formData.terms
       ) {
-        toast.error('Vui lòng điền đầy đủ các trường bắt buộc (*)!');
+        toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc (*)!');
         return;
       }
 
       if (new Date(formData.saleEndDate!) < new Date(formData.saleStartDate!)) {
-        toast.error('Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
+        toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
         return;
       }
 
       if (new Date(formData.validEndDate!) < new Date(formData.validStartDate!)) {
-        toast.error('Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
+        toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
         return;
       }
     }
 
     if (formData.originalPrice && formData.salePrice) {
       if (parseFloat(formData.salePrice) >= parseFloat(formData.originalPrice)) {
-        toast.error('Giá bán phải nhỏ hơn giá gốc!');
+        toast.error(t('toast.voucher.price_error') || 'Giá bán phải nhỏ hơn giá gốc!');
         return;
       }
     }
@@ -255,14 +255,14 @@ export default function CreateVoucher() {
       const selectedCategoryName = formData.categories && formData.categories.length > 0 ? formData.categories[0] : null;
       const categoryObj = voucherCategories.find(c => c.name === selectedCategoryName);
       
-      const firstImageRelativePath = images.length > 0 ? images[0].url.replace('http://localhost:5000', '') : null;
+      const imageUrlsStr = images.length > 0 ? images.map(img => img.url.replace('http://localhost:5000', '')).join(',') : null;
 
       const payload = {
         ...formData,
         categoryId: categoryObj ? categoryObj.id : null,
         partnerId: parseInt(localStorage.getItem('partnerId') || '1', 10),
         status,
-        imageUrl: firstImageRelativePath,
+        imageUrl: imageUrlsStr,
         images // Optional: send images if the backend handles them
       };
 
@@ -286,7 +286,7 @@ export default function CreateVoucher() {
 
       const data = await response.json();
 
-      toast.success(submitModal.isDraft ? 'Đã lưu bản nháp thành công!' : 'Đã gửi duyệt Voucher thành công!');
+      toast.success(submitModal.isDraft ? (t('toast.voucher.draft_success') || 'Đã lưu bản nháp thành công!') : (t('toast.voucher.submit_success') || 'Đã gửi duyệt Voucher thành công!'));
       setSubmitModal({ isOpen: false, isDraft: false });
 
       // Tự động reset lại toàn bộ màn hình khi thành công (cả Lưu Nháp và Gửi Duyệt)
@@ -296,9 +296,9 @@ export default function CreateVoucher() {
       localStorage.removeItem('voucher_images_draft');
     } catch (error: any) {
       if (error.message.includes('404')) {
-        toast.error('Vui lòng nhấn "Xóa bản nháp" để tạo mới!');
+        toast.error(t('toast.voucher.draft_clear_needed') || 'Vui lòng nhấn "Xóa bản nháp" để tạo mới!');
       } else {
-        toast.error('Đã xảy ra lỗi khi lưu Voucher. Vui lòng thử lại!');
+        toast.error(t('toast.voucher.save_failed') || 'Đã xảy ra lỗi khi lưu Voucher. Vui lòng thử lại!');
       }
     }
   };
@@ -542,6 +542,16 @@ export default function CreateVoucher() {
             )}
 
             {images.length > 0 && (
+              <div className="mt-4 flex justify-center">
+                <label className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 h-10 px-4 py-2 gap-2 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  {t('partner.create.add_more_image') || 'Thêm ảnh khác'}
+                  <input type="file" className="hidden" onChange={handleFileChange} accept="image/png, image/jpeg" multiple />
+                </label>
+              </div>
+            )}
+
+            {images.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 text-sm mt-4">
                 {t('partner.create.image_note_prefix')}{images.length}{t('partner.create.image_note_suffix')}
               </div>
@@ -591,7 +601,7 @@ export default function CreateVoucher() {
               </Button>
               <Button variant="ghost" onClick={handleClearDraft} className="w-full gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
                 <Trash2 className="w-4 h-4" />
-                Xóa bản nháp (Làm mới)
+                {t('partner.create.clear_draft') || 'Xóa bản nháp (Làm mới)'}
               </Button>
             </div>
           </div>
