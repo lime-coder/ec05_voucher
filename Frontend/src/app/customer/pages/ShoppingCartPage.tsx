@@ -3,12 +3,13 @@ import { Link, useNavigate } from "react-router";
 import { Trash2, ShoppingCart as CartIcon, Clock, RefreshCw, Zap, ChevronRight } from "lucide-react";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
-
+import { useAuth } from "../../auth/AuthContext";
 import { useCartStore } from "../../../store/useCartStore";
 
 export function ShoppingCartPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const { items: cartItems, updateQuantity: storeUpdateQuantity, removeItem, clearCart, getCartTotal } = useCartStore();
 
@@ -43,6 +44,9 @@ export function ShoppingCartPage() {
   const tax = subtotal * 0.08;
   const platformFee = 2.5;
   const total = subtotal + tax + platformFee;
+
+  const handleCheckout = () => { navigate( "/checkout/review" ); };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -239,7 +243,7 @@ export function ShoppingCartPage() {
                 </div>
 
                 <Button
-                  onClick={() => navigate("/checkout/review")}
+                  onClick={handleCheckout}
                   className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3"
                 >
                   {t('cart.checkout')}

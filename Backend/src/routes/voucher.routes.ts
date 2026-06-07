@@ -2,9 +2,14 @@ import { Router } from 'express';
 import { 
   getAllVouchers, 
   getVoucherById, 
-  createVoucher, 
+  createVoucher,
   updateVoucher, 
-  getVouchersByPartnerId,
+  getVouchersByPartnerId, 
+  getPendingVouchers,
+  approveVoucher,
+  rejectVoucher, 
+  getCategories,
+  searchVouchers,
   verifyVoucher,
   confirmVoucher,
   getVerifyHistory,
@@ -23,6 +28,8 @@ const router = Router();
 router.get('/pending', getPendingVouchers);
 router.get('/', getAllVouchers);
 router.get('/partner/:partnerId', getVouchersByPartnerId);
+router.get('/categories', getCategories);
+router.get( '/search', searchVouchers );
 
 // Verify routes MUST come before /:id to prevent routing conflict
 router.get('/verify/history/partner/:partnerId', getVerifyHistory);

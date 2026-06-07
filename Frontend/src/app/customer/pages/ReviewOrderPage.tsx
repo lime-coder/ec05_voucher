@@ -9,11 +9,20 @@ import { useCartStore } from "../../../store/useCartStore";
 export function ReviewOrderPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-  });
+
+  const [fullName,
+  setFullName] =
+    useState("");
+
+  const [phone,
+  setPhone] =
+    useState("");
+
+  const [email,
+  setEmail] =
+    useState("");
+
+
 
   const { items: vouchers, getCartTotal } = useCartStore();
 
@@ -21,12 +30,6 @@ export function ReviewOrderPage() {
   const processingFee = 12.5;
   const tax = 45.0;
   const grandTotal = subtotal + processingFee + tax;
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -70,8 +73,7 @@ export function ReviewOrderPage() {
                 <Input
                   type="text"
                   name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFullName( e.target.value ) }
                   placeholder="e.g. Alexander Hamilton"
                   className="bg-input-background"
                 />
@@ -84,8 +86,7 @@ export function ReviewOrderPage() {
                 <Input
                   type="tel"
                   name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
+                  onChange={(e) => setPhone( e.target.value ) }
                   placeholder="+1 (555) 000-0000"
                   className="bg-input-background"
                 />
@@ -98,8 +99,7 @@ export function ReviewOrderPage() {
                 <Input
                   type="email"
                   name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  onChange={(e) => setEmail( e.target.value ) }
                   placeholder="alexander@treasury.gov"
                   className="bg-input-background"
                 />
@@ -191,7 +191,44 @@ export function ReviewOrderPage() {
               </div>
 
               <Button
-                onClick={() => navigate("/checkout/payment")}
+                onClick={() => {
+
+                  // =====================
+                  // Validate
+                  // =====================
+                  if (
+                    !fullName.trim() ||
+                    !phone.trim() ||
+                    !email.trim()
+                  ) {
+
+                    alert(
+                      "Vui lòng nhập đầy đủ thông tin"
+                    );
+
+                    return;
+                  }
+
+                  // =====================
+                  // Lưu buyer info
+                  // =====================
+                  localStorage.setItem(
+                    "checkout-info",
+
+                    JSON.stringify({
+                      fullName,
+                      phone,
+                      email,
+                    })
+                  );
+
+                  // =====================
+                  // Chuyển payment
+                  // =====================
+                  navigate(
+                    "/checkout/payment"
+                  );
+                }}
                 className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3 flex items-center justify-center gap-2"
               >
                 {t('review.pay_now')} <CreditCard className="w-5 h-5" />

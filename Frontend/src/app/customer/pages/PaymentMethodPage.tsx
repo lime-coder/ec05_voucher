@@ -1,30 +1,156 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Shield, ChevronRight, Wallet, CreditCard, Landmark } from "lucide-react";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
-
-type PaymentMethod = "ewallet" | "card" | "bank";
+import { useCartStore } from "../../../store/useCartStore"; 
+import { useAuth } from "../../auth/AuthContext"; 
+type PaymentMethod = "EWALLET" | "CARD" | "BANK";
 
 export function PaymentMethodPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { items, clearCart, getCartTotal,} = useCartStore();
   const { t } = useLanguage();
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("card");
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("CARD");
 
-  const orderItems = [
-    { name: "Premium Voucher Pack", price: 240.0 },
-    { name: "Annual Membership", price: 150.0 },
-    { name: "Gift Card ($50)", price: 50.0 },
-  ];
 
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
-  const processingFee = 12.5;
-  const tax = 45.25;
+  const subtotal = getCartTotal();
+
+  const processingFee = 0;
+
+  const tax = subtotal * 0.08;
+
   const orderTotal = subtotal + processingFee + tax;
 
-  const handleConfirmPayment = () => {
-    navigate("/checkout/success");
-  };
+  useEffect(() => {
+
+    if (items.length === 0) {
+
+      navigate("/cart");
+    }
+
+  }, [items, navigate]);
+  
+  const handlePayment =
+    async () => {
+
+      try {
+
+        // =====================
+        // Lấy buyer info
+        // =====================
+        const checkoutInfo =
+          JSON.parse(
+            localStorage.getItem(
+              "checkout-info"
+            ) || "{}"
+          );
+
+        // =====================
+        // Validate
+        // =====================
+        if (
+          !checkoutInfo.fullName ||
+          !checkoutInfo.phone ||
+          !checkoutInfo.email
+        ) {
+
+          alert(
+            "Thiếu thông tin thanh toán"
+          );
+
+          navigate(
+            "/checkout/review"
+          );
+
+          return;
+        }
+
+        // =====================
+        // Call backend
+        // =====================
+        const response =
+          await fetch(
+            "/api/orders",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                customerId:
+                  user?.id || 1,
+
+                paymentMethod:
+                  selectedMethod,
+
+                buyerInfo:
+                  checkoutInfo,
+
+                items:
+                  items.map(
+                    (item) => ({
+                      voucherId:
+                        Number(
+                          item.id
+                        ),
+
+                      quantity:
+                        item.quantity,
+                    })
+                  ),
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+        
+        console.log(
+          "PAYMENT RESPONSE:",
+          data
+        );
+        // =====================
+        // Thành công
+        // =====================
+        if (
+          
+          response.ok
+        ) {
+
+          localStorage.removeItem(
+            "checkout-info"
+          );
+
+          navigate(
+            `/checkout/success?orderId=${data.orderId}`
+          );
+
+          setTimeout(() => {
+            clearCart();
+          }, 300);
+
+        } else {
+
+          alert(
+            data.message ||
+            "Thanh toán thất bại"
+          );
+        }
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Lỗi thanh toán"
+        );
+      }
+    };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -60,7 +186,7 @@ export function PaymentMethodPage() {
               {/* E-wallet Option */}
               <label
                 className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "ewallet"
+                  selectedMethod === "EWALLET"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
                 }`}
@@ -69,9 +195,9 @@ export function PaymentMethodPage() {
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="ewallet"
-                    checked={selectedMethod === "ewallet"}
-                    onChange={() => setSelectedMethod("ewallet")}
+                    value="EWALLET"
+                    checked={selectedMethod === "EWALLET"}
+                    onChange={() => setSelectedMethod("EWALLET")}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -91,7 +217,7 @@ export function PaymentMethodPage() {
               {/* Credit/Debit Card Option */}
               <label
                 className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "card"
+                  selectedMethod === "CARD"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
                 }`}
@@ -100,9 +226,9 @@ export function PaymentMethodPage() {
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="card"
-                    checked={selectedMethod === "card"}
-                    onChange={() => setSelectedMethod("card")}
+                    value="CARD"
+                    checked={selectedMethod === "CARD"}
+                    onChange={() => setSelectedMethod("CARD")}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -122,7 +248,7 @@ export function PaymentMethodPage() {
               {/* Bank Transfer Option */}
               <label
                 className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "bank"
+                  selectedMethod === "BANK"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
                 }`}
@@ -131,9 +257,9 @@ export function PaymentMethodPage() {
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="bank"
-                    checked={selectedMethod === "bank"}
-                    onChange={() => setSelectedMethod("bank")}
+                    value="BANK"
+                    checked={selectedMethod === "BANK"}
+                    onChange={() => setSelectedMethod("BANK")}
                     className="mt-1"
                   />
                   <div className="flex-1">
@@ -169,9 +295,9 @@ export function PaymentMethodPage() {
 
               {/* Items List */}
               <div className="space-y-3 mb-4 pb-4 border-b border-border">
-                <p className="text-sm font-semibold text-muted-foreground">{t('payment.items_count').replace('{count}', String(orderItems.length))}</p>
-                {orderItems.map((item, index) => (
-                  <div key={index} className="flex justify-between text-sm">
+                <p className="text-sm font-semibold text-muted-foreground">{t('payment.items_count').replace('{count}', String(items.length))}</p>
+                {items.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{item.name}:</span>
                     <span className="font-semibold">
                       ${item.price.toFixed(2)}
@@ -208,7 +334,7 @@ export function PaymentMethodPage() {
               </div>
 
               <Button
-                onClick={handleConfirmPayment}
+                onClick={handlePayment}
                 className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3"
               >
                 {t('payment.confirm')}
