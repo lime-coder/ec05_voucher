@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@voucherhub/ui';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ImageUploadModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ImageUploadModalProps {
 }
 
 export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModalProps) {
+  const { t } = useLanguage();
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -33,7 +35,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
       if (file.type === 'image/jpeg' || file.type === 'image/png') {
         setSelectedFile(file);
       } else {
-        toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+        toast.error(t('toast.voucher.image_format_error') || 'Chỉ chấp nhận định dạng JPEG và PNG');
       }
     }
   };
@@ -45,7 +47,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
       if (file.type === 'image/jpeg' || file.type === 'image/png') {
         setSelectedFile(file);
       } else {
-        toast.error('Chỉ chấp nhận định dạng JPEG và PNG');
+        toast.error(t('toast.voucher.image_format_error') || 'Chỉ chấp nhận định dạng JPEG và PNG');
       }
     }
   };
@@ -62,7 +64,7 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Tải lên ảnh mới</DialogTitle>
+          <DialogTitle>{t('common.upload_new_image') || 'Tải lên ảnh mới'}</DialogTitle>
         </DialogHeader>
 
         <div 
@@ -89,10 +91,10 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-900">Kéo thả ảnh vào đây</p>
-              <p className="text-xs text-gray-500">Hoặc</p>
+              <p className="text-sm font-medium text-gray-900">{t('common.drag_drop_image') || 'Kéo thả ảnh vào đây'}</p>
+              <p className="text-xs text-gray-500">{t('common.or') || 'Hoặc'}</p>
               <label className="cursor-pointer">
-                <span className="text-sm font-medium text-primary hover:underline">Chọn ảnh từ máy tính</span>
+                <span className="text-sm font-medium text-primary hover:underline">{t('common.choose_from_computer') || 'Chọn ảnh từ máy tính'}</span>
                 <input 
                   type="file" 
                   className="hidden" 
@@ -100,15 +102,15 @@ export function ImageUploadModal({ isOpen, onClose, onUpload }: ImageUploadModal
                   onChange={handleChange}
                 />
               </label>
-              <p className="text-xs text-gray-400 mt-2">Hỗ trợ: JPG, PNG. Tối đa 5MB</p>
+              <p className="text-xs text-gray-400 mt-2">{t('common.supported_format') || 'Hỗ trợ: JPG, PNG. Tối đa 5MB'}</p>
             </div>
           )}
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" onClick={onClose}>{t('common.cancel') || 'Hủy'}</Button>
           <Button onClick={handleUploadClick} disabled={!selectedFile}>
-            Tải lên
+            {t('common.upload') || 'Tải lên'}
           </Button>
         </div>
       </DialogContent>

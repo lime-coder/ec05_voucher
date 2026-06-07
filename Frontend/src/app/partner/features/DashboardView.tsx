@@ -55,11 +55,33 @@ export default function DashboardView() {
     fetchStats();
   }, []);
 
+  let revenueChange = '+0%';
+  let soldChange = '+0%';
+
+  if (stats.salesData && stats.salesData.length >= 2) {
+    const currentMonth = stats.salesData[stats.salesData.length - 1];
+    const prevMonth = stats.salesData[stats.salesData.length - 2];
+    
+    if (prevMonth.revenue > 0) {
+      const revDiff = ((currentMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100;
+      revenueChange = `${revDiff > 0 ? '+' : ''}${revDiff.toFixed(1)}%`;
+    } else if (currentMonth.revenue > 0) {
+      revenueChange = '+100%';
+    }
+    
+    if (prevMonth.vouchers > 0) {
+      const soldDiff = ((currentMonth.vouchers - prevMonth.vouchers) / prevMonth.vouchers) * 100;
+      soldChange = `${soldDiff > 0 ? '+' : ''}${soldDiff.toFixed(1)}%`;
+    } else if (currentMonth.vouchers > 0) {
+      soldChange = '+100%';
+    }
+  }
+
   const dynamicStats = [
-    { title: 'Tổng Doanh Thu', value: `${stats.totalRevenue.toLocaleString('vi-VN')}₫`, change: '+0%', icon: 'money', colorClass: 'text-blue-500', bgClass: 'bg-blue-50' },
-    { title: 'Voucher Đã Bán', value: stats.totalSold.toString(), change: '+0%', icon: 'voucher', colorClass: 'text-green-500', bgClass: 'bg-green-50' },
-    { title: 'Chờ Duyệt', value: stats.pendingVouchers.toString(), change: '0%', icon: 'check', colorClass: 'text-yellow-500', bgClass: 'bg-yellow-50' },
-    { title: 'Đang Phát Hành', value: stats.activeVouchers.toString(), change: '0%', icon: 'schedule', colorClass: 'text-purple-500', bgClass: 'bg-purple-50' }
+    { title: t('partner.dash.total_revenue') || 'Tổng Doanh Thu', value: `${stats.totalRevenue.toLocaleString('vi-VN')}₫`, change: revenueChange, icon: 'money', colorClass: 'text-blue-500', bgClass: 'bg-blue-50' },
+    { title: t('partner.dash.total_sold') || 'Voucher Đã Bán', value: stats.totalSold.toString(), change: soldChange, icon: 'voucher', colorClass: 'text-green-500', bgClass: 'bg-green-50' },
+    { title: t('partner.dash.pending') || 'Chờ Duyệt', value: stats.pendingVouchers.toString(), change: '0%', icon: 'check', colorClass: 'text-yellow-500', bgClass: 'bg-yellow-50' },
+    { title: t('partner.dash.active') || 'Đang Phát Hành', value: stats.activeVouchers.toString(), change: '0%', icon: 'schedule', colorClass: 'text-purple-500', bgClass: 'bg-purple-50' }
   ];
 
   return (
@@ -97,9 +119,9 @@ export default function DashboardView() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.salesData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
+                <XAxis dataKey="month" label={{ value: t('partner.dash.month_label') || 'Tháng', position: 'insideBottom', offset: -5 }} height={40} tickFormatter={(val) => typeof val === 'string' && val.startsWith('T') ? val.replace('T', t('common.month_prefix') || 'T') : val} />
+                <YAxis yAxisId="left" label={{ value: t('partner.dash.revenue_y') || 'Triệu VNĐ', angle: -90, position: 'insideLeft', offset: 15 }} width={80} />
+                <YAxis yAxisId="right" orientation="right" label={{ value: t('partner.dash.vouchers_y') || 'Số lượng', angle: 90, position: 'insideRight', offset: 15 }} width={80} />
                 <Tooltip />
                 <Legend />
                 <Line

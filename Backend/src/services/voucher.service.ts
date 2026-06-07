@@ -46,7 +46,7 @@ export class VoucherService {
         TrangThaiVoucher: data.status || 'DRAFT',
         ChinhSachHoanTien: data.refundPolicy || null,
         HuongDanSuDung: data.usageInstructions || null,
-        ...(data.imageUrl && { ImageUrl: data.imageUrl } as any)
+        ImageUrl: data.imageUrl !== undefined ? data.imageUrl : null
       }
     });
   }
@@ -70,7 +70,7 @@ export class VoucherService {
         TrangThaiVoucher: data.status,
         ChinhSachHoanTien: data.refundPolicy !== undefined ? data.refundPolicy : undefined,
         HuongDanSuDung: data.usageInstructions !== undefined ? data.usageInstructions : undefined,
-        ...(data.imageUrl && { ImageUrl: data.imageUrl } as any)
+        ImageUrl: data.imageUrl !== undefined ? data.imageUrl : undefined
       }
     });
   }
@@ -110,9 +110,10 @@ export class VoucherService {
    * Xác minh mã voucher
    */
   static async verifyVoucherCode(code: string, partnerId: number) {
-    const maVoucher = await prisma.maVoucher.findUnique({
+    const maVoucher: any = await prisma.maVoucher.findUnique({
       where: { SoMaVoucher: code },
       include: {
+        ChiNhanh: true,
         ChiTietDonHang: {
           include: {
             Voucher: true,
@@ -127,7 +128,7 @@ export class VoucherService {
             }
           }
         }
-      }
+      } as any
     });
 
     if (!maVoucher || !maVoucher.ChiTietDonHang || !maVoucher.ChiTietDonHang.Voucher) {
@@ -165,14 +166,14 @@ export class VoucherService {
       validUntil: voucher.ThoiGianKetThuc.toISOString(),
       status: status,
       usedDate: maVoucher.ThoiDiemSuDung?.toISOString(),
-      branch: 'Tất cả chi nhánh' // Optional: Retrieve from Voucher_ChiNhanh if needed
+      branch: (maVoucher as any).ChiNhanh?.TenChiNhanh || 'Tất cả chi nhánh'
     };
   }
 
   /**
    * Xác nhận khách hàng đã sử dụng voucher
    */
-  static async confirmVoucherUsage(code: string, partnerId: number) {
+  static async confirmVoucherUsage(code: string, partnerId: number, branchId?: number) {
     // First verify it's valid and belongs to partner
     const result = await this.verifyVoucherCode(code, partnerId);
 
@@ -193,7 +194,9 @@ export class VoucherService {
       where: { SoMaVoucher: code },
       data: {
         TrangThaiSuDung: 'Đã sử dụng',
-        ThoiDiemSuDung: new Date()
+        ThoiDiemSuDung: new Date(),
+        // @ts-ignore
+        MaChiNhanhSuDung: branchId || null
       }
     });
 
@@ -204,7 +207,7 @@ export class VoucherService {
    * Lấy lịch sử xác thực voucher của đối tác
    */
   static async getVerificationHistory(partnerId: number) {
-    const usedVouchers = await prisma.maVoucher.findMany({
+    const usedVouchers: any[] = await prisma.maVoucher.findMany({
       where: {
         TrangThaiSuDung: 'Đã sử dụng',
         ChiTietDonHang: {
@@ -218,12 +221,13 @@ export class VoucherService {
       },
       take: 20, // Limit to recent 20 for history
       include: {
+        ChiNhanh: true,
         ChiTietDonHang: {
           include: {
             Voucher: true
           }
         }
-      }
+      } as any
     });
 
     return usedVouchers.map(mv => ({
@@ -231,7 +235,7 @@ export class VoucherService {
       voucherName: mv.ChiTietDonHang?.Voucher?.TenVoucher || 'Không xác định',
       time: mv.ThoiDiemSuDung?.toISOString(),
       status: 'verified', // If it's in this list, it was successfully verified and used
-      branch: 'Tất cả chi nhánh'
+      branch: (mv as any).ChiNhanh?.TenChiNhanh || 'Tất cả chi nhánh'
     }));
   }
 }

@@ -49,7 +49,7 @@ export default function BranchManagement() {
       }
     } catch (error) {
       console.error('Lỗi khi lấy danh sách chi nhánh', error);
-      toast.error('Lỗi lấy danh sách chi nhánh');
+      toast.error(t('toast.branch.fetch_error') || 'Lỗi lấy danh sách chi nhánh');
     }
   };
 
@@ -76,14 +76,14 @@ export default function BranchManagement() {
         body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
       });
       if (response.ok) {
-        toast.success('Thêm chi nhánh thành công');
+        toast.success(t('toast.branch.add_success') || 'Thêm chi nhánh thành công');
         setOpenDialog(false);
         fetchBranches();
       } else {
-        toast.error('Lỗi thêm chi nhánh');
+        toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
       }
     } catch (error) {
-      toast.error('Lỗi thêm chi nhánh');
+      toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
     }
   };
 
@@ -103,14 +103,14 @@ export default function BranchManagement() {
         body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
       });
       if (response.ok) {
-        toast.success('Cập nhật chi nhánh thành công');
+        toast.success(t('toast.branch.update_success') || 'Cập nhật chi nhánh thành công');
         setEditDialogOpen(false);
         fetchBranches();
       } else {
-        toast.error('Lỗi cập nhật chi nhánh');
+        toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
       }
     } catch (error) {
-      toast.error('Lỗi cập nhật chi nhánh');
+      toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
     }
   };
 
@@ -125,14 +125,14 @@ export default function BranchManagement() {
         method: 'DELETE'
       });
       if (response.ok) {
-        toast.success('Xóa chi nhánh thành công');
+        toast.success(t('toast.branch.delete_success') || 'Xóa chi nhánh thành công');
         setDeleteDialogOpen(false);
         fetchBranches();
       } else {
-        toast.error('Lỗi xóa chi nhánh');
+        toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
       }
     } catch (error) {
-      toast.error('Lỗi xóa chi nhánh');
+      toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
     }
   };
 
@@ -166,7 +166,7 @@ export default function BranchManagement() {
               {branches.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-4 text-gray-500">
-                    Chưa có chi nhánh nào.
+                    {t('partner.branch.empty') || 'Chưa có chi nhánh nào.'}
                   </TableCell>
                 </TableRow>
               ) : branches.map((branch) => (

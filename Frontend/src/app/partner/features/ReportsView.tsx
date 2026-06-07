@@ -77,11 +77,11 @@ export default function ReportsView() {
           setReportData(data);
         } else {
           const errBody = await res.json().catch(() => ({}));
-          setFetchError(`Lỗi ${res.status}: ${errBody.message || errBody.detail || 'Không tải được dữ liệu'}`);
+          setFetchError(`${t('common.error') || 'Lỗi'} ${res.status}: ${errBody.message || errBody.detail || t('partner.report.fetch_error') || 'Không tải được dữ liệu'}`);
         }
       } catch (error: any) {
         console.error('Failed to fetch reports', error);
-        setFetchError('Không kết nối được tới Backend. Hãy kiểm tra Backend đang chạy.');
+        setFetchError(t('toast.voucher.connection_error') || 'Không kết nối được tới Backend. Hãy kiểm tra Backend đang chạy.');
       } finally {
         setIsLoading(false);
       }
@@ -101,12 +101,12 @@ export default function ReportsView() {
   if (fetchError || !reportData) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
-        <p className="text-red-500 font-medium">{fetchError || 'Không có dữ liệu'}</p>
+        <p className="text-red-500 font-medium">{fetchError || t('partner.report.no_data') || 'Không có dữ liệu'}</p>
         <button
           onClick={() => { setIsLoading(true); setFetchError(null); }}
           className="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:opacity-90"
         >
-          Thử lại
+          {t('common.retry') || 'Thử lại'}
         </button>
       </div>
     );
@@ -187,11 +187,11 @@ export default function ReportsView() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 border rounded-xl p-6">
                 <h2 className="text-lg font-bold mb-6">{t('partner.report.chart_title')}</h2>
-                <div className="h-[380px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[380px] w-full">
+                  <ResponsiveContainer width="99%" height="100%">
                     <LineChart data={reportData.revenueData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" />
+                      <XAxis dataKey="month" tickFormatter={(val) => typeof val === 'string' && val.startsWith('T') ? val.replace('T', t('common.month_prefix') || 'T') : val} />
                       <YAxis />
                       <Tooltip />
                       <Legend />
@@ -203,15 +203,23 @@ export default function ReportsView() {
               </div>
 
               <div className="lg:col-span-4 border rounded-xl p-6 flex flex-col justify-center text-center">
-                <h2 className="text-lg font-bold mb-8">{t('partner.report.target_title')}</h2>
+                <h2 className="text-lg font-bold mb-2">{t('partner.report.target_title')}</h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  {t('partner.report.apply_for_period') || 'Áp dụng cho kỳ:'} <span className="font-medium text-gray-800">{
+                    timeRange === 'week' ? t('partner.report.time_7d') || '7 ngày qua' :
+                    timeRange === 'month' ? t('partner.report.time_30d') || '30 ngày qua' :
+                    timeRange === 'quarter' ? t('partner.report.time_3m') || '3 tháng qua' :
+                    t('partner.report.time_12m') || '12 tháng qua'
+                  }</span>
+                </p>
                 <div>
                   <div className={`text-6xl font-bold ${reportData.targetStats.completionRate >= 100 ? 'text-green-500' : 'text-orange-500'} mb-2`}>
                     {reportData.targetStats.completionRate}%
                   </div>
                   <p className="text-gray-500 mb-8">
                     {reportData.targetStats.completionRate >= 100
-                      ? `Vượt mục tiêu ${reportData.targetStats.completionRate - 100}%`
-                      : `Chưa đạt mục tiêu (${100 - reportData.targetStats.completionRate}%)`}
+                      ? `${t('partner.report.exceed_target') || 'Vượt mục tiêu'} ${reportData.targetStats.completionRate - 100}%`
+                      : `${t('partner.report.miss_target') || 'Chưa đạt mục tiêu'} (${100 - reportData.targetStats.completionRate}%)`}
                   </p>
 
                   <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-6">
@@ -222,10 +230,10 @@ export default function ReportsView() {
                   </div>
 
                   <div className="space-y-1 text-sm text-gray-500 mb-5">
-                    <p>{t('partner.report.target_current')} <strong className="text-gray-900">{(reportData.targetStats.currentRevenue / 1000000).toFixed(1)} triệu</strong></p>
+                    <p>{t('partner.report.target_current')} <strong className="text-gray-900">{(reportData.targetStats.currentRevenue / 1000000).toFixed(1)} {t('common.million') || 'triệu'}</strong></p>
                     <p>
-                      {t('partner.report.target_goal')} <strong className="text-gray-900">{(reportData.targetStats.targetGoal / 1000000).toFixed(1)} triệu</strong>
-                      {!reportData.targetStats.isCustomTarget && <span className="ml-1 text-xs text-gray-400">(tự động)</span>}
+                      {t('partner.report.target_goal')} <strong className="text-gray-900">{(reportData.targetStats.targetGoal / 1000000).toFixed(1)} {t('common.million') || 'triệu'}</strong>
+                      {!reportData.targetStats.isCustomTarget && <span className="ml-1 text-xs text-gray-400">({t('common.auto') || 'tự động'})</span>}
                     </p>
                   </div>
 
@@ -235,7 +243,7 @@ export default function ReportsView() {
                       <input
                         type="number"
                         className="w-full border border-orange-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-orange-400"
-                        placeholder="Nhập số tiền (VD: 50000000)"
+                        placeholder={t('partner.report.enter_amount_ph') || 'Nhập số tiền (VD: 50000000)'}
                         value={targetInput}
                         onChange={(e) => setTargetInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSaveTarget()}
@@ -247,13 +255,13 @@ export default function ReportsView() {
                           disabled={isSavingTarget}
                           className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg py-1.5 font-medium disabled:opacity-60 transition-colors"
                         >
-                          {isSavingTarget ? 'Đang lưu...' : 'Lưu'}
+                          {isSavingTarget ? (t('common.saving') || 'Đang lưu...') : (t('common.save') || 'Lưu')}
                         </button>
                         <button
                           onClick={() => setIsEditingTarget(false)}
                           className="flex-1 border border-gray-300 text-gray-600 text-sm rounded-lg py-1.5 font-medium hover:bg-gray-50 transition-colors"
                         >
-                          Hủy
+                          {t('common.cancel') || 'Hủy'}
                         </button>
                       </div>
                     </div>
@@ -265,7 +273,7 @@ export default function ReportsView() {
                       }}
                       className="text-sm text-orange-500 hover:text-orange-600 underline underline-offset-2 font-medium transition-colors"
                     >
-                      ⚙️ Đặt mục tiêu doanh thu
+                      ⚙️ {t('partner.report.set_revenue_target') || 'Đặt mục tiêu doanh thu'}
                     </button>
                   )}
                 </div>
