@@ -63,7 +63,7 @@ export default function VoucherManagement() {
     isOpen: false,
     title: '',
     description: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
   const [voucherCategories, setVoucherCategories] = useState<{ id: number; name: string }[]>([]);
 
@@ -116,7 +116,7 @@ export default function VoucherManagement() {
     open: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const triggerConfirm = (
@@ -141,15 +141,9 @@ export default function VoucherManagement() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-<<<<<<< HEAD
     const validFiles = files.filter(file => file.type === 'image/jpeg' || file.type === 'image/png');
     if (validFiles.length < files.length) {
       toast.error(t('toast.voucher.image_format_error') || 'Chỉ chấp nhận ảnh JPEG hoặc PNG');
-=======
-    if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
-      toast.error('Chỉ chấp nhận ảnh JPEG hoặc PNG');
-      return;
->>>>>>> origin/main
     }
 
     setUploadingImage(true);
@@ -163,7 +157,6 @@ export default function VoucherManagement() {
           body: uploadFormData,
         });
 
-<<<<<<< HEAD
         if (res.ok) {
           const data = await res.json();
           const newImage = {
@@ -179,20 +172,6 @@ export default function VoucherManagement() {
         console.error('Error uploading image:', error);
         toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
       }
-=======
-      if (res.ok) {
-        const data = await res.json();
-        // Cập nhật imageUrl dạng đường dẫn tương đối (hoặc tuyệt đối theo tùy chọn)
-        setEditingVoucher(prev => prev ? { ...prev, imageUrl: data.imageUrl } : null);
-      } else {
-        toast.error('Lỗi tải ảnh lên máy chủ.');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Lỗi kết nối khi tải ảnh.');
-    } finally {
-      setUploadingImage(false);
->>>>>>> origin/main
     }
     setUploadingImage(false);
   };
@@ -283,26 +262,17 @@ export default function VoucherManagement() {
     setDeleteDialogOpen(true);
   };
 
-<<<<<<< HEAD
   const handleRestore = async (voucher: Voucher) => {
     setConfirmModalState({
       isOpen: true,
       title: t('voucher.restore.title') || 'Khôi phục voucher',
       description: t('voucher.restore.desc') || 'Bạn có chắc muốn khôi phục voucher này?',
       onConfirm: async () => {
-=======
-  const handleRestore = (voucher: Voucher) => {
-    triggerConfirm(
-      t('partner.vouchers.restore_title') || 'Khôi phục Voucher',
-      'Bạn có chắc muốn khôi phục voucher này?',
-      async () => {
->>>>>>> origin/main
         try {
           const res = await fetch(`http://localhost:5000/api/vouchers/${voucher.id}/restore`, {
             method: 'PUT'
           });
           if (res.ok) {
-<<<<<<< HEAD
             fetchVouchers();
           }
         } catch (err) {
@@ -310,21 +280,6 @@ export default function VoucherManagement() {
         }
       }
     });
-=======
-            setVouchers(prev => prev.map(v => v.id === voucher.id ? { ...v, status: 'active' } : v));
-            fetchVouchers();
-            toast.success('Khôi phục voucher thành công!');
-          } else {
-            toast.error('Khôi phục voucher thất bại!');
-          }
-        } catch (err) {
-          console.error(err);
-          toast.error('Có lỗi xảy ra!');
-        }
-      },
-      'default'
-    );
->>>>>>> origin/main
   };
 
   const handleClearFilters = () => {
@@ -732,7 +687,7 @@ export default function VoucherManagement() {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent 
+        <DialogContent
           className="sm:max-w-[700px]"
           onInteractOutside={(e) => {
             if (previewImage) {
@@ -774,16 +729,16 @@ export default function VoucherManagement() {
                     <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                       {editImages.map((img) => (
                         <div key={img.id} className="relative border rounded-lg overflow-hidden bg-white group">
-                          <img 
-                            src={img.url} 
-                            alt="Voucher" 
-                            className="w-full h-32 object-cover cursor-pointer" 
+                          <img
+                            src={img.url}
+                            alt="Voucher"
+                            className="w-full h-32 object-cover cursor-pointer"
                             onClick={() => setPreviewImage(img.url)}
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                             <Eye className="text-white w-6 h-6" />
                           </div>
-                          <button 
+                          <button
                             type="button"
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-md p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
                             onClick={() => handleRemoveEditImage(img.id)}
@@ -842,9 +797,9 @@ export default function VoucherManagement() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t('partner.vouchers.status_label')}</label>
                     {editingVoucher?.status === 'pending' ? (
-                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 px-3 py-2 text-sm text-gray-500">
-                         {t('partner.vouchers.tab_pending')}
-                       </div>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 px-3 py-2 text-sm text-gray-500">
+                        {t('partner.vouchers.tab_pending')}
+                      </div>
                     ) : (
                       <select
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:opacity-50"
@@ -1142,12 +1097,12 @@ export default function VoucherManagement() {
       </Dialog>
 
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent 
+        <DialogContent
           className="max-w-[95vw] w-[95vw] h-[95vh] sm:max-w-[95vw] bg-transparent border-none shadow-none p-0 flex justify-center items-center [&>button]:hidden"
           style={{ maxWidth: '95vw', width: '95vw', height: '95vh', backgroundColor: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
         >
           <div className="relative w-full h-full flex justify-center items-center">
-            <button 
+            <button
               className="absolute top-2 right-2 md:top-4 md:right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors z-[110]"
               onClick={() => setPreviewImage(null)}
             >
@@ -1157,7 +1112,7 @@ export default function VoucherManagement() {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       <ConfirmModal
         isOpen={confirmModalState.isOpen}
         onClose={() => setConfirmModalState(prev => ({ ...prev, isOpen: false }))}
