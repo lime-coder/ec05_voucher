@@ -105,37 +105,8 @@ export default function VoucherManagement() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // Custom Confirm Dialog State
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    confirmVariant?: 'default' | 'destructive';
-  }>({
-    open: false,
-    title: '',
-    message: '',
-    onConfirm: () => { },
-  });
 
-  const triggerConfirm = (
-    title: string,
-    message: string,
-    onConfirm: () => void,
-    confirmVariant: 'default' | 'destructive' = 'default'
-  ) => {
-    setConfirmDialog({
-      open: true,
-      title,
-      message,
-      onConfirm: () => {
-        onConfirm();
-        setConfirmDialog(prev => ({ ...prev, open: false }));
-      },
-      confirmVariant
-    });
-  };
+
 
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -1120,32 +1091,6 @@ export default function VoucherManagement() {
         title={confirmModalState.title}
         description={confirmModalState.description}
       />
-
-      {/* Custom Confirm Dialog */}
-      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900 font-bold text-lg">
-              {confirmDialog.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2">
-            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
-          </div>
-          <DialogFooter className="flex justify-end gap-2 mt-2">
-            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
-              {t('common.cancel') || 'Hủy'}
-            </Button>
-            <Button
-              onClick={confirmDialog.onConfirm}
-              variant={confirmDialog.confirmVariant}
-              className={confirmDialog.confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
-            >
-              {t('common.confirm') || 'Xác nhận'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
