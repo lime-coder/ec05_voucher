@@ -36,11 +36,12 @@ interface KPICardProps {
   value: string;
   change: string;
   isPositive: boolean;
+  isNeutral?: boolean;
   colorClass: string;
   bgClass: string;
 }
 
-function KPICard({ icon, label, value, change, isPositive, bgClass }: KPICardProps) {
+function KPICard({ icon, label, value, change, isPositive, isNeutral = false, bgClass }: KPICardProps) {
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
       <div className="flex items-start justify-between mb-3">
@@ -50,8 +51,8 @@ function KPICard({ icon, label, value, change, isPositive, bgClass }: KPICardPro
       </div>
       <div className="text-xs text-gray-600 mb-1">{label}</div>
       <div className="text-2xl font-bold mb-2 text-primary">{value}</div>
-      <div className={`text-xs flex items-center gap-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+      <div className={`text-xs flex items-center gap-1 ${isNeutral ? 'text-gray-500' : isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        {!isNeutral && (isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />)}
         <span>{change}</span>
       </div>
     </div>
@@ -89,10 +90,49 @@ export function Dashboard() {
   }, [timeRange, customStartDate, customEndDate]);
 
   const formatRevenueValue = (val: number | undefined) => {
-    if (val === undefined) return '72.5M';
+    if (val === undefined) return '0đ';
     if (val >= 1000000000) return `${(val / 1000000000).toFixed(1)}B`;
     if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
-    return val.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
+    return val.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US') + 'đ';
+  };
+
+  const getGrowth = (current: number | undefined | null, prev: number | undefined | null) => {
+    if (current === undefined || current === null || prev === undefined || prev === null) {
+      return { changeText: tText('No previous-period data', 'Chưa có dữ liệu kỳ trước'), isPositive: true, isNeutral: true };
+    }
+    if (prev === 0) {
+      return { changeText: current > 0 ? '+100%' : '0%', isPositive: true, isNeutral: false };
+    }
+    const diff = current - prev;
+    const percent = (diff / prev) * 100;
+    const absPercent = Math.abs(percent).toFixed(1);
+    const prefix = percent >= 0 ? '+' : '-';
+    
+    let periodText = '';
+    if (timeRange === 'today') periodText = tText('vs yesterday', 'so với hôm qua');
+    else if (timeRange === '7days') periodText = tText('vs last week', 'so với tuần trước');
+    else if (timeRange === '30days') periodText = tText('vs last month', 'so với tháng trước');
+    else periodText = tText('vs last period', 'so với kỳ trước');
+
+    return {
+      changeText: `${prefix}${absPercent}% ${periodText}`,
+      isPositive: percent >= 0,
+      isNeutral: false
+    };
+  };
+
+  const getGrowthDiff = (current: number | undefined | null, prev: number | undefined | null, labelEn: string, labelVi: string) => {
+    if (current === undefined || current === null || prev === undefined || prev === null) {
+      return { changeText: tText('No previous-period data', 'Chưa có dữ liệu kỳ trước'), isPositive: true, isNeutral: true };
+    }
+    const diff = current - prev;
+    const absDiff = Math.abs(diff);
+    const prefix = diff >= 0 ? '+' : '-';
+    return {
+      changeText: `${prefix}${absDiff} ${tText(labelEn, labelVi)}`,
+      isPositive: diff >= 0,
+      isNeutral: false
+    };
   };
 
   const mapStatusToEnglish = (status: string) => {
@@ -109,6 +149,21 @@ export function Dashboard() {
     displayName: tText(v.name, v.nameVi || v.name)
   }));
   const recentOrders = stats?.recentOrders || defaultRecentOrders;
+
+  // Calculate dynamic growth for KPI cards
+  const revenueGrowth = getGrowth(stats?.tongDoanhThu, stats?.prevDoanhThu);
+  const ordersGrowth = getGrowth(stats?.tongDonHang, stats?.prevDonHang);
+  const customersGrowth = getGrowth(stats?.tongKhachHang, stats?.prevKhachHang);
+  const partnersGrowth = getGrowthDiff(stats?.tongDoiTac, stats?.prevDoiTac, 'new partners', 'đối tác mới');
+  const vouchersGrowth = getGrowthDiff(stats?.tongVoucher, stats?.prevVoucher, 'new vouchers', 'voucher mới');
+  const vouchersSoldGrowth = getGrowth(stats?.tongVoucherDaBan, stats?.prevVoucherDaBan);
+  const issuedCodesGrowth = getGrowth(stats?.tongMaPhatHanh, stats?.prevMaPhatHanh);
+  const usedCodesGrowth = getGrowth(stats?.tongMaSuDung, stats?.prevMaSuDung);
+  const revenueChartTitle = stats?.revenueGranularity === 'month'
+    ? tText('Monthly Revenue', 'Doanh thu theo tháng')
+    : stats?.revenueGranularity === 'week'
+      ? tText('Weekly Revenue', 'Doanh thu theo tuần')
+      : tText('Daily Revenue', 'Doanh thu theo ngày');
 
   return (
     <div className="space-y-6">
@@ -164,74 +219,79 @@ export function Dashboard() {
           icon={<DollarSign size={20} className="text-primary" />}
           label={tText('Total Revenue', 'Tổng doanh thu')}
           value={formatRevenueValue(stats?.tongDoanhThu)}
-          change={tText('+12.5% vs yesterday', '+12.5% so với hôm qua')}
-          isPositive={true}
+          change={revenueGrowth.changeText}
+          isPositive={revenueGrowth.isPositive}
+          isNeutral={revenueGrowth.isNeutral}
           colorClass="text-primary"
           bgClass="bg-primary/10"
         />
         <KPICard
           icon={<ShoppingCart size={20} className="text-emerald-500" />}
           label={tText('Total Orders', 'Tổng đơn hàng')}
-          value={stats?.tongDonHang?.toLocaleString() ?? '1,248'}
-          change={tText('+8.3% vs yesterday', '+8.3% so với hôm qua')}
-          isPositive={true}
+          value={stats?.tongDonHang?.toLocaleString() ?? '0'}
+          change={ordersGrowth.changeText}
+          isPositive={ordersGrowth.isPositive}
+          isNeutral={ordersGrowth.isNeutral}
           colorClass="text-emerald-500"
           bgClass="bg-emerald-500/10"
         />
         <KPICard
           icon={<Users size={20} className="text-amber-500" />}
           label={tText('Customers', 'Khách hàng')}
-          value={stats?.tongKhachHang?.toLocaleString() ?? '4,532'}
-          change={tText('+15.2% vs last week', '+15.2% so với tuần trước')}
-          isPositive={true}
+          value={stats?.tongKhachHang?.toLocaleString() ?? '0'}
+          change={customersGrowth.changeText}
+          isPositive={customersGrowth.isPositive}
+          isNeutral={customersGrowth.isNeutral}
           colorClass="text-amber-500"
           bgClass="bg-amber-500/10"
         />
         <KPICard
           icon={<Handshake size={20} className="text-violet-500" />}
           label={tText('Partners', 'Đối tác')}
-          value={stats?.tongDoiTac?.toLocaleString() ?? '89'}
-          change={tText('+3 new partners', '+3 đối tác mới')}
-          isPositive={true}
+          value={stats?.tongDoiTac?.toLocaleString() ?? '0'}
+          change={partnersGrowth.changeText}
+          isPositive={partnersGrowth.isPositive}
+          isNeutral={partnersGrowth.isNeutral}
           colorClass="text-violet-500"
           bgClass="bg-violet-500/10"
         />
         <KPICard
           icon={<Ticket size={20} className="text-pink-500" />}
           label={tText('Vouchers', 'Voucher')}
-          value={stats?.tongVoucher?.toLocaleString() ?? '234'}
-          change={tText('+18 new vouchers', '+18 voucher mới')}
-          isPositive={true}
+          value={stats?.tongVoucher?.toLocaleString() ?? '0'}
+          change={vouchersGrowth.changeText}
+          isPositive={vouchersGrowth.isPositive}
+          isNeutral={vouchersGrowth.isNeutral}
           colorClass="text-pink-500"
           bgClass="bg-pink-500/10"
         />
         <KPICard
           icon={<CheckCircle size={20} className="text-cyan-500" />}
           label={tText('Vouchers Sold', 'Voucher đã bán')}
-          value={stats?.tongVoucherDaBan?.toLocaleString() ?? '8,945'}
-          change={tText('+22.1% vs yesterday', '+22.1% so với hôm qua')}
-          isPositive={true}
+          value={stats?.tongVoucherDaBan?.toLocaleString() ?? '0'}
+          change={vouchersSoldGrowth.changeText}
+          isPositive={vouchersSoldGrowth.isPositive}
+          isNeutral={vouchersSoldGrowth.isNeutral}
           colorClass="text-cyan-500"
           bgClass="bg-cyan-500/10"
         />
         <KPICard
           icon={<Send size={20} className="text-teal-500" />}
           label={tText('Issued Codes', 'Mã đã phát hành')}
-          value={stats?.tongMaPhatHanh?.toLocaleString() ?? '12,340'}
-          change={tText('+890 new codes', '+890 mã mới')}
-          isPositive={true}
+          value={stats?.tongMaPhatHanh?.toLocaleString() ?? '0'}
+          change={issuedCodesGrowth.changeText}
+          isPositive={issuedCodesGrowth.isPositive}
+          isNeutral={issuedCodesGrowth.isNeutral}
           colorClass="text-teal-500"
           bgClass="bg-teal-500/10"
         />
         <KPICard
           icon={<Award size={20} className="text-orange-500" />}
           label={tText('Used Codes', 'Mã đã sử dụng')}
-          value={stats?.tongMaSuDung?.toLocaleString() ?? '9,127'}
-          change={stats 
-            ? `${Math.round((stats.tongMaSuDung / (stats.tongMaPhatHanh || 1)) * 100)}% ${tText('usage rate', 'tỷ lệ sử dụng')}` 
-            : `74% ${tText('usage rate', 'tỷ lệ sử dụng')}`
-          }
-          isPositive={true}
+          value={stats?.tongMaSuDung?.toLocaleString() ?? '0'}
+          change={usedCodesGrowth.changeText}
+          isPositive={usedCodesGrowth.isPositive}
+          isNeutral={usedCodesGrowth.isNeutral}
           colorClass="text-orange-500"
           bgClass="bg-orange-500/10"
         />
@@ -239,11 +299,15 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">{tText('Daily Revenue', 'Doanh thu theo ngày')}</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{revenueChartTitle}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fontSize: 12 }} 
+                interval={revenueData.length > 15 ? 'preserveEnd' : 0} 
+              />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(value: number) => {
@@ -258,7 +322,7 @@ export function Dashboard() {
                 name={tText("Revenue", "Doanh thu")}
                 stroke="var(--color-primary)"
                 strokeWidth={3}
-                dot={{ fill: 'var(--color-primary)', r: 4 }}
+                dot={revenueData.length > 15 ? false : { fill: 'var(--color-primary)', r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>

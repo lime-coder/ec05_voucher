@@ -105,13 +105,51 @@ export default function VoucherManagement() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmVariant?: 'default' | 'destructive';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmVariant: 'default' | 'destructive' = 'default'
+  ) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      },
+      confirmVariant
+    });
+  };
+
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+<<<<<<< HEAD
     const validFiles = files.filter(file => file.type === 'image/jpeg' || file.type === 'image/png');
     if (validFiles.length < files.length) {
       toast.error(t('toast.voucher.image_format_error') || 'Chỉ chấp nhận ảnh JPEG hoặc PNG');
+=======
+    if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+      toast.error('Chỉ chấp nhận ảnh JPEG hoặc PNG');
+      return;
+>>>>>>> origin/main
     }
 
     setUploadingImage(true);
@@ -125,6 +163,7 @@ export default function VoucherManagement() {
           body: uploadFormData,
         });
 
+<<<<<<< HEAD
         if (res.ok) {
           const data = await res.json();
           const newImage = {
@@ -140,6 +179,20 @@ export default function VoucherManagement() {
         console.error('Error uploading image:', error);
         toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
       }
+=======
+      if (res.ok) {
+        const data = await res.json();
+        // Cập nhật imageUrl dạng đường dẫn tương đối (hoặc tuyệt đối theo tùy chọn)
+        setEditingVoucher(prev => prev ? { ...prev, imageUrl: data.imageUrl } : null);
+      } else {
+        toast.error('Lỗi tải ảnh lên máy chủ.');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Lỗi kết nối khi tải ảnh.');
+    } finally {
+      setUploadingImage(false);
+>>>>>>> origin/main
     }
     setUploadingImage(false);
   };
@@ -150,7 +203,7 @@ export default function VoucherManagement() {
 
   const fetchVouchers = () => {
     const partnerId = localStorage.getItem('partnerId') || '1';
-    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}`)
+    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -230,17 +283,26 @@ export default function VoucherManagement() {
     setDeleteDialogOpen(true);
   };
 
+<<<<<<< HEAD
   const handleRestore = async (voucher: Voucher) => {
     setConfirmModalState({
       isOpen: true,
       title: t('voucher.restore.title') || 'Khôi phục voucher',
       description: t('voucher.restore.desc') || 'Bạn có chắc muốn khôi phục voucher này?',
       onConfirm: async () => {
+=======
+  const handleRestore = (voucher: Voucher) => {
+    triggerConfirm(
+      t('partner.vouchers.restore_title') || 'Khôi phục Voucher',
+      'Bạn có chắc muốn khôi phục voucher này?',
+      async () => {
+>>>>>>> origin/main
         try {
           const res = await fetch(`http://localhost:5000/api/vouchers/${voucher.id}/restore`, {
             method: 'PUT'
           });
           if (res.ok) {
+<<<<<<< HEAD
             fetchVouchers();
           }
         } catch (err) {
@@ -248,6 +310,21 @@ export default function VoucherManagement() {
         }
       }
     });
+=======
+            setVouchers(prev => prev.map(v => v.id === voucher.id ? { ...v, status: 'active' } : v));
+            fetchVouchers();
+            toast.success('Khôi phục voucher thành công!');
+          } else {
+            toast.error('Khôi phục voucher thất bại!');
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error('Có lỗi xảy ra!');
+        }
+      },
+      'default'
+    );
+>>>>>>> origin/main
   };
 
   const handleClearFilters = () => {
@@ -990,6 +1067,24 @@ export default function VoucherManagement() {
                 });
 
                 if (res.ok) {
+                  setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
+                    ...v,
+                    name: editingVoucher.name!,
+                    originalPrice: editingVoucher.originalPrice!,
+                    salePrice: editingVoucher.salePrice!,
+                    quantity: editingVoucher.quantity!,
+                    status: editingVoucher.status!,
+                    categoryId: editingVoucher.categoryId,
+                    validStartDateRaw: editingVoucher.validStartDateRaw,
+                    validEndDateRaw: editingVoucher.validEndDateRaw,
+                    validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
+                    validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
+                    description: editingVoucher.description,
+                    terms: editingVoucher.terms,
+                    refundPolicy: editingVoucher.refundPolicy,
+                    usageInstructions: editingVoucher.usageInstructions,
+                    imageUrl: editingVoucher.imageUrl
+                  } : v));
                   setEditDialogOpen(false);
                   fetchVouchers(); // Refresh
                   toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
@@ -1031,6 +1126,7 @@ export default function VoucherManagement() {
                     method: 'DELETE'
                   });
                   if (res.ok) {
+                    setVouchers(prev => prev.map(v => v.id === selectedVoucher.id ? { ...v, status: 'deleted' } : v));
                     setDeleteDialogOpen(false);
                     fetchVouchers();
                   }
@@ -1069,6 +1165,32 @@ export default function VoucherManagement() {
         title={confirmModalState.title}
         description={confirmModalState.description}
       />
+
+      {/* Custom Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 font-bold text-lg">
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+              {t('common.cancel') || 'Hủy'}
+            </Button>
+            <Button
+              onClick={confirmDialog.onConfirm}
+              variant={confirmDialog.confirmVariant}
+              className={confirmDialog.confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+            >
+              {t('common.confirm') || 'Xác nhận'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

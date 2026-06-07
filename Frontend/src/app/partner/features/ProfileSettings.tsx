@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { ChangeEvent } from 'react';
 import {
   Edit2,
@@ -31,7 +32,7 @@ export default function ProfileSettings() {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const defaultTab = searchParams.get('tab') || 'business';
-  
+
   const [currentTab, setCurrentTab] = useState(defaultTab);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -51,7 +52,7 @@ export default function ProfileSettings() {
         const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`);
         if (res.ok) {
           const data = await res.json();
-          setFormData(prev => ({...prev, ...data}));
+          setFormData(prev => ({ ...prev, ...data }));
           if (data.avatarUrl) {
             setAvatarUrl(data.avatarUrl);
           }
@@ -89,7 +90,7 @@ export default function ProfileSettings() {
       });
       if (res.ok) {
         setIsEditing(false);
-        alert(t('partner.settings.business.save_success'));
+        toast.success(t('partner.settings.business.save_success'));
       } else {
         alert(t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
       }
@@ -151,8 +152,8 @@ export default function ProfileSettings() {
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 mb-6">
                     {t('partner.settings.business.verified')}
                   </Badge>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full gap-2 z-10"
                     onClick={() => setIsUploadModalOpen(true)}
                   >
@@ -322,7 +323,7 @@ export default function ProfileSettings() {
                       });
                       const data = await res.json();
                       if (res.ok) {
-                        alert(data.message);
+                        toast.success(data.message);
                         setCurrentPassword("");
                         setNewPassword("");
                         setConfirmPassword("");
@@ -384,7 +385,7 @@ export default function ProfileSettings() {
                   <Globe className="w-5 h-5 text-primary" /> {t('settings.language')}
                 </h2>
                 <div className="space-y-4">
-                  <div 
+                  <div
                     onClick={() => setLanguage('en')}
                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${language === 'en' ? 'bg-secondary border-primary' : 'hover:bg-secondary'}`}
                   >
@@ -394,7 +395,7 @@ export default function ProfileSettings() {
                     </div>
                     <div className={`w-4 h-4 rounded-full ${language === 'en' ? 'border-4 border-primary' : 'border border-border'}`}></div>
                   </div>
-                  <div 
+                  <div
                     onClick={() => setLanguage('vi')}
                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${language === 'vi' ? 'bg-secondary border-primary' : 'hover:bg-secondary'}`}
                   >
@@ -433,9 +434,9 @@ export default function ProfileSettings() {
         </div>
       </div>
 
-      <ImageUploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
+      <ImageUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
         onUpload={async (file) => {
           try {
             const partnerId = localStorage.getItem('partnerId') || '1';
@@ -459,7 +460,7 @@ export default function ProfileSettings() {
             console.error('Error uploading avatar:', error);
             alert(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
           }
-        }} 
+        }}
       />
 
       {avatarSuccess && (
@@ -471,7 +472,7 @@ export default function ProfileSettings() {
             <h3 className="font-bold text-xl mb-2">
               {t('partner.settings.business.avatar_success')}
             </h3>
-            <Button 
+            <Button
               onClick={() => setAvatarSuccess(false)}
               className="w-full py-3 mt-4"
             >

@@ -33,8 +33,40 @@ export function PartnerManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
 
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmVariant?: 'default' | 'destructive';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmVariant: 'default' | 'destructive' = 'default'
+  ) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      },
+      confirmVariant
+    });
+  };
+
   const fetchPartners = () => {
-    fetch('/api/admin/partners')
+    fetch(`/api/admin/partners?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -46,8 +78,6 @@ export function PartnerManagement() {
                                  : 'Pending'
           }));
           setPartners(mapped);
-        } else {
-          setPartners([]);
         }
       })
       .catch(err => console.error('Fetch partners error:', err));
@@ -57,95 +87,103 @@ export function PartnerManagement() {
     fetchPartners();
   }, []);
 
-  const handleApprovePartner = async (id: number, name: string) => {
-    const confirmMsg = tText(
-      `Are you sure you want to approve partner "${name}"?`,
-      `Bạn có chắc chắn muốn duyệt đối tác "${name}" không?`
+  const handleApprovePartner = (id: number, name: string) => {
+    triggerConfirm(
+      tText('Approve Partner', 'Duyệt Đối Tác'),
+      tText(`Are you sure you want to approve partner "${name}"?`, `Bạn có chắc chắn muốn duyệt đối tác "${name}" không?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/partners/${id}/approve`, {
+            method: 'PATCH'
+          });
+
+          if (res.ok) {
+            toast.success(
+              tText(
+                `Successfully approved partner "${name}"!`,
+                `Đã phê duyệt đối tác "${name}" thành công!`
+              )
+            );
+            setPartners(prev => prev.map(p => p.id === id ? { ...p, displayApprovalStatus: 'Approved', approvalStatus: 'APPROVED', status: 'ACTIVE' } : p));
+          } else {
+            toast.error(tText('Approval failed!', 'Duyệt đối tác thất bại!'));
+          }
+        } catch (e) {
+          console.error(e);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
+      },
+      'default'
     );
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const res = await fetch(`/api/admin/partners/${id}/approve`, {
-        method: 'PATCH'
-      });
-
-      if (res.ok) {
-        toast.success(
-          tText(
-            `Successfully approved partner "${name}"!`,
-            `Đã phê duyệt đối tác "${name}" thành công!`
-          )
-        );
-        fetchPartners();
-      } else {
-        toast.error(tText('Approval failed!', 'Duyệt đối tác thất bại!'));
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
   };
 
-  const handleRejectPartner = async (id: number, name: string) => {
-    const confirmMsg = tText(
-      `Are you sure you want to reject partner "${name}"?`,
-      `Bạn có chắc chắn muốn từ chối đối tác "${name}" không?`
+  const handleRejectPartner = (id: number, name: string) => {
+    triggerConfirm(
+      tText('Reject Partner', 'Từ Chối Đối Tác'),
+      tText(`Are you sure you want to reject partner "${name}"?`, `Bạn có chắc chắn muốn từ chối đối tác "${name}" không?`),
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/partners/${id}/reject`, {
+            method: 'PATCH'
+          });
+
+          if (res.ok) {
+            toast.success(
+              tText(
+                `Successfully rejected partner "${name}"!`,
+                `Đã từ chối đối tác "${name}"!`
+              )
+            );
+            setPartners(prev => prev.map(p => p.id === id ? { ...p, displayApprovalStatus: 'Rejected', approvalStatus: 'REJECTED' } : p));
+          } else {
+            toast.error(tText('Rejection failed!', 'Từ chối đối tác thất bại!'));
+          }
+        } catch (e) {
+          console.error(e);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
+      },
+      'destructive'
     );
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const res = await fetch(`/api/admin/partners/${id}/reject`, {
-        method: 'PATCH'
-      });
-
-      if (res.ok) {
-        toast.success(
-          tText(
-            `Successfully rejected partner "${name}"!`,
-            `Đã từ chối đối tác "${name}"!`
-          )
-        );
-        fetchPartners();
-      } else {
-        toast.error(tText('Rejection failed!', 'Từ chối đối tác thất bại!'));
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
   };
 
-  const handleTogglePartner = async (id: number, name: string) => {
+  const handleTogglePartner = (id: number, name: string) => {
     const partner = partners.find(p => p.id === id);
     if (!partner) return;
 
     const isLocking = partner.status === 'ACTIVE';
+    const confirmTitle = isLocking ? tText('Lock Partner', 'Khóa Đối Tác') : tText('Unlock Partner', 'Mở Khóa Đối Tác');
     const confirmMsg = isLocking
       ? tText(`Are you sure you want to lock partner "${name}"?`, `Bạn có chắc chắn muốn khóa đối tác "${name}" không?`)
       : tText(`Are you sure you want to unlock partner "${name}"?`, `Bạn có chắc chắn muốn mở khóa đối tác "${name}" không?`);
 
-    if (!confirm(confirmMsg)) return;
+    triggerConfirm(
+      confirmTitle,
+      confirmMsg,
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/partners/${id}/toggle`, {
+            method: 'PATCH'
+          });
 
-    try {
-      const res = await fetch(`/api/admin/partners/${id}/toggle`, {
-        method: 'PATCH'
-      });
-
-      if (res.ok) {
-        toast.success(
-          isLocking
-            ? tText(`Successfully locked partner "${name}"!`, `Đã khóa đối tác "${name}" thành công!`)
-            : tText(`Successfully unlocked partner "${name}"!`, `Đã mở khóa đối tác "${name}" thành công!`)
-        );
-        fetchPartners();
-      } else {
-        const err = await res.json();
-        toast.error(err.error || tText('Failed to change partner status!', 'Thay đổi trạng thái đối tác thất bại!'));
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+          if (res.ok) {
+            toast.success(
+              isLocking
+                ? tText(`Successfully locked partner "${name}"!`, `Đã khóa đối tác "${name}" thành công!`)
+                : tText(`Successfully unlocked partner "${name}"!`, `Đã mở khóa đối tác "${name}" thành công!`)
+            );
+            setPartners(prev => prev.map(p => p.id === id ? { ...p, status: isLocking ? 'LOCKED' : 'ACTIVE' } : p));
+          } else {
+            const err = await res.json();
+            toast.error(err.error || tText('Failed to change partner status!', 'Thay đổi trạng thái đối tác thất bại!'));
+          }
+        } catch (e) {
+          console.error(e);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
+      },
+      isLocking ? 'destructive' : 'default'
+    );
   };
 
   const handleViewPartner = (partner: any) => {
@@ -437,6 +475,32 @@ export function PartnerManagement() {
           <DialogFooter>
             <Button className="w-full" onClick={() => setShowDetailModal(false)}>
               {tText('Close', 'Đóng')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 font-bold text-lg">
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+              {tText('Cancel', 'Hủy')}
+            </Button>
+            <Button
+              onClick={confirmDialog.onConfirm}
+              variant={confirmDialog.confirmVariant}
+              className={confirmDialog.confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+            >
+              {tText('Confirm', 'Xác nhận')}
             </Button>
           </DialogFooter>
         </DialogContent>

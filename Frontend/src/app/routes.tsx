@@ -34,6 +34,7 @@ import { ContentManagement } from "./admin/components/screens/ContentManagement"
 import { SystemLogs } from "./admin/components/screens/SystemLogs";
 import { BannerEdit } from "./admin/components/screens/BannerEdit";
 import { AdminProfile } from "./admin/components/screens/AdminProfile";
+import { BranchStats } from "./admin/components/screens/BranchStats";
 
 // Shared Route Components
 import { NotificationsPage } from "./shared/pages/NotificationsPage";
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
       { path: "logs", element: <SystemLogs /> },
       { path: "profile", element: <AdminProfile /> },
       { path: "notifications", element: <NotificationsPage /> },
+      { path: "branch-stats", element: <BranchStats /> },
     ],
   },
   {

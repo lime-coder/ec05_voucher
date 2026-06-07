@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Handshake, BadgeCheck, ShoppingBag, Layout, ScrollText, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Handshake, BadgeCheck, ShoppingBag, Layout, ScrollText, LogOut, Store } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
@@ -19,6 +19,7 @@ export function Sidebar() {
     { id: '/admin', label: tText('Dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: '/admin/users', label: tText('User Management', 'Quản lý người dùng'), icon: Users },
     { id: '/admin/partners', label: tText('Partner Management', 'Quản lý đối tác'), icon: Handshake },
+    { id: '/admin/branch-stats', label: tText('Branch Stats', 'Thống kê chi nhánh'), icon: Store },
     { id: '/admin/vouchers', label: tText('Voucher Approval', 'Duyệt voucher'), icon: BadgeCheck },
     { id: '/admin/orders', label: tText('Order Management', 'Quản lý đơn hàng'), icon: ShoppingBag },
     { id: '/admin/content', label: tText('Content Management', 'Quản lý nội dung'), icon: Layout },
