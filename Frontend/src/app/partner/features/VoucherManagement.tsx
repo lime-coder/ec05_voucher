@@ -69,12 +69,44 @@ export default function VoucherManagement() {
   const [editingVoucher, setEditingVoucher] = useState<Partial<Voucher> | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmVariant?: 'default' | 'destructive';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmVariant: 'default' | 'destructive' = 'default'
+  ) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      },
+      confirmVariant
+    });
+  };
+
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
-      alert('Chỉ chấp nhận ảnh JPEG hoặc PNG');
+      toast.error('Chỉ chấp nhận ảnh JPEG hoặc PNG');
       return;
     }
 
@@ -93,11 +125,11 @@ export default function VoucherManagement() {
         // Cập nhật imageUrl dạng đường dẫn tương đối (hoặc tuyệt đối theo tùy chọn)
         setEditingVoucher(prev => prev ? { ...prev, imageUrl: data.imageUrl } : null);
       } else {
-        alert('Lỗi tải ảnh lên máy chủ.');
+        toast.error('Lỗi tải ảnh lên máy chủ.');
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Lỗi kết nối khi tải ảnh.');
+      toast.error('Lỗi kết nối khi tải ảnh.');
     } finally {
       setUploadingImage(false);
     }
@@ -105,7 +137,7 @@ export default function VoucherManagement() {
 
   const fetchVouchers = () => {
     const partnerId = localStorage.getItem('partnerId') || '1';
-    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}`)
+    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}?t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -175,19 +207,29 @@ export default function VoucherManagement() {
     setDeleteDialogOpen(true);
   };
 
-  const handleRestore = async (voucher: Voucher) => {
-    if (confirm("Bạn có chắc muốn khôi phục voucher này?")) {
-      try {
-        const res = await fetch(`http://localhost:5000/api/vouchers/${voucher.id}/restore`, {
-          method: 'PUT'
-        });
-        if (res.ok) {
-          fetchVouchers();
+  const handleRestore = (voucher: Voucher) => {
+    triggerConfirm(
+      t('partner.vouchers.restore_title') || 'Khôi phục Voucher',
+      'Bạn có chắc muốn khôi phục voucher này?',
+      async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/vouchers/${voucher.id}/restore`, {
+            method: 'PUT'
+          });
+          if (res.ok) {
+            setVouchers(prev => prev.map(v => v.id === voucher.id ? { ...v, status: 'active' } : v));
+            fetchVouchers();
+            toast.success('Khôi phục voucher thành công!');
+          } else {
+            toast.error('Khôi phục voucher thất bại!');
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error('Có lỗi xảy ra!');
         }
-      } catch (err) {
-        console.error(err);
-      }
-    }
+      },
+      'default'
+    );
   };
 
   const handleClearFilters = () => {
@@ -805,6 +847,24 @@ export default function VoucherManagement() {
                 });
 
                 if (res.ok) {
+                  setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
+                    ...v,
+                    name: editingVoucher.name!,
+                    originalPrice: editingVoucher.originalPrice!,
+                    salePrice: editingVoucher.salePrice!,
+                    quantity: editingVoucher.quantity!,
+                    status: editingVoucher.status!,
+                    categoryId: editingVoucher.categoryId,
+                    validStartDateRaw: editingVoucher.validStartDateRaw,
+                    validEndDateRaw: editingVoucher.validEndDateRaw,
+                    validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
+                    validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
+                    description: editingVoucher.description,
+                    terms: editingVoucher.terms,
+                    refundPolicy: editingVoucher.refundPolicy,
+                    usageInstructions: editingVoucher.usageInstructions,
+                    imageUrl: editingVoucher.imageUrl
+                  } : v));
                   setEditDialogOpen(false);
                   fetchVouchers(); // Refresh
                   toast.success('Cập nhật Voucher thành công!');
@@ -846,6 +906,7 @@ export default function VoucherManagement() {
                     method: 'DELETE'
                   });
                   if (res.ok) {
+                    setVouchers(prev => prev.map(v => v.id === selectedVoucher.id ? { ...v, status: 'deleted' } : v));
                     setDeleteDialogOpen(false);
                     fetchVouchers();
                   }
@@ -855,6 +916,32 @@ export default function VoucherManagement() {
               }}
             >
               {t('partner.vouchers.delete_title')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 font-bold text-lg">
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+              {t('common.cancel') || 'Hủy'}
+            </Button>
+            <Button
+              onClick={confirmDialog.onConfirm}
+              variant={confirmDialog.confirmVariant}
+              className={confirmDialog.confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+            >
+              {t('common.confirm') || 'Xác nhận'}
             </Button>
           </DialogFooter>
         </DialogContent>

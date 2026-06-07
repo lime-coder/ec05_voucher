@@ -175,14 +175,29 @@ export const getCategories = async (req: Request, res: Response) => {
         Vouchers: true
       }
     });
-    const mapped = categories.map(c => ({
-      id: c.MaDanhMuc,
-      name: c.TenDanhMuc,
-      moTa: c.MoTa || '',
-      vouchers: c.Vouchers.length,
-      icon: '🎫',
-      status: 'Hiển thị'
-    }));
+    const mapped = categories.map(c => {
+      let icon = 'Tag';
+      let moTa = c.MoTa || '';
+      try {
+        if (c.MoTa && c.MoTa.startsWith('{')) {
+          const parsed = JSON.parse(c.MoTa);
+          if (parsed && parsed.icon) {
+            icon = parsed.icon;
+            moTa = parsed.text || '';
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing category MoTa:', e);
+      }
+      return {
+        id: c.MaDanhMuc,
+        name: c.TenDanhMuc,
+        moTa: moTa,
+        vouchers: c.Vouchers.length,
+        icon: icon,
+        status: 'Hiển thị'
+      };
+    });
     res.json(mapped);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -191,11 +206,12 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { TenDanhMuc, MoTa } = req.body;
+    const { TenDanhMuc, MoTa, Icon } = req.body;
+    const MoTaJson = JSON.stringify({ icon: Icon || 'Tag', text: MoTa || '' });
     const category = await prisma.danhMuc.create({
       data: {
         TenDanhMuc,
-        MoTa
+        MoTa: MoTaJson
       }
     });
     res.status(201).json(category);
@@ -207,12 +223,13 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { TenDanhMuc, MoTa } = req.body;
+    const { TenDanhMuc, MoTa, Icon } = req.body;
+    const MoTaJson = JSON.stringify({ icon: Icon || 'Tag', text: MoTa || '' });
     const category = await prisma.danhMuc.update({
       where: { MaDanhMuc: Number(id) },
       data: {
         TenDanhMuc,
-        MoTa
+        MoTa: MoTaJson
       }
     });
     res.json(category);

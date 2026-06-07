@@ -26,11 +26,49 @@ export function OrderManagement() {
   const [orders, setOrders] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmVariant?: 'default' | 'destructive';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmVariant: 'default' | 'destructive' = 'default'
+  ) => {
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+      },
+      confirmVariant
+    });
+  };
+
   const fetchOrders = () => {
-    fetch('/api/admin/orders')
+    let url = `/api/admin/orders?t=${Date.now()}`;
+    if (startDate && endDate) {
+      url += `&startDate=${startDate}&endDate=${endDate}`;
+    }
+    fetch(url, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -51,35 +89,53 @@ export function OrderManagement() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [startDate, endDate]);
 
-  const handleUpdateStatus = async (orderId: number, nextStatus: string) => {
+  const handleUpdateStatus = (orderId: number, nextStatus: string) => {
     const statusTextEn = nextStatus === 'PAID' ? 'process payment' : nextStatus === 'CANCELLED' ? 'cancel order' : 'refund';
     const statusTextVi = nextStatus === 'PAID' ? 'xử lý thanh toán' : nextStatus === 'CANCELLED' ? 'hủy đơn hàng' : 'hoàn tiền';
     const confirmMsg = tText(
       `Are you sure you want to ${statusTextEn} for order ORD-${orderId}?`,
       `Bạn có chắc chắn muốn ${statusTextVi} cho đơn hàng ORD-${orderId}?`
     );
-    if (!confirm(confirmMsg)) return;
 
-    try {
-      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
-      });
+    const isDestructive = nextStatus === 'CANCELLED' || nextStatus === 'REFUNDED';
+    const confirmTitle = nextStatus === 'PAID' ? tText('Process Payment', 'Xử Lý Thanh Toán')
+                       : nextStatus === 'CANCELLED' ? tText('Cancel Order', 'Hủy Đơn Hàng')
+                       : tText('Refund Order', 'Hoàn Tiền Đơn Hàng');
 
-      if (res.ok) {
-        toast.success(tText('Order status updated successfully!', 'Cập nhật trạng thái đơn hàng thành công!'));
-        fetchOrders();
-      } else {
-        const err = await res.json();
-        toast.error(err.error || tText('Update failed!', 'Cập nhật thất bại!'));
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
-    }
+    triggerConfirm(
+      confirmTitle,
+      confirmMsg,
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: nextStatus })
+          });
+
+          if (res.ok) {
+            toast.success(tText('Order status updated successfully!', 'Cập nhật trạng thái đơn hàng thành công!'));
+            setOrders(prev => prev.map(o => o.rawId === orderId ? {
+              ...o,
+              status: nextStatus,
+              englishStatus: nextStatus === 'PAID' ? 'Paid'
+                           : nextStatus === 'CANCELLED' ? 'Cancelled'
+                           : nextStatus === 'REFUNDED' ? 'Refunded' : nextStatus
+            } : o));
+            fetchOrders();
+          } else {
+            const err = await res.json();
+            toast.error(err.error || tText('Update failed!', 'Cập nhật thất bại!'));
+          }
+        } catch (e) {
+          console.error(e);
+          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+        }
+      },
+      isDestructive ? 'destructive' : 'default'
+    );
   };
 
   const handleViewOrder = (order: any) => {
@@ -126,10 +182,30 @@ export function OrderManagement() {
           <option value="cancelled">{tText("Cancelled", "Đã hủy")}</option>
           <option value="refunded">{tText("Refunded", "Đã hoàn tiền")}</option>
         </select>
-        <Input
-          type="date"
-          className="w-auto bg-white shadow-sm border-gray-200"
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-auto bg-white shadow-sm border-gray-200 text-sm"
+          />
+          <span className="text-gray-400 text-sm">{tText('to', 'đến')}</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-auto bg-white shadow-sm border-gray-200 text-sm"
+          />
+          {(startDate || endDate) && (
+            <Button
+              variant="ghost"
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 h-10 border border-gray-200 bg-white"
+            >
+              {tText('Clear', 'Xóa')}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -314,6 +390,32 @@ export function OrderManagement() {
           )}
           <DialogFooter>
             <Button className="w-full" onClick={() => setShowDetailModal(false)}>{tText("Close", "Đóng")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 font-bold text-lg">
+              {confirmDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm">{confirmDialog.message}</p>
+          </div>
+          <DialogFooter className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+              {tText('Cancel', 'Hủy')}
+            </Button>
+            <Button
+              onClick={confirmDialog.onConfirm}
+              variant={confirmDialog.confirmVariant}
+              className={confirmDialog.confirmVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+            >
+              {tText('Confirm', 'Xác nhận')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

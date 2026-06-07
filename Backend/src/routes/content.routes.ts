@@ -29,6 +29,6 @@ router.put('/categories/:id', C.updateCategory);
 router.delete('/categories/:id', C.deleteCategory);
 
 // === Upload ===
-router.post('/upload', upload.single('image'), uploadImage);
+router.post('/upload', uploadImage);
 
 export default router;

@@ -27,6 +27,12 @@ export function AdminLayout() {
         subtitle: tText('Review and manage partner registration approval', 'Kiểm duyệt và quản lý đối tác đăng ký') 
       };
     }
+    if (pathname.includes('/admin/branch-stats')) {
+      return { 
+        title: tText('Branch Statistics', 'Thống kê chi nhánh'), 
+        subtitle: tText('Track voucher usage performance across partner branches', 'Theo dõi hiệu suất sử dụng voucher tại các chi nhánh đối tác') 
+      };
+    }
     if (pathname.includes('/admin/vouchers')) {
       return { 
         title: tText('Voucher Approval', 'Duyệt voucher'), 

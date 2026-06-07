@@ -22,6 +22,14 @@ app.use(cors()); // Allow requests from the React Frontend
 app.use(express.json()); // Parse incoming JSON payloads
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
+// Disable caching for all API endpoints
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Mount Routes
 // E.g., any request to /api/vouchers will be handled by voucherRoutes
 app.use('/api/vouchers', voucherRoutes);

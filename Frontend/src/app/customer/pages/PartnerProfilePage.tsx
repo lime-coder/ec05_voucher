@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { Building2, User, Mail, Phone, MapPin, Hash, Save, Camera } from "lucide-react";
 import { Button, Input } from "@voucherhub/ui";
 import { ImageUploadModal } from "../../shared/components/ImageUploadModal";
@@ -29,7 +30,7 @@ export function PartnerProfilePage() {
   };
 
   const handleSave = () => {
-    alert(t('partner.profile_updated'));
+    toast.success(t('partner.profile_updated'));
   };
 
   const handleDiscard = () => {
