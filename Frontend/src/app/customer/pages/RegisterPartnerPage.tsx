@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, User, Briefcase, Building2, FileText, Info, CheckCircle2, Circle } from "lucide-react";
+import { Mail, Lock, User, Briefcase, Building2, FileText, Info, CheckCircle2, Circle, Phone } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@voucherhub/ui";
@@ -47,6 +47,8 @@ export function RegisterPartnerPage() {
         CaNhanDaiDien: data.legalRep,
         LinhVucKinhDoanh: data.businessField,
         ChucVu: data.jobPosition,
+        EmailLienHe: data.companyEmail,
+        SDTLienHe: data.companyPhone,
       };
       
       await api.post('/auth/register/partner', payload);
@@ -211,6 +213,40 @@ export function RegisterPartnerPage() {
                       />
                     </div>
                     {errors.companyName && <p className="text-red-500 text-xs mt-1">{errors.companyName.message}</p>}
+                  </div>
+
+                  {/* Company Email */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {t('auth.company_email') || "Company Email"} <span className="text-destructive">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="contact@company.com"
+                        className="pl-10 py-6 bg-input-background"
+                        {...register("companyEmail")}
+                      />
+                    </div>
+                    {errors.companyEmail && <p className="text-red-500 text-xs mt-1">{errors.companyEmail.message}</p>}
+                  </div>
+
+                  {/* Company Phone */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {t('auth.company_phone') || "Company Phone"} <span className="text-destructive">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="0123456789"
+                        className="pl-10 py-6 bg-input-background"
+                        {...register("companyPhone")}
+                      />
+                    </div>
+                    {errors.companyPhone && <p className="text-red-500 text-xs mt-1">{errors.companyPhone.message}</p>}
                   </div>
 
                   {/* Tax ID */}

@@ -412,7 +412,7 @@ export function PartnerManagement() {
             </DialogTitle>
           </DialogHeader>
           {selectedPartner && (
-            <div className="py-4 space-y-3 text-sm">
+            <div className="py-4 space-y-3 text-sm max-h-[60vh] overflow-y-auto pr-2">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500 font-medium">{tText('Enterprise Name:', 'Tên doanh nghiệp:')}</span>
                 <span className="font-semibold text-gray-900">{selectedPartner.name}</span>
@@ -434,6 +434,26 @@ export function PartnerManagement() {
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500 font-medium">{tText('Legal Representative:', 'Người đại diện:')}</span>
                 <span className="text-gray-900">{selectedPartner.representative || tText('Not provided', 'Chưa cung cấp')}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Phone:', 'Số điện thoại:')}</span>
+                <span className="text-gray-900">{selectedPartner.phone || tText('Not provided', 'Chưa cung cấp')}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Email:', 'Email:')}</span>
+                <span className="text-gray-900">{selectedPartner.email || tText('Not provided', 'Chưa cung cấp')}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">{tText('Operating Hours:', 'Giờ hoạt động:')}</span>
+                <span className="text-gray-900">
+                  {selectedPartner.openTime && selectedPartner.closeTime 
+                    ? `${selectedPartner.openTime} - ${selectedPartner.closeTime}`
+                    : tText('Not provided', 'Chưa cung cấp')}
+                </span>
+              </div>
+              <div className="flex flex-col border-b pb-2 gap-1">
+                <span className="text-gray-500 font-medium">{tText('Description:', 'Mô tả:')}</span>
+                <span className="text-gray-900 whitespace-pre-wrap">{selectedPartner.description || tText('Not provided', 'Chưa cung cấp')}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500 font-medium">{tText('Voucher Count:', 'Số lượng voucher:')}</span>

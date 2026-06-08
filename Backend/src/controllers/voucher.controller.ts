@@ -500,8 +500,8 @@ export const uploadVoucherImage = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No file uploaded.' });
     }
     
-    // Create the relative URL to access the uploaded file
-    const relativeUrl = `/uploads/vouchers/${req.file.filename}`;
+    // Create the relative URL to access the uploaded file in temp
+    const relativeUrl = `/uploads/temp/${req.file.filename}`;
     
     res.status(200).json({ 
       message: 'Voucher image uploaded successfully', 
@@ -521,19 +521,13 @@ export const deleteVoucherImage = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No image URL provided.' });
     }
 
-    const filename = imageUrl.split('/').pop();
-    if (!filename) {
-      return res.status(400).json({ message: 'Invalid image URL.' });
-    }
-
-    const filePath = path.join(process.cwd(), 'uploads', 'vouchers', filename);
+    const { deleteMediaFile } = require('../utils/media.util');
     
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      return res.status(200).json({ message: 'Image deleted successfully' });
-    } else {
-      return res.status(404).json({ message: 'Image not found on server' });
-    }
+    // deleteMediaFile will handle reconstructing the correct path from the URL
+    // (e.g. /uploads/temp/file.jpg or /uploads/vouchers/...)
+    deleteMediaFile(imageUrl);
+    
+    return res.status(200).json({ message: 'Image deletion triggered' });
   } catch (error) {
     console.error('Error deleting voucher image:', error);
     res.status(500).json({ message: 'An error occurred while deleting the image.' });

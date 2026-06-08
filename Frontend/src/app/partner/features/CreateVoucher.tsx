@@ -180,7 +180,7 @@ export default function CreateVoucher() {
 
   const handleRemoveImage = async (id: string) => {
     const imgToRemove = images.find(img => img.id === id);
-    if (imgToRemove && imgToRemove.url.includes('/uploads/vouchers/')) {
+    if (imgToRemove && imgToRemove.url.includes('/uploads/temp/')) {
       try {
         await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(imgToRemove.url)}`);
       } catch (error) {
@@ -192,7 +192,7 @@ export default function CreateVoucher() {
 
   const handleClearDraft = async () => {
     for (const img of images) {
-      if (img.url.includes('/uploads/vouchers/')) {
+      if (img.url.includes('/uploads/temp/')) {
         try {
           await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(img.url)}`);
         } catch (e) {

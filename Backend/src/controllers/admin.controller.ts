@@ -668,9 +668,14 @@ export const getPartners = async (req: Request, res: Response) => {
         vouchers: p.Vouchers.length,
         revenue: totalRevenue.toLocaleString('vi-VN') + 'đ',
         status: p.TrangThaiHoatDong === 'Hoạt động' ? 'ACTIVE' : (p.TrangThaiHoatDong === 'Bị khóa' ? 'LOCKED' : 'PENDING'),
-        date: '01/03/2026',
+        date: p.NgayThamGia ? new Date(p.NgayThamGia).toLocaleDateString('vi-VN') : '01/03/2026',
         taxCode: p.MaSoThue || '',
         representative: p.CaNhanDaiDien || '',
+        phone: p.SDTLienHe || '',
+        email: p.EmailLienHe || '',
+        description: p.MoTa || '',
+        openTime: p.GioMoCua || '',
+        closeTime: p.GioDongCua || '',
         approvalStatus: p.TrangThaiPheDuyet === 'Đã duyệt' ? 'APPROVED' : (p.TrangThaiPheDuyet === 'Từ chối' ? 'REJECTED' : 'PENDING')
       };
     });

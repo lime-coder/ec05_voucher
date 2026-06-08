@@ -23,6 +23,7 @@ import {
   DialogFooter,
   Input,
 } from '@voucherhub/ui';
+import api from '../../../../lib/api';
 
 const PRESET_ICONS = [
   // Ăn uống & Đồ uống
@@ -151,8 +152,8 @@ export function ContentManagement() {
 
   // Load content from API
   const fetchAllContent = () => {
-    fetch(`/api/admin/content?t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
+    api.get(`/admin/content?t=${Date.now()}`)
+      .then(res => res.data)
       .then(data => {
         if (Array.isArray(data.banners)) setBanners(data.banners);
         if (Array.isArray(data.articles)) setArticles(data.articles);
@@ -160,8 +161,8 @@ export function ContentManagement() {
       })
       .catch(err => console.error('Fetch content error:', err));
 
-    fetch(`/api/content/categories?t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
+    api.get(`/content/categories?t=${Date.now()}`)
+      .then(res => res.data)
       .then(data => {
         if (Array.isArray(data)) setCategories(data);
       })
@@ -179,16 +180,12 @@ export function ContentManagement() {
       tText(`Are you sure you want to delete banner: ${title}?`, `Xác nhận xoá banner: ${title}?`),
       async () => {
         try {
-          const res = await fetch(`/api/admin/content/${id}?type=banner`, { method: 'DELETE' });
-          if (res.ok) {
-            toast.success(tText('Banner deleted successfully!', 'Đã xóa banner thành công!'));
-            setBanners(prev => prev.filter(b => b.MaBanner !== id));
-          } else {
-            toast.error(tText('Failed to delete banner!', 'Xóa banner thất bại!'));
-          }
-        } catch (err) {
+          await api.delete(`/admin/content/${id}?type=banner`);
+          toast.success(tText('Banner deleted successfully!', 'Đã xóa banner thành công!'));
+          setBanners(prev => prev.filter(b => b.MaBanner !== id));
+        } catch (err: any) {
           console.error(err);
-          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+          toast.error(tText('Failed to delete banner!', 'Xóa banner thất bại!'));
         }
       }
     );
@@ -200,16 +197,12 @@ export function ContentManagement() {
       tText(`Are you sure you want to delete article: ${title}?`, `Xác nhận xoá bài viết: ${title}?`),
       async () => {
         try {
-          const res = await fetch(`/api/admin/content/${id}?type=article`, { method: 'DELETE' });
-          if (res.ok) {
-            toast.success(tText('Article deleted successfully!', 'Đã xóa bài viết thành công!'));
-            setArticles(prev => prev.filter(a => a.MaBaiViet !== id));
-          } else {
-            toast.error(tText('Failed to delete article!', 'Xóa bài viết thất bại!'));
-          }
-        } catch (err) {
+          await api.delete(`/admin/content/${id}?type=article`);
+          toast.success(tText('Article deleted successfully!', 'Đã xóa bài viết thành công!'));
+          setArticles(prev => prev.filter(a => a.MaBaiViet !== id));
+        } catch (err: any) {
           console.error(err);
-          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+          toast.error(tText('Failed to delete article!', 'Xóa bài viết thất bại!'));
         }
       }
     );
@@ -221,16 +214,12 @@ export function ContentManagement() {
       tText(`Are you sure you want to delete FAQ: ${question}?`, `Xác nhận xoá FAQ: ${question}?`),
       async () => {
         try {
-          const res = await fetch(`/api/admin/content/${id}?type=faq`, { method: 'DELETE' });
-          if (res.ok) {
-            toast.success(tText('FAQ deleted successfully!', 'Đã xóa FAQ thành công!'));
-            setFaqs(prev => prev.filter(f => f.MaFAQ !== id));
-          } else {
-            toast.error(tText('Failed to delete FAQ!', 'Xóa FAQ thất bại!'));
-          }
-        } catch (err) {
+          await api.delete(`/admin/content/${id}?type=faq`);
+          toast.success(tText('FAQ deleted successfully!', 'Đã xóa FAQ thành công!'));
+          setFaqs(prev => prev.filter(f => f.MaFAQ !== id));
+        } catch (err: any) {
           console.error(err);
-          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+          toast.error(tText('Failed to delete FAQ!', 'Xóa FAQ thất bại!'));
         }
       }
     );
@@ -243,18 +232,14 @@ export function ContentManagement() {
       tText(`Are you sure you want to delete category: ${name}?`, `Xác nhận xoá danh mục: ${name}?`),
       async () => {
         try {
-          const res = await fetch(`/api/content/categories/${id}`, { method: 'DELETE' });
-          if (res.ok) {
-            toast.success(tText('Category deleted successfully!', 'Đã xóa danh mục thành công!'));
-            setCategories(prev => prev.filter(c => c.id !== id));
-            fetchAllContent();
-          } else {
-            const data = await res.json();
-            toast.error(data.error ? tText(data.error, data.error) : tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
-          }
-        } catch (err) {
+          await api.delete(`/content/categories/${id}`);
+          toast.success(tText('Category deleted successfully!', 'Đã xóa danh mục thành công!'));
+          setCategories(prev => prev.filter(c => c.id !== id));
+          fetchAllContent();
+        } catch (err: any) {
           console.error(err);
-          toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+          const data = err.response?.data;
+          toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
         }
       }
     );
@@ -287,25 +272,16 @@ export function ContentManagement() {
     }
 
     try {
-      const url = currentCategory ? `/api/content/categories/${currentCategory.id}` : '/api/content/categories';
-      const method = currentCategory ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(categoryForm)
-      });
-
-      if (res.ok) {
-        toast.success(currentCategory ? tText('Category updated successfully!', 'Đã cập nhật danh mục!') : tText('Category added successfully!', 'Đã thêm danh mục mới!'));
-        setShowCategoryModal(false);
-        fetchAllContent();
-      } else {
-        const data = await res.json();
-        toast.error(data.error ? tText(data.error, data.error) : tText('Failed to save category!', 'Lưu danh mục thất bại!'));
-      }
-    } catch (err) {
+      const url = currentCategory ? `/content/categories/${currentCategory.id}` : '/content/categories';
+      const method = currentCategory ? 'put' : 'post';
+      await api[method](url, categoryForm);
+      toast.success(currentCategory ? tText('Category updated successfully!', 'Đã cập nhật danh mục!') : tText('Category added successfully!', 'Đã thêm danh mục mới!'));
+      setShowCategoryModal(false);
+      fetchAllContent();
+    } catch (err: any) {
       console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+      const data = err.response?.data;
+      toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save category!', 'Lưu danh mục thất bại!'));
     }
   };
 
@@ -341,25 +317,16 @@ export function ContentManagement() {
     }
 
     try {
-      const url = currentFaq ? `/api/admin/content/${currentFaq.MaFAQ}` : '/api/admin/content';
-      const method = currentFaq ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'faq', ...faqForm })
-      });
-
-      if (res.ok) {
-        toast.success(currentFaq ? tText('FAQ updated successfully!', 'Đã cập nhật FAQ!') : tText('FAQ added successfully!', 'Đã thêm FAQ mới!'));
-        setShowFaqModal(false);
-        fetchAllContent();
-      } else {
-        const data = await res.json().catch(() => null);
-        toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
-      }
-    } catch (err) {
+      const url = currentFaq ? `/admin/content/${currentFaq.MaFAQ}` : '/admin/content';
+      const method = currentFaq ? 'put' : 'post';
+      await api[method](url, { type: 'faq', ...faqForm });
+      toast.success(currentFaq ? tText('FAQ updated successfully!', 'Đã cập nhật FAQ!') : tText('FAQ added successfully!', 'Đã thêm FAQ mới!'));
+      setShowFaqModal(false);
+      fetchAllContent();
+    } catch (err: any) {
       console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+      const data = err.response?.data;
+      toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
     }
   };
 
@@ -398,25 +365,16 @@ export function ContentManagement() {
     }
 
     try {
-      const url = currentArticle ? `/api/admin/content/${currentArticle.MaBaiViet}` : '/api/admin/content';
-      const method = currentArticle ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'article', ...articleForm })
-      });
-
-      if (res.ok) {
-        toast.success(currentArticle ? tText('Article updated successfully!', 'Đã cập nhật bài viết!') : tText('Article added successfully!', 'Đã thêm bài viết mới!'));
-        setShowArticleModal(false);
-        fetchAllContent();
-      } else {
-        const data = await res.json().catch(() => null);
-        toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save article!', 'Lưu bài viết thất bại!'));
-      }
-    } catch (err) {
+      const url = currentArticle ? `/admin/content/${currentArticle.MaBaiViet}` : '/admin/content';
+      const method = currentArticle ? 'put' : 'post';
+      await api[method](url, { type: 'article', ...articleForm });
+      toast.success(currentArticle ? tText('Article updated successfully!', 'Đã cập nhật bài viết!') : tText('Article added successfully!', 'Đã thêm bài viết mới!'));
+      setShowArticleModal(false);
+      fetchAllContent();
+    } catch (err: any) {
       console.error(err);
-      toast.error(tText('An error occurred!', 'Có lỗi xảy ra!'));
+      const data = err.response?.data;
+      toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save article!', 'Lưu bài viết thất bại!'));
     }
   };
 

@@ -142,7 +142,7 @@ export default function VoucherManagement() {
 
   const handleRemoveEditImage = async (id: string) => {
     const imgToRemove = editImages.find(img => img.id === id);
-    if (imgToRemove && imgToRemove.url.includes('/uploads/vouchers/')) {
+    if (imgToRemove && imgToRemove.url.includes('/uploads/temp/')) {
       try {
         await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(imgToRemove.url)}`);
       } catch (error) {
@@ -157,7 +157,7 @@ export default function VoucherManagement() {
     const newImages = editImages.filter(img => !originalUrls.includes(img.url));
     
     for (const img of newImages) {
-      if (img.url.includes('/uploads/vouchers/')) {
+      if (img.url.includes('/uploads/temp/')) {
         try {
           await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(img.url)}`);
         } catch (e) {
@@ -179,7 +179,8 @@ export default function VoucherManagement() {
             let status: any = 'draft';
             if (v.TrangThaiVoucher === 'PENDING_APPROVAL' || v.TrangThaiVoucher === 'Chờ duyệt') status = 'pending';
             else if (v.TrangThaiVoucher === 'APPROVED' || v.TrangThaiVoucher === 'ACTIVE' || v.TrangThaiVoucher === 'Đang hoạt động') status = 'active';
-            else if (v.TrangThaiVoucher === 'PAUSED' || v.TrangThaiVoucher === 'Tạm ngưng' || v.TrangThaiVoucher === 'REJECTED' || v.TrangThaiVoucher === 'Từ chối') status = 'paused';
+            else if (v.TrangThaiVoucher === 'PAUSED' || v.TrangThaiVoucher === 'Tạm ngưng') status = 'paused';
+            else if (v.TrangThaiVoucher === 'REJECTED' || v.TrangThaiVoucher === 'Từ chối') status = 'rejected';
             else if (v.TrangThaiVoucher === 'DELETED' || v.TrangThaiVoucher === 'Đã xóa') status = 'deleted';
             else if (v.TrangThaiVoucher === 'EXPIRED' || v.TrangThaiVoucher === 'Hết hạn') status = 'expired';
             else if (v.TrangThaiVoucher === 'DRAFT' || v.TrangThaiVoucher === 'Bản nháp') status = 'draft';
@@ -934,9 +935,10 @@ export default function VoucherManagement() {
                     <div className="relative">
                       <Input
                         type="number"
-                        className="rounded-lg border-gray-300 pr-8 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="rounded-lg border-gray-300 pr-8 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                         value={editingVoucher?.originalPrice || 0}
                         onChange={e => setEditingVoucher(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) }))}
+                        disabled={!!selectedVoucher}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₫</span>
                     </div>
@@ -946,9 +948,10 @@ export default function VoucherManagement() {
                     <div className="relative">
                       <Input
                         type="number"
-                        className="rounded-lg border-red-300 text-red-600 font-semibold pr-8 shadow-sm focus:ring-red-500 focus:border-red-500"
+                        className="rounded-lg border-red-300 text-red-600 font-semibold pr-8 shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:opacity-70"
                         value={editingVoucher?.salePrice || 0}
                         onChange={e => setEditingVoucher(prev => ({ ...prev, salePrice: parseFloat(e.target.value) }))}
+                        disabled={!!selectedVoucher}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 font-medium">₫</span>
                     </div>
@@ -969,18 +972,20 @@ export default function VoucherManagement() {
                     <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.start_date') || 'Bắt đầu'}</label>
                     <Input
                       type="date"
-                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                       value={editingVoucher?.validStartDateRaw ? new Date(editingVoucher.validStartDateRaw as string).toISOString().split('T')[0] : ''}
                       onChange={e => setEditingVoucher(prev => ({ ...prev, validStartDateRaw: e.target.value }))}
+                      disabled={!!selectedVoucher}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.end_date') || 'Kết thúc'}</label>
                     <Input
                       type="date"
-                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                       value={editingVoucher?.validEndDateRaw ? new Date(editingVoucher.validEndDateRaw as string).toISOString().split('T')[0] : ''}
                       onChange={e => setEditingVoucher(prev => ({ ...prev, validEndDateRaw: e.target.value }))}
+                      disabled={!!selectedVoucher}
                     />
                   </div>
                 </div>

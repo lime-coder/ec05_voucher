@@ -11,6 +11,7 @@ const screenTitleKeys: Record<string, string> = {
   '/partner/verify': 'partner.nav.verify',
   '/partner/reports': 'partner.nav.reports',
   '/partner/branches': 'partner.nav.branches',
+  '/partner/store': 'partner.nav.store',
   '/partner/profile': 'partner.nav.profile',
   '/': 'partner.nav.dashboard',
   '/vouchers': 'partner.nav.vouchers',

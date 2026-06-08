@@ -164,6 +164,8 @@ export class AuthService {
           LinhVucKinhDoanh: data.LinhVucKinhDoanh,
           TrangThaiPheDuyet: 'Chờ duyệt',
           TrangThaiHoatDong: 'Hoạt động',
+          EmailLienHe: data.EmailLienHe || 'contact@domain.com',
+          SDTLienHe: data.SDTLienHe || '0000000000',
         },
       });
 

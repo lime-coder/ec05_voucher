@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { AdminSettingsModal } from './AdminSettingsModal';
+import api from '../../../lib/api';
 
 interface HeaderProps {
   title: string;
@@ -23,8 +24,8 @@ export function Header({ title, subtitle }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = () => {
-    fetch('/api/admin/notifications')
-      .then(res => res.json())
+    api.get('/admin/notifications')
+      .then(res => res.data)
       .then(data => {
         if (Array.isArray(data)) {
           const readIds = JSON.parse(localStorage.getItem('admin_read_notifs') || '[]');

@@ -7,6 +7,7 @@ import {
   TableBody, TableCell, Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogFooter,
 } from '@voucherhub/ui';
+import api from '../../../../lib/api';
 
 export function UserManagement() {
   const { language } = useLanguage();
@@ -31,8 +32,8 @@ export function UserManagement() {
   const itemsPerPage = 10;
 
   const fetchUsers = () => {
-    fetch(`/api/admin/users?t=${Date.now()}`, { cache: 'no-store' })
-      .then(r => r.json())
+    api.get(`/admin/users?t=${Date.now()}`)
+      .then(r => r.data)
       .then(data => {
         if (Array.isArray(data)) setUsers(data);
       })
@@ -72,33 +73,23 @@ export function UserManagement() {
       return;
     }
     try {
-      const res = await fetch(`/api/admin/users/${selectedUser.id}/toggle`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: lockReason })
-      });
-      if (res.ok) {
-        toast.success(t(`Locked account: ${selectedUser.name}`, `Đã khóa tài khoản: ${selectedUser.name}`));
-        setShowLockModal(false);
-        setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'INACTIVE' } : u));
-      } else {
-        const err = await res.json();
-        toast.error(err.error || t('Failed!', 'Thất bại!'));
-      }
-    } catch { toast.error(t('Error occurred', 'Có lỗi xảy ra')); }
+      await api.patch(`/admin/users/${selectedUser.id}/toggle`, { reason: lockReason });
+      toast.success(t(`Locked account: ${selectedUser.name}`, `Đã khóa tài khoản: ${selectedUser.name}`));
+      setShowLockModal(false);
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: 'INACTIVE' } : u));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || t('Failed!', 'Thất bại!'));
+    }
   };
 
   const handleUnlock = async (user: any) => {
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/toggle`, { method: 'PATCH' });
-      if (res.ok) {
-        toast.success(t(`Unlocked: ${user.name}`, `Đã mở khóa: ${user.name}`));
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'ACTIVE' } : u));
-      } else {
-        const err = await res.json();
-        toast.error(err.error || t('Failed!', 'Thất bại!'));
-      }
-    } catch { toast.error(t('Error occurred', 'Có lỗi xảy ra')); }
+      await api.patch(`/admin/users/${user.id}/toggle`);
+      toast.success(t(`Unlocked: ${user.name}`, `Đã mở khóa: ${user.name}`));
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: 'ACTIVE' } : u));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || t('Failed!', 'Thất bại!'));
+    }
   };
 
   const statusBadge = (status: string) => {

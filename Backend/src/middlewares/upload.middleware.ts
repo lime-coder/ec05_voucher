@@ -4,7 +4,8 @@ import fs from 'fs';
 import { Request, Response, NextFunction } from 'express';
 
 const createUploadMiddleware = (folder: string, fieldName: string) => {
-  const uploadDir = path.join(process.cwd(), 'uploads', folder);
+  // All new uploads go to the temp folder first
+  const uploadDir = path.join(process.cwd(), 'uploads', 'temp');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
@@ -12,8 +13,9 @@ const createUploadMiddleware = (folder: string, fieldName: string) => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
+      // Use a timestamp suffix for temp uniqueness
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      cb(null, 'temp_' + fieldName + '-' + uniqueSuffix + path.extname(file.originalname));
     }
   });
 

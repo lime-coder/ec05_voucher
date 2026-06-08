@@ -51,7 +51,13 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/brands', require('./routes/brand.routes').default);
 
+import { cleanupTempUploads } from './utils/cleanup.util';
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Backend Server is running on http://localhost:${PORT}`);
+  
+  // Run cleanup job immediately and then every hour
+  cleanupTempUploads();
+  setInterval(cleanupTempUploads, 60 * 60 * 1000);
 });

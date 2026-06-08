@@ -9,6 +9,7 @@ import {
   Zap,
   Check,
   ChevronLeft,
+  ChevronRight,
   Diamond,
   BadgeCheck,
 } from "lucide-react";
@@ -87,6 +88,7 @@ export function VoucherDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -282,6 +284,7 @@ export function VoucherDetailPage() {
         )
       : 0;
 
+  const images = voucher.image ? voucher.image.split(',').map(url => url.startsWith('http') ? url : `http://localhost:5000${url}`) : ["https://placehold.co/600x400?text=Voucher"];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -301,18 +304,51 @@ export function VoucherDetailPage() {
           {/* Left - Images */}
           <div>
             {/* Main Image */}
-            <div className="relative rounded-xl overflow-hidden mb-4">
+            <div className="relative rounded-xl overflow-hidden mb-4 group">
               <img
-                src={ voucher.image || "https://placehold.co/600x400?text=Voucher" }
+                src={images[selectedImageIndex] || images[0]}
                 alt="Voucher"
-                className="w-full aspect-[4/3] object-cover"
+                className="w-full aspect-[4/3] object-cover transition-opacity duration-300"
               />
-              <div className="absolute top-4 left-4 bg-[#FF4444] text-white px-3 py-1 rounded-md font-bold">
+              <div className="absolute top-4 left-4 bg-[#FF4444] text-white px-3 py-1 rounded-md font-bold shadow-sm z-10">
                 {t('voucher.best_seller')}
               </div>
+
+              {/* Navigation Arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-gray-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
+                  >
+                    <ChevronLeft className="w-6 h-6 ml-[-2px]" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-gray-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
+                  >
+                    <ChevronRight className="w-6 h-6 mr-[-2px]" />
+                  </button>
+                </>
+              )}
             </div>
 
-          
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`relative rounded-lg overflow-hidden shrink-0 w-20 h-20 border-2 transition-all ${
+                      selectedImageIndex === idx ? "border-primary opacity-100 ring-2 ring-primary ring-offset-1" : "border-transparent opacity-70 hover:opacity-100 hover:border-primary/50"
+                    }`}
+                  >
+                    <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right - Details */}

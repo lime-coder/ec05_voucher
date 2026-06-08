@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { HeroSection } from "../components/home/HeroSection";
 import { HowItWorksSection } from "../components/home/HowItWorksSection";
 import { CategorySection } from "../components/home/CategorySection";
+import { MiddleBannerSection } from "../components/home/MiddleBannerSection";
 import { FlashSaleSection } from "../components/home/FlashSaleSection";
 import { ArticleSection } from "../components/home/ArticleSection";
 import { FAQSection } from "../components/home/FAQSection";
@@ -43,6 +44,7 @@ export function HomePage() {
         <HeroSection timeLeft={timeLeft} />
         <HowItWorksSection />
         <CategorySection />
+        <MiddleBannerSection />
         <FlashSaleSection timeLeft={timeLeft} />
         <ArticleSection />
         <FAQSection />

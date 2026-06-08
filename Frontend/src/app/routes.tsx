@@ -49,6 +49,7 @@ import VerifyVoucher from "./partner/features/VerifyVoucher";
 import ReportsView from "./partner/features/ReportsView";
 import BranchManagement from "./partner/features/BranchManagement";
 import ProfileSettings from "./partner/features/ProfileSettings";
+import StoreStats from "./partner/features/StoreStats";
 
 export const router = createBrowserRouter([
 
@@ -105,6 +106,7 @@ export const router = createBrowserRouter([
       { path: "reports", element: <ReportsView /> },
       { path: "branches", element: <BranchManagement /> },
       { path: "profile", element: <ProfileSettings /> },
+      { path: "store", element: <StoreStats /> },
       { path: "notifications", element: <NotificationsPage /> },
     ],
   },

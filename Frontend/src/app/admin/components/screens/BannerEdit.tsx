@@ -4,6 +4,7 @@ import { ArrowLeft, Save, UploadCloud } from 'lucide-react';
 import { Button, Input } from '@voucherhub/ui';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import api from '../../../../lib/api';
 
 export function BannerEdit() {
   const { id } = useParams();
@@ -28,8 +29,8 @@ export function BannerEdit() {
   // Fetch banner data if editing
   useEffect(() => {
     if (!isNew) {
-      fetch('/api/admin/content')
-        .then(res => res.json())
+      api.get('/admin/content')
+        .then(res => res.data)
         .then(data => {
           if (data && Array.isArray(data.banners)) {
             const found = data.banners.find((b: any) => b.MaBanner === Number(id));
@@ -62,10 +63,8 @@ export function BannerEdit() {
   const deleteDraftImage = async (path: string) => {
     if (!path || path === originalImageUrl) return;
     try {
-      await fetch('/api/content/upload', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ imagePath: path })
+      await api.delete('/content/upload', {
+        data: { imagePath: path }
       });
     } catch (e) {
       console.error('Failed to delete draft image', e);
@@ -81,24 +80,16 @@ export function BannerEdit() {
     bodyData.append('image', file);
 
     try {
-      const response = await fetch('/api/content/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: bodyData
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (formData.imageUrl && formData.imageUrl !== originalImageUrl) {
-          deleteDraftImage(formData.imageUrl);
-        }
-        setFormData(prev => ({ ...prev, imageUrl: data.path }));
-        toast.success(tText('Image uploaded successfully!', 'Tải ảnh lên thành công!'));
-      } else {
-        toast.error(tText('Failed to upload image!', 'Tải ảnh lên thất bại!'));
+      const response = await api.post('/content/upload', bodyData);
+      const data = response.data;
+      if (formData.imageUrl && formData.imageUrl !== originalImageUrl) {
+        deleteDraftImage(formData.imageUrl);
       }
-    } catch (err) {
+      setFormData(prev => ({ ...prev, imageUrl: data.path }));
+      toast.success(tText('Image uploaded successfully!', 'Tải ảnh lên thành công!'));
+    } catch (err: any) {
       console.error('File upload error:', err);
-      toast.error(tText('An error occurred while uploading image!', 'Có lỗi xảy ra khi tải ảnh lên!'));
+      toast.error(tText('Failed to upload image!', 'Tải ảnh lên thất bại!'));
     }
   };
 
@@ -133,24 +124,16 @@ export function BannerEdit() {
     };
 
     try {
-      const url = isNew ? '/api/admin/content' : `/api/admin/content/${id}`;
-      const method = isNew ? 'POST' : 'PUT';
+      const url = isNew ? '/admin/content' : `/admin/content/${id}`;
+      const method = isNew ? 'post' : 'put';
       
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      await api[method](url, payload);
 
-      if (res.ok) {
-        toast.success(isNew ? tText('Banner added successfully!', 'Đã thêm banner thành công!') : tText('Banner updated successfully!', 'Đã cập nhật banner thành công!'));
-        navigate('/admin/content');
-      } else {
-        toast.error(tText('Failed to save banner!', 'Lưu banner thất bại!'));
-      }
-    } catch (err) {
+      toast.success(isNew ? tText('Banner added successfully!', 'Đã thêm banner thành công!') : tText('Banner updated successfully!', 'Đã cập nhật banner thành công!'));
+      navigate('/admin/content');
+    } catch (err: any) {
       console.error(err);
-      toast.error(tText('An error occurred while saving banner!', 'Có lỗi xảy ra khi lưu banner!'));
+      toast.error(tText('Failed to save banner!', 'Lưu banner thất bại!'));
     }
   };
 

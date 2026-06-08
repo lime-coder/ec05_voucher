@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { getPartnerStatistics, getPartnerReports, getPartnerProfile, updatePartnerProfile, uploadAvatar, changePartnerPassword, updateRevenueTarget } from '../controllers/partner.controller';
+import { getPartnerBranchStats } from '../controllers/admin.controller';
 import { uploadAvatarMiddleware } from '../middlewares/upload.middleware';
 
 const router = Router();
@@ -19,5 +20,6 @@ router.put('/:id/profile', updatePartnerProfile);
 router.post('/:id/upload-avatar', uploadAvatarMiddleware, uploadAvatar);
 router.put('/:id/password', changePartnerPassword);
 router.put('/:id/revenue-target', updateRevenueTarget);
+router.get('/:partnerId/branch-stats', getPartnerBranchStats);
 
 export default router;

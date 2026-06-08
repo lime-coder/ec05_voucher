@@ -115,8 +115,9 @@ export function VoucherCard({
       >
         <img
           src={
-            voucher.image ||
-            "https://placehold.co/600x400?text=Voucher"
+            voucher.image
+              ? (voucher.image.split(',')[0].startsWith('http') ? voucher.image.split(',')[0] : `http://localhost:5000${voucher.image.split(',')[0]}`)
+              : "https://placehold.co/600x400?text=Voucher"
           }
           alt={voucher.name}
           className="absolute inset-0 w-full h-full object-cover"

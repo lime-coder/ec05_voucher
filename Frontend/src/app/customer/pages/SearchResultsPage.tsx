@@ -2,7 +2,8 @@ import { VoucherCard, Voucher } from "../components/VoucherCard";
 import { useState, useEffect, } from "react";
 import { useSearchParams, Link } from "react-router";
 import { ChevronDown, Grid3x3, List, X, ChevronRight } from "lucide-react";
-import { Button, Input } from "@voucherhub/ui";
+import { Button, Input, Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@voucherhub/ui";
+import Autoplay from "embla-carousel-autoplay";
 import { PriceRangeSlider } from "../components/PriceRangeSlider";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
@@ -16,6 +17,7 @@ export function SearchResultsPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   const [categories, setCategories] = useState<any[]>([]);
+  const [categoryBanners, setCategoryBanners] = useState<any[]>([]);
 
   const [sortType, setSortType] =
     useState("popular");
@@ -84,6 +86,18 @@ export function SearchResultsPage() {
         }
       })
       .catch((err) => console.error("Fetch categories error:", err));
+
+    fetch('/api/content/banners')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const active = data
+            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && b.ViTri === 'Category Page')
+            .sort((a: any, b: any) => a.ThuTu - b.ThuTu);
+          setCategoryBanners(active);
+        }
+      })
+      .catch((err) => console.error('Fetch category banners error:', err));
 
     fetch(url)
       .then((res) => res.json())
@@ -168,6 +182,47 @@ export function SearchResultsPage() {
         </p>
 
 
+
+        {categoryBanners.length > 0 && (
+          <div className="mb-8 w-full max-h-[300px] rounded-2xl overflow-hidden relative">
+            <Carousel opts={{ loop: true }} plugins={[Autoplay({ delay: 5000 })]}>
+              <CarouselContent>
+                {categoryBanners.map((banner, idx) => (
+                  <CarouselItem key={banner.MaBanner || idx}>
+                    <div 
+                      className="w-full relative cursor-pointer"
+                      onClick={() => {
+                        const target = banner?.LinkURL || '/search';
+                        if (target.startsWith('http://') || target.startsWith('https://')) {
+                          window.open(target, '_blank');
+                        } else {
+                          window.location.href = target;
+                        }
+                      }}
+                    >
+                      <img
+                        src={banner.HinhAnh}
+                        alt={banner.TieuDe || "Category Banner"}
+                        className="w-full h-[200px] md:h-[300px] object-cover"
+                      />
+                      {banner.TieuDe && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <h3 className="text-white text-3xl font-bold px-4 text-center">{banner.TieuDe}</h3>
+                        </div>
+                      )}
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {categoryBanners.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-4 bg-white" />
+                  <CarouselNext className="right-4 bg-white" />
+                </>
+              )}
+            </Carousel>
+          </div>
+        )}
 
         {/* Sort Bar */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-border">

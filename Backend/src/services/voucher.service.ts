@@ -1,5 +1,6 @@
 import prisma from '../config/db';
 import { customAlphabet } from 'nanoid';
+import { commitVoucherImage } from '../utils/media.util';
 
 // Bộ ký tự an toàn (bỏ 0, O, 1, I, L)
 const SAFE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -44,11 +45,17 @@ export class VoucherService {
       }
     }
 
-    return await prisma.voucher.create({
+    const partnerId = data.partnerId || 1;
+    const partner = await prisma.doiTac.findUnique({ where: { MaDoiTac: partnerId } });
+    const partnerName = partner ? partner.TenDoanhNghiep : 'Unknown';
+
+    let imageUrl = data.imageUrl !== undefined ? data.imageUrl : null;
+
+    const voucher = await prisma.voucher.create({
       data: {
         TenVoucher: data.name,
         MaDanhMuc: data.categoryId || null, // Có thể chỉnh sửa logic mapping nếu data có mảng categories
-        MaDoiTac: data.partnerId || 1, // Giả sử lấy MaDoiTac từ context người dùng hiện tại
+        MaDoiTac: partnerId, // Giả sử lấy MaDoiTac từ context người dùng hiện tại
         MoTaVoucher: data.description,
         MoTaDieuKien: data.terms,
         GiaGoc: data.originalPrice ? parseFloat(data.originalPrice) : 100,
@@ -59,9 +66,22 @@ export class VoucherService {
         TrangThaiVoucher: statusDb,
         ChinhSachHoanTien: data.refundPolicy || null,
         HuongDanSuDung: data.usageInstructions || null,
-        ImageUrl: data.imageUrl !== undefined ? data.imageUrl : null
+        ImageUrl: imageUrl
       }
     });
+
+    if (imageUrl && imageUrl.includes('/uploads/temp/')) {
+      const finalImageUrl = commitVoucherImage(imageUrl, voucher.VoucherID, partnerId, partnerName, voucher.TenVoucher);
+      if (finalImageUrl && finalImageUrl !== imageUrl) {
+        await prisma.voucher.update({
+          where: { VoucherID: voucher.VoucherID },
+          data: { ImageUrl: finalImageUrl }
+        });
+        voucher.ImageUrl = finalImageUrl;
+      }
+    }
+
+    return voucher;
   }
 
   /**
@@ -81,6 +101,31 @@ export class VoucherService {
       }
     }
 
+    const oldVoucher = await prisma.voucher.findUnique({
+      where: { VoucherID: id },
+      include: { DoiTac: true }
+    });
+
+    if (oldVoucher?.TrangThaiVoucher === 'Từ chối' && statusDb === 'Đang hoạt động') {
+      throw new Error('Không thể tự kích hoạt lại voucher đã bị từ chối/khóa bởi hệ thống.');
+    }
+
+    let finalImageUrl = data.imageUrl;
+    if (finalImageUrl !== undefined && finalImageUrl !== oldVoucher?.ImageUrl) {
+      const partnerName = oldVoucher?.DoiTac?.TenDoanhNghiep || 'Unknown';
+      const partnerId = oldVoucher?.MaDoiTac || 1;
+      const voucherName = data.name || oldVoucher?.TenVoucher || 'Unknown';
+      
+      finalImageUrl = commitVoucherImage(
+        finalImageUrl || '', 
+        id, 
+        partnerId, 
+        partnerName, 
+        voucherName, 
+        oldVoucher?.ImageUrl || undefined
+      );
+    }
+
     const dataToUpdate: any = {};
     if (data.name !== undefined) dataToUpdate.TenVoucher = data.name;
     if (data.categoryId !== undefined) dataToUpdate.MaDanhMuc = data.categoryId;
@@ -94,7 +139,7 @@ export class VoucherService {
     if (statusDb !== undefined) dataToUpdate.TrangThaiVoucher = statusDb;
     if (data.refundPolicy !== undefined) dataToUpdate.ChinhSachHoanTien = data.refundPolicy;
     if (data.usageInstructions !== undefined) dataToUpdate.HuongDanSuDung = data.usageInstructions;
-    if (data.imageUrl !== undefined) dataToUpdate.ImageUrl = data.imageUrl;
+    if (finalImageUrl !== undefined) dataToUpdate.ImageUrl = finalImageUrl;
 
     return await prisma.voucher.update({
       where: { VoucherID: id },
@@ -106,9 +151,15 @@ export class VoucherService {
    * Xóa mềm Voucher (Chuyển trạng thái thành DELETED)
    */
   static async softDeleteVoucher(id: number) {
+    const voucher = await prisma.voucher.findUnique({ where: { VoucherID: id } });
+    if (voucher?.ImageUrl) {
+      const { deleteMediaFile } = require('../utils/media.util');
+      deleteMediaFile(voucher.ImageUrl);
+    }
+
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: { TrangThaiVoucher: 'Đã xóa' }
+      data: { TrangThaiVoucher: 'Đã xóa', ImageUrl: null }
     });
   }
 

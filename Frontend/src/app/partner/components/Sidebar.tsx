@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tag, PlusCircle, CheckCircle, BarChart3, Store, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Tag, PlusCircle, CheckCircle, BarChart3, Store, Settings, LogOut, ShoppingBag } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
@@ -14,6 +14,8 @@ export function Sidebar() {
     navigate('/login');
   };
 
+  const partnerId = localStorage.getItem('partnerId') || '1';
+  
   const menuItems = [
     { id: '/partner', label: t('partner.nav.dashboard'), icon: LayoutDashboard },
     { id: '/partner/vouchers', label: t('partner.nav.vouchers'), icon: Tag },
@@ -21,6 +23,7 @@ export function Sidebar() {
     { id: '/partner/verify', label: t('partner.nav.verify'), icon: CheckCircle },
     { id: '/partner/reports', label: t('partner.nav.reports'), icon: BarChart3 },
     { id: '/partner/branches', label: t('partner.nav.branches'), icon: Store },
+    { id: '/partner/store', label: t('partner.nav.store') || 'Cửa hàng', icon: ShoppingBag },
     { id: '/partner/profile', label: t('partner.nav.profile'), icon: Settings },
   ];
 
@@ -39,7 +42,13 @@ export function Sidebar() {
           return (
             <button
               key={item.id}
-              onClick={() => navigate(item.id)}
+              onClick={() => {
+                if ((item as any).external) {
+                  window.open(item.id, '_blank');
+                } else {
+                  navigate(item.id);
+                }
+              }}
               className={`w-full px-5 py-3 flex items-center gap-3 text-sm transition-all border-l-4 ${
                 isActive
                   ? 'bg-primary-foreground/15 border-primary-foreground font-semibold'

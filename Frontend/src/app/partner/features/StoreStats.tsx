@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Store, MapPin, Phone, Ticket, DollarSign, ArrowRightLeft, TrendingUp } from 'lucide-react';
-import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import { useLanguage } from '../../shared/contexts/LanguageContext';
 import {
   Button,
   Badge,
@@ -11,7 +11,7 @@ import {
   TableBody,
   TableCell,
 } from '@voucherhub/ui';
-import api from '../../../../lib/api';
+import api from '../../../lib/api';
 
 interface UsedVoucher {
   voucherId: number;
@@ -39,50 +39,28 @@ interface Partner {
   category: string;
 }
 
-export function BranchStats() {
+export default function StoreStats() {
   const { language } = useLanguage();
   const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
 
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const selectedPartnerId = localStorage.getItem('partnerId') || '1';
   const [branchStats, setBranchStats] = useState<BranchStat[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load all partners
-  useEffect(() => {
-    let isActive = true;
-    api.get(`/admin/partners?t=${Date.now()}`)
-      .then(res => res.data)
-      .then(data => {
-        if (isActive && Array.isArray(data)) {
-          setPartners(data);
-          if (data.length > 0) {
-            setSelectedPartnerId(data[0].id.toString());
-          }
-        }
-      })
-      .catch(err => {
-        console.error('Fetch partners error:', err);
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  // Load branch stats for selected partner
+  // Load branch stats for current partner
   useEffect(() => {
     if (!selectedPartnerId) return;
 
     let isActive = true;
     setLoading(true);
-    api.get(`/admin/partners/${selectedPartnerId}/branch-stats?t=${Date.now()}`)
-      .then(res => res.data)
-      .then(data => {
+    api.get(`/partners/${selectedPartnerId}/branch-stats?t=${Date.now()}`)
+      .then((res: any) => res.data)
+      .then((data: any) => {
         if (isActive && Array.isArray(data)) {
           setBranchStats(data);
         }
       })
-      .catch(err => {
+      .catch((err: any) => {
         console.error('Fetch branch stats error:', err);
       })
       .finally(() => {
@@ -100,30 +78,13 @@ export function BranchStats() {
 
   return (
     <div className="space-y-6">
-      {/* Partner Selector */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">{tText('Select Partner', 'Chọn Đối Tác')}</h2>
-          <p className="text-sm text-gray-500">{tText('Select a partner enterprise to view branch usage statistics', 'Chọn doanh nghiệp đối tác để xem thống kê sử dụng của các chi nhánh')}</p>
-        </div>
-        <div className="w-full md:max-w-xs">
-          <select
-            value={selectedPartnerId}
-            onChange={e => setSelectedPartnerId(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer font-medium"
-          >
-            <option value="" disabled>{tText('Choose a partner...', 'Chọn đối tác...')}</option>
-            {partners.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.category})
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">{tText('Store Statistics', 'Thống kê cửa hàng')}</h1>
+        <p className="text-gray-500">{tText('View detailed voucher usage and revenue for each of your stores', 'Xem chi tiết lượt dùng voucher và doanh thu của từng cửa hàng')}</p>
       </div>
 
       {/* Aggregate metrics */}
-      {selectedPartnerId && !loading && (
+      {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className="p-3.5 bg-blue-50 rounded-lg text-blue-600">
@@ -163,7 +124,7 @@ export function BranchStats() {
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-500 font-medium">{tText('Loading statistics...', 'Đang tải thống kê...')}</p>
         </div>
-      ) : selectedPartnerId ? (
+      ) : (
         <div className="space-y-6">
           {branchStats.map(branch => (
             <div key={branch.branchId} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
@@ -255,12 +216,6 @@ export function BranchStats() {
               <p className="text-sm">{tText('This partner does not have any branches registered in the system.', 'Đối tác này chưa đăng ký chi nhánh nào trên hệ thống.')}</p>
             </div>
           )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-500">
-          <Store className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-          <h3 className="text-base font-bold text-gray-900 mb-1">{tText('Select a Partner', 'Hãy chọn một đối tác')}</h3>
-          <p className="text-sm">{tText('Choose an enterprise from the list above to view branch-specific statistics.', 'Vui lòng chọn một doanh nghiệp đối tác phía trên để bắt đầu xem chi tiết.')}</p>
         </div>
       )}
     </div>
