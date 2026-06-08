@@ -207,37 +207,36 @@ export default function CreateVoucher() {
     if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
     }
+    e.target.value = '';
   };
 
   const handleSubmit = (isDraft: boolean) => {
-    if (!isDraft) {
-      if (
-        !formData.name ||
-        !formData.categories?.length ||
-        !formData.branches?.length ||
-        !formData.originalPrice ||
-        !formData.salePrice ||
-        !formData.quantity ||
-        !formData.saleStartDate ||
-        !formData.saleEndDate ||
-        !formData.validStartDate ||
-        !formData.validEndDate ||
-        !formData.description ||
-        !formData.terms
-      ) {
-        toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc (*)!');
-        return;
-      }
+    if (
+      !formData.name ||
+      !formData.categories?.length ||
+      !formData.branches?.length ||
+      !formData.originalPrice ||
+      !formData.salePrice ||
+      !formData.quantity ||
+      !formData.saleStartDate ||
+      !formData.saleEndDate ||
+      !formData.validStartDate ||
+      !formData.validEndDate ||
+      !formData.description ||
+      !formData.terms
+    ) {
+      toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc (*)!');
+      return;
+    }
 
-      if (new Date(formData.saleEndDate!) < new Date(formData.saleStartDate!)) {
-        toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
-        return;
-      }
+    if (new Date(formData.saleEndDate!) < new Date(formData.saleStartDate!)) {
+      toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
+      return;
+    }
 
-      if (new Date(formData.validEndDate!) < new Date(formData.validStartDate!)) {
-        toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
-        return;
-      }
+    if (new Date(formData.validEndDate!) < new Date(formData.validStartDate!)) {
+      toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu sử dụng!');
+      return;
     }
 
     if (formData.originalPrice && formData.salePrice) {
@@ -527,6 +526,7 @@ export default function CreateVoucher() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleImageDescriptionChange(image.id, e.target.value)}
                       />
                       <Button
+                        type="button"
                         variant="destructive"
                         size="sm"
                         className="w-full gap-2"

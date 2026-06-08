@@ -235,13 +235,14 @@ export const en = {
   'voucher.whats_included': 'What\'s Included:',
   'voucher.terms': 'Terms & Conditions',
   'voucher.available_locations': 'Available Locations',
-  'voucher.cancellation_policy': 'Cancellation & Refund Policy',
+  'voucher.refund_policy': 'Refund Policy',
   'voucher.customer_reviews': 'Customer Reviews',
   'voucher.based_on_reviews': 'Based on {count} reviews',
   'voucher.verified_purchase': 'Verified Purchase',
   'voucher.response_from': 'Response from',
   'voucher.load_more_reviews': 'Load More Reviews',
   'voucher.all_reviews_loaded': 'All reviews loaded',
+  'voucher.no_rating': 'No rating yet',
 
   // Cart
   'cart.title': 'Shopping Cart',

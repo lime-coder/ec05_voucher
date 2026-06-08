@@ -115,7 +115,7 @@ export class PartnerService {
           MaDoiTac: partnerId,
         },
         DonHang: {
-          TrangThaiThanhToan: 'PAID',
+          TrangThaiThanhToan: 'Đã thanh toán',
         },
       },
     });
@@ -124,7 +124,7 @@ export class PartnerService {
     const pendingVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'PENDING_APPROVAL',
+        TrangThaiVoucher: 'Chờ duyệt',
       },
     });
 
@@ -132,7 +132,7 @@ export class PartnerService {
     const activeVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'ACTIVE',
+        TrangThaiVoucher: 'Đang hoạt động',
       },
     });
 
@@ -172,7 +172,7 @@ export class PartnerService {
           ThoiGianThanhToan: {
             gte: sixMonthsAgo
           },
-          TrangThaiThanhToan: 'PAID',
+          TrangThaiThanhToan: 'Đã thanh toán',
         }
       },
       include: {
@@ -239,7 +239,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: start, lte: end },
-            TrangThaiThanhToan: 'PAID'
+            TrangThaiThanhToan: 'Đã thanh toán'
           }
         },
         include: { DonHang: true }
@@ -262,7 +262,7 @@ export class PartnerService {
               DonHang: {
                 IDTaiKhoan: customerId,
                 ThoiGianThanhToan: { lt: start },
-                TrangThaiThanhToan: 'PAID',
+                TrangThaiThanhToan: 'Đã thanh toán',
               }
             }
           });
@@ -361,7 +361,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: yearAgo },
-            TrangThaiThanhToan: 'PAID'
+            TrangThaiThanhToan: 'Đã thanh toán'
           }
         }
       });

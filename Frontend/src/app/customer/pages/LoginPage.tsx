@@ -50,8 +50,8 @@ export function LoginPage() {
       else if (result.user.role === "partner") navigate("/partner");
       else navigate("/");
     } else {
-      const errorMessage = result.error === "Invalid credentials" 
-        ? "Incorrect email address or password" 
+      const errorMessage = (result.error === "Invalid credentials" || result.error === "error.invalid_credentials")
+        ? t('auth.invalid_credentials')
         : (result.error || "Incorrect email address or password");
       setLoginError(errorMessage);
     }

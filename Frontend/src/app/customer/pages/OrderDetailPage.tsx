@@ -205,6 +205,16 @@ export function OrderDetailPage() {
                           ${Number(voucher.DonGia || 0).toFixed(2)}
                         </p>
                       </div>
+
+                      {voucher.MaVouchers.some(c => c.TrangThaiSuDung === "USED" || c.TrangThaiSuDung === "Đã sử dụng") && (
+                        <button
+                          onClick={() => navigate(`/review/${voucher.MaCTDonHang}`)}
+                          className="px-3 py-2 border border-border rounded hover:bg-white transition-colors text-sm font-semibold flex items-center gap-1"
+                        >
+                          <MessageSquare className="w-4 h-4" /> {t('order.review')}
+                        </button>
+                      )}
+
                       <button
                         onClick={() =>
                           toggleExpand(
@@ -251,7 +261,7 @@ export function OrderDetailPage() {
                             <p className="font-semibold">${Number(voucher.DonGia || 0).toFixed(2)}</p>
                             <StatusBadge
                               status={
-                                codeItem.TrangThaiSuDung === "USED"
+                                codeItem.TrangThaiSuDung === "USED" || codeItem.TrangThaiSuDung === "Đã sử dụng"
                                   ? "used"
                                   : "unused"
                               }
@@ -261,12 +271,6 @@ export function OrderDetailPage() {
                               className="px-3 py-2 border border-border rounded hover:bg-white transition-colors text-sm font-semibold flex items-center gap-1"
                             >
                               <QrCode className="w-4 h-4" /> {t('order.view_qr')}
-                            </button>
-                            <button
-                              onClick={() => navigate(`/review/${voucher.MaCTDonHang}`)}
-                              className="px-3 py-2 border border-border rounded hover:bg-white transition-colors text-sm font-semibold flex items-center gap-1"
-                            >
-                              <MessageSquare className="w-4 h-4" /> {t('order.review')}
                             </button>
                             <span className="px-3 py-1 ml-2 bg-secondary text-foreground rounded text-base font-bold">x1</span>
                           </div>
@@ -309,7 +313,7 @@ export function OrderDetailPage() {
                       </div>
 
                       <StatusBadge status={voucher.MaVouchers?.[0]
-                                            ?.TrangThaiSuDung === "USED"
+                                            ?.TrangThaiSuDung === "USED" || voucher.MaVouchers?.[0]?.TrangThaiSuDung === "Đã sử dụng"
                                             ? "used"
                                             : "unused"} />
 
@@ -320,12 +324,14 @@ export function OrderDetailPage() {
                         >
                           <QrCode className="w-4 h-4" /> {t('order.view_qr')}
                         </button>
+                        { (voucher.MaVouchers?.[0]?.TrangThaiSuDung === "USED" || voucher.MaVouchers?.[0]?.TrangThaiSuDung === "Đã sử dụng") && (
                         <button
                           onClick={() => navigate(`/review/${voucher.MaCTDonHang}`)}
                           className="px-3 py-2 border border-border rounded hover:bg-secondary transition-colors text-sm font-semibold flex items-center gap-1"
                         >
                           <MessageSquare className="w-4 h-4" /> {t('order.review')}
                         </button>
+                        )}
                       </div>
 
                       <span className="px-3 py-1 ml-2 bg-secondary text-foreground rounded text-base font-bold">

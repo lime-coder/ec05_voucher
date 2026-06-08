@@ -18,7 +18,7 @@ export const createReview = async (req: Request, res: Response) => {
         VoucherID: Number(voucherId),
         DonHang: {
           IDTaiKhoan: customerId,
-          TrangThaiDonHang: 'COMPLETED'
+          TrangThaiDonHang: 'Hoàn tất'
         }
       },
       include: {

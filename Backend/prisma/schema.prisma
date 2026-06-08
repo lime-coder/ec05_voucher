@@ -8,9 +8,9 @@ datasource db {
 }
 
 model Admin {
-  SDT_Admin  String   @id(map: "PK__Admin__574698DDEA3DA776") @db.VarChar(15)
-  IDTaiKhoan Int      @unique(map: "UQ__Admin__BC5F907D5A930172")
-  TaiKhoan   TaiKhoan @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_Admin_TaiKhoan")
+  SDT_Admin  String    @id(map: "PK__Admin__574698DDEA3DA776") @db.VarChar(15)
+  IDTaiKhoan Int?      @unique(map: "UQ__Admin__BC5F907D5A930172")
+  TaiKhoan   TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_Admin_TaiKhoan")
 }
 
 model BaiViet {
@@ -47,13 +47,13 @@ model ChiNhanh {
 
 model ChiTietDonHang {
   MaCTDonHang Int         @id(map: "PK__ChiTietD__B9F4AB6C58D591C0") @default(autoincrement())
-  MaDonHang   Int?
-  VoucherID   Int?
-  SoLuongMua  Int?
-  DonGia      Decimal?    @db.Decimal(18, 2)
+  MaDonHang   Int
+  VoucherID   Int
+  SoLuongMua  Int
+  DonGia      Decimal     @db.Decimal(18, 2)
   ThanhTien   Decimal?    @db.Decimal(18, 2)
-  DonHang     DonHang?    @relation(fields: [MaDonHang], references: [MaDonHang], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTDH_DonHang")
-  Voucher     Voucher?    @relation(fields: [VoucherID], references: [VoucherID], onDelete: NoAction, onUpdate: NoAction, map: "FK_CTDH_Voucher")
+  DonHang     DonHang     @relation(fields: [MaDonHang], references: [MaDonHang], onUpdate: NoAction, map: "FK_CTDH_DonHang")
+  Voucher     Voucher     @relation(fields: [VoucherID], references: [VoucherID], onUpdate: NoAction, map: "FK_CTDH_Voucher")
   MaVouchers  MaVoucher[]
 }
 
@@ -88,8 +88,8 @@ model DanhMuc {
 
 model DoiTac {
   MaDoiTac          Int              @id(map: "PK__DoiTac__5F76BF3484C439FB") @default(autoincrement())
-  TenDoanhNghiep    String?          @db.NVarChar(255)
-  MaSoThue          String?          @db.VarChar(50)
+  TenDoanhNghiep    String           @db.NVarChar(255)
+  MaSoThue          String           @db.VarChar(50)
   CaNhanDaiDien     String?          @db.NVarChar(255)
   LinhVucKinhDoanh  String?          @db.NVarChar(255)
   TrangThaiPheDuyet String?          @db.NVarChar(50)
@@ -102,14 +102,14 @@ model DoiTac {
 
 model DonHang {
   MaDonHang           Int              @id(map: "PK__DonHang__129584AD439B6660") @default(autoincrement())
-  IDTaiKhoan          Int?
+  IDTaiKhoan          Int
   ThoiGianThanhToan   DateTime?        @db.DateTime
-  TongTien            Decimal?         @db.Decimal(18, 2)
+  TongTien            Decimal          @db.Decimal(18, 2)
   PhuongThucThanhToan String?          @db.NVarChar(100)
   TrangThaiDonHang    String?          @db.NVarChar(50)
   TrangThaiThanhToan  String?          @db.NVarChar(50)
   ChiTietDonHangs     ChiTietDonHang[]
-  TaiKhoan            TaiKhoan?        @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_DonHang_TaiKhoan")
+  TaiKhoan            TaiKhoan         @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onUpdate: NoAction, map: "FK_DonHang_TaiKhoan")
 }
 
 model FAQ {
@@ -131,22 +131,21 @@ model GioHang {
 
 model KhachHang {
   SDT_KH          String    @id(map: "PK__KhachHan__DE78DCDA495FA377") @db.VarChar(15)
-  IDTaiKhoan      Int       @unique(map: "UQ__KhachHan__BC5F907DE37108C3")
+  IDTaiKhoan      Int       @unique(map: "UQ_KhachHang_IDTaiKhoan")
   NgaySinh        DateTime? @db.Date
   GioiTinh        String?   @db.NVarChar(10)
   DiaChiKhachHang String?   @db.NVarChar(500)
-  TaiKhoan        TaiKhoan  @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_KhachHang_TaiKhoan")
 }
 
 model MaVoucher {
-  SoMaVoucher      String          @id(map: "PK__MaVouche__9FAD330E58F12E4E") @db.VarChar(100)
-  MaCTDonHang      Int?
-  TrangThaiSuDung  String?         @db.NVarChar(50)
-  ThoiDiemPhatHanh DateTime?       @db.DateTime
-  ThoiDiemSuDung   DateTime?       @db.DateTime
+  SoMaVoucher      String         @id(map: "PK__MaVouche__9FAD330E58F12E4E") @db.VarChar(100)
+  MaCTDonHang      Int
+  TrangThaiSuDung  String?        @db.NVarChar(50)
+  ThoiDiemPhatHanh DateTime?      @db.DateTime
+  ThoiDiemSuDung   DateTime?      @db.DateTime
   MaChiNhanhSuDung Int?
-  ChiNhanh         ChiNhanh?       @relation(fields: [MaChiNhanhSuDung], references: [MaChiNhanh], onDelete: NoAction, onUpdate: NoAction, map: "FK_MaVoucher_ChiNhanh")
-  ChiTietDonHang   ChiTietDonHang? @relation(fields: [MaCTDonHang], references: [MaCTDonHang], onDelete: NoAction, onUpdate: NoAction, map: "FK_MaVoucher_CTDonHang")
+  ChiNhanh         ChiNhanh?      @relation(fields: [MaChiNhanhSuDung], references: [MaChiNhanh], onDelete: NoAction, onUpdate: NoAction, map: "FK_MaVoucher_ChiNhanh")
+  ChiTietDonHang   ChiTietDonHang @relation(fields: [MaCTDonHang], references: [MaCTDonHang], onUpdate: NoAction, map: "FK_MaVoucher_CTDonHang")
 }
 
 model NhanVienDoiTac {
@@ -169,15 +168,14 @@ model TaiKhoan {
   DanhGias          DanhGia[]
   DonHangs          DonHang[]
   GioHang           GioHang?
-  KhachHang         KhachHang?
   NhanVienDoiTacs   NhanVienDoiTac[]
   SystemLog         SystemLog[]
 }
 
 model Voucher {
   VoucherID         Int                @id(map: "PK__Voucher__3AEE79C1B53D81DF") @default(autoincrement())
-  MaDanhMuc         Int?
-  MaDoiTac          Int?
+  MaDanhMuc         Int
+  MaDoiTac          Int
   TenVoucher        String             @db.NVarChar(255)
   MoTaVoucher       String?            @db.NVarChar(Max)
   MoTaDieuKien      String?            @db.NVarChar(Max)
@@ -194,8 +192,8 @@ model Voucher {
   ChiTietDonHangs   ChiTietDonHang[]
   ChiTietGioHangs   ChiTietGioHang[]
   DanhGias          DanhGia[]
-  DanhMuc           DanhMuc?           @relation(fields: [MaDanhMuc], references: [MaDanhMuc], onDelete: NoAction, onUpdate: NoAction, map: "FK_Voucher_DanhMuc")
-  DoiTac            DoiTac?            @relation(fields: [MaDoiTac], references: [MaDoiTac], onDelete: NoAction, onUpdate: NoAction, map: "FK_Voucher_DoiTac")
+  DanhMuc           DanhMuc            @relation(fields: [MaDanhMuc], references: [MaDanhMuc], onUpdate: NoAction, map: "FK_Voucher_DanhMuc")
+  DoiTac            DoiTac             @relation(fields: [MaDoiTac], references: [MaDoiTac], onUpdate: NoAction, map: "FK_Voucher_DoiTac")
   ChiNhanhs         Voucher_ChiNhanh[]
 }
 

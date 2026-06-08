@@ -60,11 +60,11 @@ export const getUsers = async (req: Request, res: Response) => {
       // Nếu là Partner, trạng thái tài khoản phải phản ánh trạng thái của Đối tác
       if (accountType === 'Partner' && u.NhanVienDoiTacs?.[0]?.DoiTac) {
         const pt = u.NhanVienDoiTacs[0].DoiTac;
-        if (pt.TrangThaiPheDuyet === 'PENDING') {
+        if (pt.TrangThaiPheDuyet === 'Chờ duyệt') {
           status = 'PENDING';
-        } else if (pt.TrangThaiPheDuyet === 'REJECTED' || pt.TrangThaiHoatDong === 'LOCKED') {
+        } else if (pt.TrangThaiPheDuyet === 'Từ chối' || pt.TrangThaiHoatDong === 'Bị khóa') {
           status = 'INACTIVE';
-        } else if (pt.TrangThaiPheDuyet === 'APPROVED' && pt.TrangThaiHoatDong === 'ACTIVE') {
+        } else if (pt.TrangThaiPheDuyet === 'Đã duyệt' && pt.TrangThaiHoatDong === 'Hoạt động') {
           if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
             status = 'INACTIVE';
           } else {
@@ -72,8 +72,7 @@ export const getUsers = async (req: Request, res: Response) => {
           }
         }
       }
-
-      return { id: u.IDTaiKhoan, name: u.HoTenNguoiDung || u.TenDangNhap, email: u.Email, phone, status, accountType, partnerStatus, date: '15/03/2026' };
+      return { id: u.IDTaiKhoan, name: u.HoTenNguoiDung || u.TenDangNhap, username: u.TenDangNhap, email: u.Email, phone, status, accountType, partnerStatus, date: '15/03/2026' };
     });
 
     res.json(mapped);
@@ -108,11 +107,11 @@ export const toggleUserActive = async (req: Request, res: Response) => {
 
     if (user.NhanVienDoiTacs?.length > 0 && user.NhanVienDoiTacs[0]?.DoiTac) {
       const pt = user.NhanVienDoiTacs[0].DoiTac;
-      if (pt.TrangThaiPheDuyet === 'PENDING') {
+      if (pt.TrangThaiPheDuyet === 'Chờ duyệt') {
         derivedStatus = 'PENDING';
-      } else if (pt.TrangThaiPheDuyet === 'REJECTED' || pt.TrangThaiHoatDong === 'LOCKED') {
+      } else if (pt.TrangThaiPheDuyet === 'Từ chối' || pt.TrangThaiHoatDong === 'Bị khóa') {
         derivedStatus = 'INACTIVE';
-      } else if (pt.TrangThaiPheDuyet === 'APPROVED' && pt.TrangThaiHoatDong === 'ACTIVE') {
+      } else if (pt.TrangThaiPheDuyet === 'Đã duyệt' && pt.TrangThaiHoatDong === 'Hoạt động') {
         if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
           derivedStatus = 'INACTIVE';
         } else {
@@ -176,7 +175,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     }
 
     const orderWhereClause: any = {
-      TrangThaiThanhToan: 'PAID',
+      TrangThaiThanhToan: 'Đã thanh toán',
       ThoiGianThanhToan: {
         gte: start,
         lte: end
@@ -250,7 +249,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const prevStart = new Date(start.getTime() - periodLength);
 
     const prevOrderWhereClause: any = {
-      TrangThaiThanhToan: 'PAID',
+      TrangThaiThanhToan: 'Đã thanh toán',
       ThoiGianThanhToan: { gte: prevStart, lte: prevEnd }
     };
     const prevOrderFilterClause: any = {
@@ -679,7 +678,7 @@ export const createPartner = async (req: Request, res: Response) => {
         MaSoThue: taxCode || '',
         CaNhanDaiDien: representative || '',
         TrangThaiHoatDong: status || 'ACTIVE',
-        TrangThaiPheDuyet: 'APPROVED'
+        TrangThaiPheDuyet: 'Đã duyệt'
       }
     });
 
@@ -757,7 +756,7 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
     if (!partner) {
       return res.status(404).json({ error: 'Không tìm thấy đối tác' });
     }
-    const nextStatus = partner.TrangThaiHoatDong === 'LOCKED' ? 'ACTIVE' : 'LOCKED';
+    const nextStatus = partner.TrangThaiHoatDong === 'Bị khóa' ? 'ACTIVE' : 'LOCKED';
     const updated = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
       data: { TrangThaiHoatDong: nextStatus }
@@ -795,8 +794,8 @@ export const approvePartner = async (req: Request, res: Response) => {
     const partner = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
       data: {
-        TrangThaiPheDuyet: 'APPROVED',
-        TrangThaiHoatDong: 'ACTIVE'
+        TrangThaiPheDuyet: 'Đã duyệt',
+        TrangThaiHoatDong: 'Hoạt động'
       }
     });
 
@@ -826,7 +825,7 @@ export const rejectPartner = async (req: Request, res: Response) => {
     const { id } = req.params;
     const partner = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
-      data: { TrangThaiPheDuyet: 'REJECTED' }
+      data: { TrangThaiPheDuyet: 'Từ chối' }
     });
 
     // Đồng bộ trạng thái tài khoản của nhân viên đối tác
@@ -894,9 +893,9 @@ export const getAllOrders = async (req: Request, res: Response) => {
     const mapped = orders.map(o => {
       const dateStr = o.ThoiGianThanhToan ? new Date(o.ThoiGianThanhToan).toLocaleDateString('vi-VN') + ' ' + new Date(o.ThoiGianThanhToan).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Chưa thanh toán';
       let orderStatus = 'PENDING';
-      if (o.TrangThaiThanhToan === 'PAID') orderStatus = 'PAID';
+      if (o.TrangThaiThanhToan === 'Đã thanh toán') orderStatus = 'PAID';
       else if (o.TrangThaiThanhToan === 'REFUNDED') orderStatus = 'REFUNDED';
-      else if (o.TrangThaiDonHang === 'CANCELLED') orderStatus = 'CANCELLED';
+      else if (o.TrangThaiDonHang === 'Đã hủy') orderStatus = 'CANCELLED';
 
       // Fix giá 0đ: fallback sang GiaBan của Voucher nếu DonGia null
       const items = o.ChiTietDonHangs.map(item => ({
@@ -938,14 +937,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         where: { SoMaVoucher: { in: allCodes.map(mv => mv.SoMaVoucher) } },
         data: { TrangThaiSuDung: 'Hủy voucher' }
       });
-      await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data: { TrangThaiThanhToan: 'REFUNDED', TrangThaiDonHang: 'CANCELLED' } });
+      await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data: { TrangThaiThanhToan: 'REFUNDED', TrangThaiDonHang: 'Đã hủy' } });
       logActivity('admin@voucher.vn', `Refund ORD-${id}`, `${allCodes.length} voucher codes → Hủy voucher`, req.ip || '127.0.0.1');
       return res.json({ message: 'Hoàn tiền thành công, các mã voucher đã được hủy.' });
     }
 
     let data: any = {};
-    if (status === 'PAID') data = { TrangThaiThanhToan: 'PAID', TrangThaiDonHang: 'COMPLETED', ThoiGianThanhToan: new Date() };
-    else if (status === 'CANCELLED') data = { TrangThaiDonHang: 'CANCELLED' };
+    if (status === 'PAID') data = { TrangThaiThanhToan: 'Đã thanh toán', TrangThaiDonHang: 'Hoàn tất', ThoiGianThanhToan: new Date() };
+    else if (status === 'CANCELLED') data = { TrangThaiDonHang: 'Đã hủy' };
     else return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
 
     const updated = await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data });
@@ -1070,19 +1069,19 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
     const [pendingPartners, pendingVouchers, paidOrders] = await Promise.all([
       // 1. Pending partners
       prisma.doiTac.findMany({
-        where: { TrangThaiPheDuyet: 'PENDING' },
+        where: { TrangThaiPheDuyet: 'Chờ duyệt' },
         orderBy: { MaDoiTac: 'desc' },
         take: 5
       }),
       // 2. Pending vouchers
       prisma.voucher.findMany({
-        where: { TrangThaiVoucher: 'PENDING_APPROVAL' },
+        where: { TrangThaiVoucher: 'Chờ duyệt' },
         orderBy: { VoucherID: 'desc' },
         take: 5
       }),
       // 3. Paid orders
       prisma.donHang.findMany({
-        where: { TrangThaiThanhToan: 'PAID' },
+        where: { TrangThaiThanhToan: 'Đã thanh toán' },
         orderBy: { ThoiGianThanhToan: 'desc' },
         take: 5
       })
@@ -1145,9 +1144,9 @@ export const suspendVoucher = async (req: Request, res: Response) => {
 
     const voucher = await prisma.voucher.findUnique({ where: { VoucherID: Number(id) } });
     if (!voucher) return res.status(404).json({ error: 'Không tìm thấy voucher' });
-    if (voucher.TrangThaiVoucher !== 'ACTIVE') return res.status(400).json({ error: 'Chỉ tạm ngưng được voucher đang ACTIVE' });
+    if (voucher.TrangThaiVoucher !== 'Đang hoạt động') return res.status(400).json({ error: 'Chỉ tạm ngưng được voucher đang ACTIVE' });
 
-    const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'SUSPENDED' } });
+    const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'Tạm ngưng' } });
     logActivity('admin@voucher.vn', `Suspend voucher (${lyDo})`, updated.TenVoucher, req.ip || '127.0.0.1');
     res.json({ ...updated, status: 'SUSPENDED' });
   } catch (error) {
@@ -1163,7 +1162,7 @@ export const restoreVoucher = async (req: Request, res: Response) => {
     if (!voucher) return res.status(404).json({ error: 'Không tìm thấy voucher' });
     if (voucher.TrangThaiVoucher !== 'SUSPENDED') return res.status(400).json({ error: 'Chỉ khôi phục được voucher đang bị tạm ngưng' });
 
-    const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'ACTIVE' } });
+    const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'Đang hoạt động' } });
     logActivity('admin@voucher.vn', 'Khôi phục voucher', updated.TenVoucher, req.ip || '127.0.0.1');
     res.json({ ...updated, status: 'ACTIVE' });
   } catch (error) {

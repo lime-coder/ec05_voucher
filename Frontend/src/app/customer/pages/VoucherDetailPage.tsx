@@ -560,8 +560,10 @@ export function VoucherDetailPage() {
           )}
 
           {activeTab === "branches" && (
-            <div className="space-y-3 text-muted-foreground">
-              {voucher.branches.map(
+            <div>
+              <h3 className="font-bold text-xl text-black mb-4">{t('voucher.tab.branches')}</h3>
+              <div className="space-y-3 text-muted-foreground">
+                {voucher.branches.map(
                 (branch) => (
                   <div
                     key={branch.id}
@@ -582,11 +584,12 @@ export function VoucherDetailPage() {
                 )
               )}
             </div>
+            </div>
           )}
 
           {activeTab === "policy" && (
             <div>
-              <h3 className="font-bold text-xl mb-4">{t('voucher.cancellation_policy')}</h3>
+              <h3 className="font-bold text-xl mb-4">{t('voucher.refund_policy')}</h3>
               <p className="text-muted">
                 {voucher.refundPolicy}
               </p>

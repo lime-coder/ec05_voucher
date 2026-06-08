@@ -17,7 +17,6 @@ interface UsedVoucher {
   name: string;
   category: string;
   limitCount: number;
-  soldCount: number;
   usedCount: number;
   salePrice: number;
 }
@@ -29,7 +28,6 @@ interface BranchStat {
   phone: string;
   vouchers: UsedVoucher[];
   totalVouchersCount: number;
-  totalSold: number;
   totalUsed: number;
   totalRevenue: number;
 }
@@ -191,9 +189,6 @@ export function BranchStats() {
                   <Badge variant="outline" className="bg-purple-50/50 text-purple-700 border-purple-100 font-semibold py-1 px-3 shadow-none">
                     {tText(`${branch.totalVouchersCount || 0} vouchers`, `${branch.totalVouchersCount || 0} loại voucher có`)}
                   </Badge>
-                  <Badge variant="outline" className="bg-orange-50/50 text-orange-700 border-orange-100 font-semibold py-1 px-3 shadow-none">
-                    {tText(`${branch.totalSold || 0} sold`, `${branch.totalSold || 0} đã bán`)}
-                  </Badge>
                   <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 font-semibold py-1 px-3 shadow-none">
                     {tText(`${branch.totalUsed} used`, `${branch.totalUsed} lượt dùng`)}
                   </Badge>
@@ -214,7 +209,6 @@ export function BranchStats() {
                           <TableHead className="font-semibold text-gray-700">{tText('Category', 'Danh mục')}</TableHead>
                           <TableHead className="font-semibold text-gray-700 text-center">{tText('Price', 'Đơn giá')}</TableHead>
                           <TableHead className="font-semibold text-gray-700 text-center">{tText('Total Allowed', 'Số lượng cấp')}</TableHead>
-                          <TableHead className="font-semibold text-gray-700 text-center">{tText('Quantity Sold', 'Số lượng đã bán')}</TableHead>
                           <TableHead className="font-semibold text-gray-700 text-center">{tText('Quantity Used', 'Số lượng đã dùng')}</TableHead>
                           <TableHead className="font-semibold text-gray-700 text-right">{tText('Total Value', 'Thành tiền')}</TableHead>
                         </TableRow>
@@ -230,11 +224,6 @@ export function BranchStats() {
                             </TableCell>
                             <TableCell className="text-center font-medium text-gray-900">{v.salePrice.toLocaleString('vi-VN')}₫</TableCell>
                             <TableCell className="text-center font-medium text-gray-500">{v.limitCount}</TableCell>
-                            <TableCell className="text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-50 text-orange-600 font-semibold text-sm">
-                                {v.soldCount}
-                              </span>
-                            </TableCell>
                             <TableCell className="text-center">
                               <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
                                 {v.usedCount}

@@ -123,11 +123,9 @@ export const createOrder =
                   paymentMethod ||
                   "COD",
 
-                TrangThaiDonHang:
-                  "COMPLETED",
+                TrangThaiDonHang: 'Hoàn tất',
 
-                TrangThaiThanhToan:
-                  "PAID",
+                TrangThaiThanhToan: 'Đã thanh toán',
               },
             }
           );
@@ -414,11 +412,23 @@ export const getOrders =
         });
 
       if (!order) {
-
         return res.status(404).json({
-
           message:
             "Không tìm thấy đơn hàng",
+        });
+      }
+
+      if (order.ChiTietDonHangs) {
+        order.ChiTietDonHangs.forEach((ct: any) => {
+          if (ct.MaVouchers) {
+            ct.MaVouchers.forEach((mv: any) => {
+              if (mv.ThoiDiemPhatHanh) {
+                const date = new Date(mv.ThoiDiemPhatHanh);
+                date.setDate(date.getDate() + 30);
+                mv.NgayHetHan = date.toISOString().split('T')[0];
+              }
+            });
+          }
         });
       }
 

@@ -152,12 +152,12 @@ export default function VoucherManagement() {
         if (Array.isArray(data)) {
           const mappedVouchers: Voucher[] = data.map((v: any) => {
             let status: any = 'draft';
-            if (v.TrangThaiVoucher === 'PENDING_APPROVAL') status = 'pending';
-            if (v.TrangThaiVoucher === 'APPROVED' || v.TrangThaiVoucher === 'ACTIVE') status = 'active';
-            if (v.TrangThaiVoucher === 'PAUSED') status = 'paused';
-            if (v.TrangThaiVoucher === 'REJECTED') status = 'rejected';
-            if (v.TrangThaiVoucher === 'DELETED') status = 'deleted';
-            if (v.TrangThaiVoucher === 'EXPIRED') status = 'expired';
+            if (v.TrangThaiVoucher === 'PENDING_APPROVAL' || v.TrangThaiVoucher === 'Chờ duyệt') status = 'pending';
+            else if (v.TrangThaiVoucher === 'APPROVED' || v.TrangThaiVoucher === 'ACTIVE' || v.TrangThaiVoucher === 'Đang hoạt động') status = 'active';
+            else if (v.TrangThaiVoucher === 'PAUSED' || v.TrangThaiVoucher === 'Tạm ngưng' || v.TrangThaiVoucher === 'REJECTED' || v.TrangThaiVoucher === 'Từ chối') status = 'paused';
+            else if (v.TrangThaiVoucher === 'DELETED' || v.TrangThaiVoucher === 'Đã xóa') status = 'deleted';
+            else if (v.TrangThaiVoucher === 'EXPIRED' || v.TrangThaiVoucher === 'Hết hạn') status = 'expired';
+            else if (v.TrangThaiVoucher === 'DRAFT' || v.TrangThaiVoucher === 'Bản nháp') status = 'draft';
 
             const originalPrice = v.GiaGoc ? parseFloat(v.GiaGoc) : 0;
             const salePrice = v.GiaBan ? parseFloat(v.GiaBan) : 0;
@@ -242,6 +242,28 @@ export default function VoucherManagement() {
     });
   };
 
+  const handleTogglePause = async (voucher: Voucher) => {
+    try {
+      await api.put(`/vouchers/${voucher.id}`, { status: 'PAUSED' });
+      toast.success(t('toast.voucher.update_success') || 'Tạm dừng voucher thành công');
+      fetchVouchers();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra');
+    }
+  };
+
+  const handleToggleActive = async (voucher: Voucher) => {
+    try {
+      await api.put(`/vouchers/${voucher.id}`, { status: 'ACTIVE' });
+      toast.success(t('toast.voucher.update_success') || 'Kích hoạt voucher thành công');
+      fetchVouchers();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra');
+    }
+  };
+
   const handleClearFilters = () => {
     setPriceMin('');
     setPriceMax('');
@@ -253,6 +275,8 @@ export default function VoucherManagement() {
   };
 
   let filteredVouchers = vouchers.filter((voucher) => {
+    if (voucher.status === 'deleted') return false;
+
     const matchesSearch = voucher.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab =
       currentTab === 'all' ||
@@ -305,10 +329,10 @@ export default function VoucherManagement() {
                 {t('partner.vouchers.tab_active')}
               </TabsTrigger>
               <TabsTrigger
-                value="inactive"
+                value="paused"
                 className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-0 pb-3"
               >
-                {t('partner.vouchers.tab_inactive')}
+                {t('partner.vouchers.tab_inactive') || 'Pause'}
               </TabsTrigger>
               <TabsTrigger
                 value="pending"
@@ -418,21 +442,33 @@ export default function VoucherManagement() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">#</TableHead>
                 <TableHead>{t('partner.vouchers.col_name')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_category')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_original_price')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_sale_price')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_sold')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_status')}</TableHead>
-                <TableHead>{t('partner.vouchers.col_action')}</TableHead>
+                <TableHead className="text-right">{t('partner.vouchers.col_action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredVouchers.map((voucher, index) => (
                 <TableRow key={voucher.id}>
                   <TableCell>
-                    <p className="font-semibold">{index + 1}</p>
-                    <p className="text-sm text-gray-500">{voucher.name}</p>
+                    <p className="font-semibold text-gray-500">{index + 1}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                        {voucher.imageUrl ? (
+                          <img src={voucher.imageUrl.split(',')[0].startsWith('http') ? voucher.imageUrl.split(',')[0] : `http://localhost:5000${voucher.imageUrl.split(',')[0]}`} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">No img</div>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 max-w-[200px] truncate" title={voucher.name}>{voucher.name}</p>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -470,7 +506,7 @@ export default function VoucherManagement() {
                         ? 'bg-green-100 text-green-700 hover:bg-green-100'
                         : voucher.status === 'pending'
                           ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                          : ['deleted', 'rejected', 'expired'].includes(voucher.status as string)
+                          : ['deleted', 'rejected', 'expired', 'paused'].includes(voucher.status as string)
                             ? 'bg-red-100 text-red-700 hover:bg-red-100'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
                         } border-transparent shadow-none`}
@@ -478,23 +514,39 @@ export default function VoucherManagement() {
                       {language === 'en' ? (voucher.status === 'active' ? 'Active' : voucher.status === 'pending' ? 'Pending' : 'Paused') : (statusTranslations[voucher.status] || voucher.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {voucher.status !== 'pending' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {voucher.status === 'active' && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title="View details">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleTogglePause(voucher)} className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50" title="Pause">
+                            <PauseCircle className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      {voucher.status === 'paused' && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Edit">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleToggleActive(voucher)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="Active">
+                            <PlayCircle className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      {voucher.status === 'draft' && (
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Edit">
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
-                      {voucher.status === 'deleted' ? (
-                        <Button variant="ghost" size="icon" onClick={() => handleRestore(voucher)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={t('partner.vouchers.restore_title') || 'Khôi phục'}>
-                          <RotateCcw className="w-4 h-4" />
-                        </Button>
-                      ) : voucher.status !== 'pending' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={t('partner.vouchers.delete_title') || 'Xóa'}>
-                          <Trash2 className="w-4 h-4" />
+                      {voucher.status === 'pending' && (
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title="View details">
+                          <Eye className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
@@ -1008,8 +1060,7 @@ export default function VoucherManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>{t('partner.vouchers.delete_confirm')} <span className="font-bold">{selectedVoucher?.name}</span> ({selectedVoucher?.id})?</p>
-            <p className="text-sm text-gray-500 mt-2">{t('partner.vouchers.delete_warning')}</p>
+            <p>{t('partner.vouchers.delete_confirm')} <span className="font-bold">{selectedVoucher?.name}</span>?</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
@@ -1025,8 +1076,10 @@ export default function VoucherManagement() {
                   setVouchers(prev => prev.map(v => v.id === selectedVoucher.id ? { ...v, status: 'deleted' } : v));
                   setDeleteDialogOpen(false);
                   fetchVouchers();
+                  toast.success('Xóa voucher thành công');
                 } catch (err) {
                   console.error(err);
+                  toast.error('Xóa voucher thất bại. Vui lòng thử lại!');
                 }
               }}
             >

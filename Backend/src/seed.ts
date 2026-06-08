@@ -15,8 +15,8 @@ async function main() {
     partner = await prisma.doiTac.create({
       data: {
         TenDoanhNghiep: 'Tech Solutions Ltd',
-        TrangThaiHoatDong: 'ACTIVE',
-        TrangThaiPheDuyet: 'APPROVED'
+        TrangThaiHoatDong: 'Hoạt động',
+        TrangThaiPheDuyet: 'Đã duyệt'
       }
     });
   }
@@ -91,7 +91,7 @@ async function main() {
         MatKhau: await bcrypt.hash('123456', 10),
         Email: 'test1@example.com',
         HoTenNguoiDung: 'Nguyễn Văn Test',
-        TrangThaiTaiKhoan: 'ACTIVE',
+        TrangThaiTaiKhoan: 'Hoạt động',
         KhachHang: {
           create: {
             SDT_KH: '0901234567'
@@ -115,8 +115,8 @@ async function main() {
           ThoiGianThanhToan: orderDate,
           TongTien: v.GiaBan,
           PhuongThucThanhToan: 'VNPAY',
-          TrangThaiDonHang: 'COMPLETED',
-          TrangThaiThanhToan: 'PAID'
+          TrangThaiDonHang: 'Hoàn tất',
+          TrangThaiThanhToan: 'Đã thanh toán'
         }
       });
 

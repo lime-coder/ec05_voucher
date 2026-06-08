@@ -31,6 +31,19 @@ export class VoucherService {
    * Dữ liệu gửi lên sẽ kèm TrangThaiVoucher là 'DRAFT' hoặc 'PENDING_APPROVAL'
    */
   static async createVoucher(data: any) {
+    let statusDb = data.status || 'Bản nháp';
+    if (data.status) {
+      switch(data.status.toLowerCase()) {
+        case 'active': statusDb = 'Đang hoạt động'; break;
+        case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
+        case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
+        case 'rejected': statusDb = 'Từ chối'; break;
+        case 'deleted': statusDb = 'Đã xóa'; break;
+        case 'expired': statusDb = 'Hết hạn'; break;
+        case 'draft': statusDb = 'Bản nháp'; break;
+      }
+    }
+
     return await prisma.voucher.create({
       data: {
         TenVoucher: data.name,
@@ -43,7 +56,7 @@ export class VoucherService {
         SoLuongChoPhep: parseInt(data.quantity) || 0,
         ThoiGianBatDau: data.validStartDate ? new Date(data.validStartDate) : new Date(),
         ThoiGianKetThuc: data.validEndDate ? new Date(data.validEndDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        TrangThaiVoucher: data.status || 'DRAFT',
+        TrangThaiVoucher: statusDb,
         ChinhSachHoanTien: data.refundPolicy || null,
         HuongDanSuDung: data.usageInstructions || null,
         ImageUrl: data.imageUrl !== undefined ? data.imageUrl : null
@@ -55,23 +68,37 @@ export class VoucherService {
    * Cập nhật Voucher đã có.
    */
   static async updateVoucher(id: number, data: any) {
+    let statusDb = data.status;
+    if (data.status) {
+      switch(data.status.toLowerCase()) {
+        case 'active': statusDb = 'Đang hoạt động'; break;
+        case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
+        case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
+        case 'rejected': statusDb = 'Từ chối'; break;
+        case 'deleted': statusDb = 'Đã xóa'; break;
+        case 'expired': statusDb = 'Hết hạn'; break;
+        case 'draft': statusDb = 'Bản nháp'; break;
+      }
+    }
+
+    const dataToUpdate: any = {};
+    if (data.name !== undefined) dataToUpdate.TenVoucher = data.name;
+    if (data.categoryId !== undefined) dataToUpdate.MaDanhMuc = data.categoryId;
+    if (data.description !== undefined) dataToUpdate.MoTaVoucher = data.description;
+    if (data.terms !== undefined) dataToUpdate.MoTaDieuKien = data.terms;
+    if (data.originalPrice !== undefined) dataToUpdate.GiaGoc = parseFloat(data.originalPrice);
+    if (data.salePrice !== undefined) dataToUpdate.GiaBan = parseFloat(data.salePrice);
+    if (data.quantity !== undefined) dataToUpdate.SoLuongChoPhep = parseInt(data.quantity);
+    if (data.validStartDate !== undefined) dataToUpdate.ThoiGianBatDau = new Date(data.validStartDate);
+    if (data.validEndDate !== undefined) dataToUpdate.ThoiGianKetThuc = new Date(data.validEndDate);
+    if (statusDb !== undefined) dataToUpdate.TrangThaiVoucher = statusDb;
+    if (data.refundPolicy !== undefined) dataToUpdate.ChinhSachHoanTien = data.refundPolicy;
+    if (data.usageInstructions !== undefined) dataToUpdate.HuongDanSuDung = data.usageInstructions;
+    if (data.imageUrl !== undefined) dataToUpdate.ImageUrl = data.imageUrl;
+
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: {
-        TenVoucher: data.name,
-        MaDanhMuc: data.categoryId || null,
-        MoTaVoucher: data.description,
-        MoTaDieuKien: data.terms,
-        GiaGoc: data.originalPrice ? parseFloat(data.originalPrice) : 100,
-        GiaBan: data.salePrice ? parseFloat(data.salePrice) : 0,
-        SoLuongChoPhep: parseInt(data.quantity) || 0,
-        ThoiGianBatDau: data.validStartDate ? new Date(data.validStartDate) : undefined,
-        ThoiGianKetThuc: data.validEndDate ? new Date(data.validEndDate) : undefined,
-        TrangThaiVoucher: data.status,
-        ChinhSachHoanTien: data.refundPolicy !== undefined ? data.refundPolicy : undefined,
-        HuongDanSuDung: data.usageInstructions !== undefined ? data.usageInstructions : undefined,
-        ImageUrl: data.imageUrl !== undefined ? data.imageUrl : undefined
-      }
+      data: dataToUpdate
     });
   }
 
@@ -81,7 +108,7 @@ export class VoucherService {
   static async softDeleteVoucher(id: number) {
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: { TrangThaiVoucher: 'DELETED' }
+      data: { TrangThaiVoucher: 'Đã xóa' }
     });
   }
 
@@ -91,7 +118,7 @@ export class VoucherService {
   static async restoreVoucher(id: number) {
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: { TrangThaiVoucher: 'DRAFT' }
+      data: { TrangThaiVoucher: 'Bản nháp' }
     });
   }
 

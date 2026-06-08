@@ -139,6 +139,7 @@ export function UserManagement() {
             <TableRow className="bg-gray-50/50">
               <TableHead>{t('No.', 'STT')}</TableHead>
               <TableHead>{t('Name', 'Họ tên')}</TableHead>
+              <TableHead>{t('Username', 'Tên đăng nhập')}</TableHead>
               <TableHead>{t('Email', 'Email')}</TableHead>
               <TableHead>{t('Phone', 'SĐT')}</TableHead>
               <TableHead>{t('Account Type', 'Loại tài khoản')}</TableHead>
@@ -151,6 +152,7 @@ export function UserManagement() {
               <TableRow key={user.id} className="hover:bg-gray-50/50">
                 <TableCell className="text-gray-500">{(currentPage - 1) * itemsPerPage + idx + 1}</TableCell>
                 <TableCell className="font-medium text-gray-900">{user.name}</TableCell>
+                <TableCell>{user.username}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.phone || t('N/A', 'Chưa cung cấp')}</TableCell>
                 {/* Loại tài khoản */}
@@ -179,7 +181,7 @@ export function UserManagement() {
               </TableRow>
             ))}
             {currentUsers.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center py-6 text-gray-500">{t('No users found.', 'Không tìm thấy người dùng.')}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-6 text-gray-500">{t('No users found.', 'Không tìm thấy người dùng.')}</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -240,6 +242,7 @@ export function UserManagement() {
             <div className="py-4 space-y-3 text-sm">
               {[
                 [t('Full Name', 'Họ và tên'), selectedUser.name],
+                [t('Username', 'Tên đăng nhập'), selectedUser.username],
                 ['Email', selectedUser.email],
                 [t('Phone', 'Số điện thoại'), selectedUser.phone || t('N/A', 'Chưa cung cấp')],
                 [t('Account Type', 'Loại tài khoản'), selectedUser.accountType],

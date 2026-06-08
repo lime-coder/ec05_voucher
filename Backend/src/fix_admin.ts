@@ -8,7 +8,7 @@ async function main() {
   if (adminUser) {
     const updated = await prisma.taiKhoan.update({
       where: { IDTaiKhoan: adminUser.IDTaiKhoan },
-      data: { TrangThaiTaiKhoan: 'ACTIVE' }
+      data: { TrangThaiTaiKhoan: 'Hoạt động' }
     });
     console.log("Admin account status updated to ACTIVE:", updated);
   } else {

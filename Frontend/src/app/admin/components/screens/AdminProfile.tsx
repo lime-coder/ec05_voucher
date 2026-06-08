@@ -72,6 +72,22 @@ export function AdminProfile() {
       toast.error(tText('Confirm password does not match!', 'Mật khẩu xác nhận không khớp!'));
       return;
     }
+    if (pwdForm.newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!/[A-Z]/.test(pwdForm.newPassword)) {
+      toast.error("Must contain at least one uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(pwdForm.newPassword)) {
+      toast.error("Must contain at least one lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(pwdForm.newPassword)) {
+      toast.error("Must contain at least one digit");
+      return;
+    }
 
     try {
       const res = await fetch('/api/admin/profile/password', {

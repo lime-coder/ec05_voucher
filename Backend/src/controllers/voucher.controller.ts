@@ -25,8 +25,7 @@ export const getAllVouchers =
         await prisma.voucher.findMany(
           {
             where: {
-              TrangThaiVoucher:
-                "ACTIVE",
+              TrangThaiVoucher: 'Đang hoạt động',
 
               ...(search
                 ? {
@@ -76,6 +75,7 @@ export const getAllVouchers =
             include: {
               DanhMuc: true,
               DoiTac: true,
+              DanhGias: true,
             },
           }
         );
@@ -114,6 +114,11 @@ export const getAllVouchers =
 
             status:
               v.TrangThaiVoucher,
+
+            rating:
+              v.DanhGias && v.DanhGias.length > 0
+                ? v.DanhGias.reduce((sum: number, r: any) => sum + (r.DiemDanhGia || 0), 0) / v.DanhGias.length
+                : 0,
 
             category:
               v.DanhMuc
@@ -171,8 +176,7 @@ export const getVoucherById = async (
         where: {
           VoucherID: Number(id),
 
-          TrangThaiVoucher:
-            "ACTIVE",
+          TrangThaiVoucher: 'Đang hoạt động',
         },
 
         include: {
@@ -511,7 +515,7 @@ export const uploadVoucherImage = async (req: Request, res: Response) => {
 export const getPendingVouchers = async (req: Request, res: Response) => {
   try {
     const vouchers = await prisma.voucher.findMany({
-      where: { TrangThaiVoucher: 'PENDING_APPROVAL' },
+      where: { TrangThaiVoucher: 'Chờ duyệt' },
       include: { DoiTac: true }
     });
 
@@ -543,7 +547,7 @@ export const approveVoucher = async (req: Request, res: Response) => {
     const { id } = req.params;
     const voucher = await prisma.voucher.update({
       where: { VoucherID: Number(id) },
-      data: { TrangThaiVoucher: 'ACTIVE' }
+      data: { TrangThaiVoucher: 'Đang hoạt động' }
     });
     logActivity('admin@voucher.vn', 'Phê duyệt voucher', voucher.TenVoucher, req.ip || '127.0.0.1');
     res.json(voucher);
@@ -560,7 +564,7 @@ export const rejectVoucher = async (req: Request, res: Response) => {
 
     const voucher = await prisma.voucher.update({
       where: { VoucherID: Number(id) },
-      data: { TrangThaiVoucher: 'REJECTED' }
+      data: { TrangThaiVoucher: 'Từ chối' }
     });
 
     logActivity('admin@voucher.vn', 'Từ chối voucher', `${voucher.TenVoucher} (Lý do: ${lyDo})`, req.ip || '127.0.0.1');
@@ -585,8 +589,7 @@ export const getCategories = async (
             select: {
               Vouchers: {
                 where: {
-                  TrangThaiVoucher:
-                    "ACTIVE",
+                  TrangThaiVoucher: 'Đang hoạt động',
                 },
               },
             },
@@ -640,8 +643,7 @@ export const searchVouchers =
         await prisma.voucher.findMany({
           where: {
             // Chỉ lấy voucher ACTIVE
-            TrangThaiVoucher:
-              "ACTIVE",
+            TrangThaiVoucher: 'Đang hoạt động',
 
             // OR:
             // chỉ cần match 1 điều kiện

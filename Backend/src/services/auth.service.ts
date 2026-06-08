@@ -162,8 +162,8 @@ export class AuthService {
           MaSoThue: data.MaSoThue,
           CaNhanDaiDien: data.CaNhanDaiDien,
           LinhVucKinhDoanh: data.LinhVucKinhDoanh,
-          TrangThaiPheDuyet: 'PENDING',
-          TrangThaiHoatDong: 'ACTIVE',
+          TrangThaiPheDuyet: 'Chờ duyệt',
+          TrangThaiHoatDong: 'Hoạt động',
         },
       });
 

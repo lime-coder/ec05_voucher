@@ -146,7 +146,8 @@ export function SystemLogs() {
     return date.toLocaleString('vi-VN');
   };
 
-  const handleExportReport = () => {
+  const handleExportReport = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (filteredLogs.length === 0) {
       toast.error(tText("No data to export!", "Không có dữ liệu để xuất!"));
       return;

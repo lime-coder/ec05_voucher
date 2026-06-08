@@ -233,13 +233,14 @@ export const vi = {
   'voucher.whats_included': 'Bao gồm:',
   'voucher.terms': 'Điều Khoản & Điều Kiện',
   'voucher.available_locations': 'Địa điểm áp dụng',
-  'voucher.cancellation_policy': 'Chính sách Hủy & Hoàn tiền',
+  'voucher.refund_policy': 'Chính sách hoàn tiền',
   'voucher.customer_reviews': 'Đánh giá từ khách hàng',
   'voucher.based_on_reviews': 'Dựa trên {count} đánh giá',
   'voucher.verified_purchase': 'Đã xác thực mua hàng',
   'voucher.response_from': 'Phản hồi từ',
   'voucher.load_more_reviews': 'Tải thêm Đánh giá',
   'voucher.all_reviews_loaded': 'Đã tải hết đánh giá',
+  'voucher.no_rating': 'Chưa có đánh giá',
 
 
   // Cart

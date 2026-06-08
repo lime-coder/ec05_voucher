@@ -39,7 +39,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (params) {
       Object.keys(params).forEach(paramKey => {
-        text = text.replace(new RegExp(`{${paramKey}}`, 'g'), String(params[paramKey]));
+        text = text.split(`{${paramKey}}`).join(String(params[paramKey]));
       });
     }
 

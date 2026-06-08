@@ -159,7 +159,7 @@ export function VoucherCard({
           to={`/voucher/${voucher.id}`}
           className="transition-colors"
         >
-          <h3 className="font-bold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-2 min-h-[3rem]">
+          <h3 className="font-bold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-2">
             {voucher.name}
           </h3>
         </Link>
@@ -171,17 +171,14 @@ export function VoucherCard({
         </p>
 
         {/* Rating */}
-        {voucher.rating && (
+        {voucher.rating && voucher.rating > 0 ? (
           <div className="flex items-center gap-1 mb-3">
             {[...Array(5)].map(
               (_, i) => (
                 <Star
                   key={i}
                   className={`w-4 h-4 ${
-                    i <
-                    Math.floor(
-                      voucher.rating || 0
-                    )
+                    i < Math.floor(voucher.rating || 0)
                       ? "text-yellow-400 fill-yellow-400"
                       : "text-gray-300"
                   }`}
@@ -191,13 +188,13 @@ export function VoucherCard({
 
             {voucher.reviews && (
               <span className="text-xs text-muted-foreground ml-1">
-                (
-                {
-                  voucher.reviews
-                }
-                )
+                ({voucher.reviews})
               </span>
             )}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground italic mb-3">
+            {t('voucher.no_rating', 'No rating yet')}
           </div>
         )}
 
