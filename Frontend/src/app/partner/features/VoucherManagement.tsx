@@ -134,7 +134,7 @@ export default function VoucherManagement() {
         setEditImages(prev => [...prev, newImage]);
       } catch (error: any) {
         console.error('Error uploading image:', error);
-        toast.error(error.response?.data?.message || t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
+        toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
       }
     }
     setUploadingImage(false);
@@ -914,7 +914,7 @@ export default function VoucherManagement() {
                         toast.success(t('toast.voucher.submit_success') || 'Đã gửi duyệt Voucher thành công!');
                       } catch (err: any) {
                         console.error(err);
-                        toast.error(err.response?.data?.message || t('toast.voucher.submit_failed') || 'Gửi duyệt thất bại. Vui lòng thử lại!');
+                        toast.error(err.response?.data?.message ? t(err.response.data.message as string) : t('toast.voucher.submit_failed') || 'Gửi duyệt thất bại. Vui lòng thử lại!');
                       }
                     }
                   });
@@ -992,7 +992,7 @@ export default function VoucherManagement() {
                 toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
               } catch (err: any) {
                 console.error(err);
-                toast.error(err.response?.data?.message || t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
+                toast.error(err.response?.data?.message ? t(err.response.data.message as string) : t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
               }
             }}>{t('profile.save')}</Button>
           </DialogFooter>

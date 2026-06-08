@@ -14,8 +14,9 @@ export const getPartnerStatistics = async (req: Request, res: Response) => {
     const stats = await PartnerService.getStatistics(partnerId);
     res.status(200).json(stats);
   } catch (error) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -32,8 +33,9 @@ export const getPartnerReports = async (req: Request, res: Response) => {
     const reports = await PartnerService.getReports(partnerId, timeRange);
     res.status(200).json(reports);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error('[getPartnerReports ERROR]', error?.message, error?.stack);
-    res.status(500).json({ message: 'Internal server error', detail: error?.message || String(error) });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -44,8 +46,9 @@ export const getPartnerProfile = async (req: Request, res: Response) => {
     if (!profile) return res.status(404).json({ message: "Partner not found" });
     res.status(200).json(profile);
   } catch (error) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -65,8 +68,9 @@ export const updatePartnerProfile = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Profile updated successfully", data: updated });
   } catch (error) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -99,8 +103,9 @@ export const uploadAvatar = async (req: Request, res: Response) => {
       avatarUrl: `http://localhost:5000${relativeUrl}`
     });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Error uploading avatar:', error);
-    res.status(500).json({ message: 'Internal server error during upload.' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -126,6 +131,7 @@ export const changePartnerPassword = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Cập nhật mật khẩu thành công." });
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error('Error changing password:', error);
     res.status(400).json({ message: error.message || "Lỗi khi cập nhật mật khẩu." });
   }
@@ -153,6 +159,7 @@ export const updateRevenueTarget = (req: Request, res: Response) => {
 
     res.status(200).json(result);
   } catch (error: any) {
+    console.error('Server error:', error);
     res.status(400).json({ message: error.message || 'Lỗi khi cập nhật mục tiêu' });
   }
 };

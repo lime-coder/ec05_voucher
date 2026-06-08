@@ -271,6 +271,7 @@ export const createOrder =
       }); // end transaction
 
     } catch (error: any) {
+    console.error('Server error:', error);
 
       console.error(error);
 
@@ -284,10 +285,7 @@ export const createOrder =
         }
       }
 
-      res.status(500).json({
-        message:
-          "Lỗi tạo đơn hàng",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -323,15 +321,13 @@ export const getOrders =
       );
 
     } catch (error) {
+    console.error('Server error:', error);
 
       console.error(
         error
       );
 
-      res.status(500).json({
-        message:
-          "Lỗi lấy orders",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -374,13 +370,11 @@ export const getOrders =
       );
 
     } catch (error) {
+    console.error('Server error:', error);
 
       console.error(error);
 
-      res.status(500).json({
-        message:
-          "Lỗi lấy lịch sử đơn hàng",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -431,14 +425,11 @@ export const getOrders =
       res.json(order);
 
     } catch (error) {
+    console.error('Server error:', error);
 
       console.error(error);
 
-      res.status(500).json({
-
-        message:
-          "Lỗi lấy chi tiết đơn hàng",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -486,6 +477,7 @@ export const getOrderDetailById =
       );
 
     } catch (error) {
+    console.error('Server error:', error);
 
       console.error(error);
 

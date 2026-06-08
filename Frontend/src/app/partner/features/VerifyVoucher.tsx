@@ -112,7 +112,7 @@ export default function VerifyVoucher() {
       setVoucherCode('');
       fetchHistory();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
     }
   };
 

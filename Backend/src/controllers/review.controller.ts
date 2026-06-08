@@ -55,7 +55,8 @@ export const createReview = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Đánh giá thành công", review: newReview });
   } catch (error) {
+    console.error('Server error:', error);
     console.error("Lỗi khi đánh giá:", error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };

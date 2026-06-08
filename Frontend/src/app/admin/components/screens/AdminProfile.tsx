@@ -54,7 +54,7 @@ export function AdminProfile() {
         );
       } else {
         const data = await res.json();
-        toast.error(data.error || tText('Failed to update profile!', 'Cập nhật hồ sơ thất bại!'));
+        toast.error(data.error ? tText(data.error, data.error) : tText('Failed to update profile!', 'Cập nhật hồ sơ thất bại!'));
       }
     } catch (e) {
       console.error(e);
@@ -87,7 +87,7 @@ export function AdminProfile() {
         setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         const data = await res.json();
-        toast.error(data.error || tText('Failed to update password!', 'Đổi mật khẩu thất bại!'));
+        toast.error(data.error ? tText(data.error, data.error) : tText('Failed to update password!', 'Đổi mật khẩu thất bại!'));
       }
     } catch (err) {
       console.error(err);

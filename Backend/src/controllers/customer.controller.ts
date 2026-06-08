@@ -7,7 +7,7 @@ import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user?.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
 
     const { fullName, phone, address, dob, gender, email } = req.body;
 
@@ -15,7 +15,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       where: { IDTaiKhoan: customerId }
     });
 
-    if (!existingUser) return res.status(404).json({ message: 'User not found' });
+    if (!existingUser) return res.status(404).json({ message: 'error.user_not_found' });
 
     // Cập nhật thông tin tài khoản và thông tin khách hàng bằng transaction
     await prisma.$transaction(async (tx) => {
@@ -66,27 +66,28 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     res.json({ message: 'Cập nhật thông tin thành công' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi cập nhật hồ sơ:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user?.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
 
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới' });
+      return res.status(400).json({ message: 'error.missing_passwords' });
     }
 
     const user = await prisma.taiKhoan.findUnique({
       where: { IDTaiKhoan: customerId }
     });
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'error.user_not_found' });
 
     const isMatch = await bcrypt.compare(currentPassword, user.MatKhau);
     if (!isMatch) {
@@ -98,7 +99,7 @@ export const changePassword = async (req: Request, res: Response) => {
         DiaChiIP: req.ip,
         TrangThai: LOG_STATUS.FAILURE,
       });
-      return res.status(400).json({ message: 'Mật khẩu cũ không chính xác' });
+      return res.status(400).json({ message: 'error.old_password_incorrect' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -116,9 +117,10 @@ export const changePassword = async (req: Request, res: Response) => {
       TrangThai: LOG_STATUS.SUCCESS,
     });
 
-    res.json({ message: 'Đổi mật khẩu thành công' });
+    res.json({ message: 'Password changed successfully' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi đổi mật khẩu:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };

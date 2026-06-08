@@ -100,7 +100,7 @@ export function CustomerProfilePage() {
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_password') });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update password");
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : "Failed to update password");
     }
   };
 

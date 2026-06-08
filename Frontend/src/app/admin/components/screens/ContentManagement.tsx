@@ -250,7 +250,7 @@ export function ContentManagement() {
             fetchAllContent();
           } else {
             const data = await res.json();
-            toast.error(data.error || tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
+            toast.error(data.error ? tText(data.error, data.error) : tText('Failed to delete category!', 'Xóa danh mục thất bại!'));
           }
         } catch (err) {
           console.error(err);
@@ -301,7 +301,7 @@ export function ContentManagement() {
         fetchAllContent();
       } else {
         const data = await res.json();
-        toast.error(data.error || tText('Failed to save category!', 'Lưu danh mục thất bại!'));
+        toast.error(data.error ? tText(data.error, data.error) : tText('Failed to save category!', 'Lưu danh mục thất bại!'));
       }
     } catch (err) {
       console.error(err);
@@ -355,7 +355,7 @@ export function ContentManagement() {
         fetchAllContent();
       } else {
         const data = await res.json().catch(() => null);
-        toast.error(data?.error || tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
+        toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save FAQ!', 'Lưu FAQ thất bại!'));
       }
     } catch (err) {
       console.error(err);
@@ -412,7 +412,7 @@ export function ContentManagement() {
         fetchAllContent();
       } else {
         const data = await res.json().catch(() => null);
-        toast.error(data?.error || tText('Failed to save article!', 'Lưu bài viết thất bại!'));
+        toast.error(data?.error ? tText(data.error, data.error) : tText('Failed to save article!', 'Lưu bài viết thất bại!'));
       }
     } catch (err) {
       console.error(err);

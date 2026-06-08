@@ -73,7 +73,7 @@ export default function BranchManagement() {
       setOpenDialog(false);
       fetchBranches();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
     }
   };
 
@@ -92,7 +92,7 @@ export default function BranchManagement() {
       setEditDialogOpen(false);
       fetchBranches();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
     }
   };
 
@@ -108,7 +108,7 @@ export default function BranchManagement() {
       setDeleteDialogOpen(false);
       fetchBranches();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
     }
   };
 

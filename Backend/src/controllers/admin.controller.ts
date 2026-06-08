@@ -25,6 +25,7 @@ export const logActivity = (user: string, action: string, target: string, ip: st
     logs.unshift(newLog);
     fs.writeFileSync(LOG_FILE_PATH, JSON.stringify(logs, null, 2), 'utf-8');
   } catch (err) {
+    console.error('Server error:', err);
     console.error('Failed to write system log:', err);
   }
 };
@@ -77,7 +78,8 @@ export const getUsers = async (req: Request, res: Response) => {
 
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -128,7 +130,8 @@ export const toggleUserActive = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', nextDbStatus === 'Bị khóa' ? 'Lock account' : 'Unlock account', updated.HoTenNguoiDung || updated.TenDangNhap, req.ip || '127.0.0.1');
     res.json({ id: updated.IDTaiKhoan, status: derivedStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -459,7 +462,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       recentOrders
     });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -473,7 +477,8 @@ export const getContent = async (req: Request, res: Response) => {
     ]);
     res.json({ banners, articles, faqs });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -527,7 +532,8 @@ export const createContent = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Loại nội dung không hợp lệ' });
     }
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -585,7 +591,8 @@ export const updateContent = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Loại nội dung không hợp lệ' });
     }
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -599,26 +606,28 @@ export const deleteContent = async (req: Request, res: Response) => {
       try {
         const filePath = path.join(process.cwd(), imagePath);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (e) { console.error('Delete image error:', e); }
+      } catch (e) {
+    console.error('Server error:', e); console.error('Delete image error:', e); }
     };
 
     if (type === 'banner') {
       const rec = await prisma.banner.findUnique({ where: { MaBanner: Number(id) } });
       deleteImageFile(rec?.HinhAnh);
       await prisma.banner.delete({ where: { MaBanner: Number(id) } });
-      return res.json({ message: 'Đã xóa banner' });
+      return res.json({ message: 'Banner deleted successfully' });
     } else if (type === 'article') {
       const rec = await prisma.baiViet.findUnique({ where: { MaBaiViet: Number(id) } });
       deleteImageFile((rec as any)?.HinhAnh);
       await prisma.baiViet.delete({ where: { MaBaiViet: Number(id) } });
-      return res.json({ message: 'Đã xóa bài viết' });
+      return res.json({ message: 'Article deleted successfully' });
     } else if (type === 'faq') {
       await prisma.fAQ.delete({ where: { MaFAQ: Number(id) } });
-      return res.json({ message: 'Đã xóa FAQ' });
+      return res.json({ message: 'FAQ deleted successfully' });
     }
     return res.status(400).json({ error: 'Loại nội dung không hợp lệ' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -655,7 +664,8 @@ export const getPartners = async (req: Request, res: Response) => {
 
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -677,7 +687,8 @@ export const createPartner = async (req: Request, res: Response) => {
 
     res.status(201).json(partner);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -700,7 +711,8 @@ export const updatePartner = async (req: Request, res: Response) => {
 
     res.json(partner);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -729,9 +741,10 @@ export const deletePartner = async (req: Request, res: Response) => {
 
     logActivity('admin@voucher.vn', 'Xóa đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
 
-    res.json({ message: 'Đã xóa đối tác thành công' });
+    res.json({ message: 'Partner deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -771,7 +784,8 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
     );
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -802,7 +816,8 @@ export const approvePartner = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', 'Phê duyệt đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
     res.json(partner);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -830,7 +845,8 @@ export const rejectPartner = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', 'Từ chối đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
     res.json(partner);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -851,7 +867,8 @@ export const getAdminVouchers = async (req: Request, res: Response) => {
     }));
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -894,7 +911,8 @@ export const getAllOrders = async (req: Request, res: Response) => {
 
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -932,9 +950,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
     const updated = await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data });
     logActivity('admin@voucher.vn', `Update ORD-${id}`, `Status: ${status}`, req.ip || '127.0.0.1');
-    res.json({ message: 'Cập nhật thành công', order: updated });
+    res.json({ message: 'Updated successfully', order: updated });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -954,7 +973,8 @@ export const getLogs = async (req: Request, res: Response) => {
     }
     res.json(logs);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -975,7 +995,8 @@ export const getAdminProfile = async (req: Request, res: Response) => {
       role: 'System Admin'
     });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1003,9 +1024,10 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
 
     logActivity('admin@voucher.vn', 'Cập nhật hồ sơ admin', fullName, req.ip || '127.0.0.1');
 
-    res.json({ message: 'Cập nhật hồ sơ thành công' });
+    res.json({ message: 'Profile updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1035,9 +1057,10 @@ export const updateAdminPassword = async (req: Request, res: Response) => {
 
     logActivity('admin@voucher.vn', 'Đổi mật khẩu admin', admin.TaiKhoan.TenDangNhap, req.ip || '127.0.0.1');
 
-    res.json({ message: 'Đổi mật khẩu thành công' });
+    res.json({ message: 'Password changed successfully' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1108,7 +1131,8 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 
     res.json(notifications);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1127,7 +1151,8 @@ export const suspendVoucher = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', `Suspend voucher (${lyDo})`, updated.TenVoucher, req.ip || '127.0.0.1');
     res.json({ ...updated, status: 'SUSPENDED' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1142,7 +1167,8 @@ export const restoreVoucher = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', 'Khôi phục voucher', updated.TenVoucher, req.ip || '127.0.0.1');
     res.json({ ...updated, status: 'ACTIVE' });
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -1299,7 +1325,8 @@ export const getPartnerBranchStats = async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 

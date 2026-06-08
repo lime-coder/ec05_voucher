@@ -86,7 +86,7 @@ export default function ProfileSettings() {
       toast.success(t('partner.settings.business.save_success') || 'Lưu thành công');
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
+      toast.error(err.response?.data?.message ? t(err.response.data.message as string) : t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
     }
   };
 
@@ -317,7 +317,7 @@ export default function ProfileSettings() {
                       setConfirmPassword("");
                     } catch (e: any) {
                       console.error(e);
-                      toast.error(e.response?.data?.message || t('toast.partner.profile.pwd_error') || 'Lỗi cập nhật mật khẩu.');
+                      toast.error(e.response?.data?.message ? t(e.response.data.message as string) : t('toast.partner.profile.pwd_error') || 'Lỗi cập nhật mật khẩu.');
                     }
                   }}>
                     {t('partner.settings.security.pwd_update_btn')}
@@ -434,7 +434,7 @@ export default function ProfileSettings() {
             setAvatarSuccess(true);
           } catch (error: any) {
             console.error('Error uploading avatar:', error);
-            toast.error(error.response?.data?.message || t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
+            toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
           }
         }}
       />

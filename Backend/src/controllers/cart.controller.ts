@@ -4,7 +4,7 @@ import prisma from '../config/db';
 export const getCart = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
 
     // Lấy hoặc tạo giỏ hàng
     let cart = await prisma.gioHang.findUnique({
@@ -27,15 +27,16 @@ export const getCart = async (req: Request, res: Response) => {
 
     res.status(200).json(cart);
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi lấy giỏ hàng:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const syncCart = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
     const { items } = req.body; // Mảng items từ local storage cần merge
 
     let cart = await prisma.gioHang.findUnique({
@@ -89,15 +90,16 @@ export const syncCart = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedCart);
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi đồng bộ giỏ hàng:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const addItem = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
     const { voucherId, quantity } = req.body;
 
     let cart = await prisma.gioHang.findUnique({
@@ -132,17 +134,18 @@ export const addItem = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({ message: 'Đã thêm vào giỏ hàng' });
+    res.status(200).json({ message: 'Added to cart successfully' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi thêm sản phẩm:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const updateItem = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
     const { voucherId } = req.params;
     const { quantity } = req.body;
 
@@ -150,7 +153,7 @@ export const updateItem = async (req: Request, res: Response) => {
       where: { IDTaiKhoan: customerId },
     });
 
-    if (!cart) return res.status(404).json({ message: 'Không tìm thấy giỏ hàng' });
+    if (!cart) return res.status(404).json({ message: 'error.cart_not_found' });
 
     const existingItem = await prisma.chiTietGioHang.findFirst({
       where: {
@@ -159,31 +162,32 @@ export const updateItem = async (req: Request, res: Response) => {
       }
     });
 
-    if (!existingItem) return res.status(404).json({ message: 'Sản phẩm không có trong giỏ hàng' });
+    if (!existingItem) return res.status(404).json({ message: 'error.item_not_in_cart' });
 
     await prisma.chiTietGioHang.update({
       where: { MaCTGioHang: existingItem.MaCTGioHang },
       data: { SoLuong: quantity }
     });
 
-    res.status(200).json({ message: 'Đã cập nhật số lượng' });
+    res.status(200).json({ message: 'Quantity updated successfully' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi cập nhật sản phẩm:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const removeItem = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
     const { voucherId } = req.params;
 
     const cart = await prisma.gioHang.findUnique({
       where: { IDTaiKhoan: customerId },
     });
 
-    if (!cart) return res.status(404).json({ message: 'Không tìm thấy giỏ hàng' });
+    if (!cart) return res.status(404).json({ message: 'error.cart_not_found' });
 
     const existingItem = await prisma.chiTietGioHang.findFirst({
       where: {
@@ -198,17 +202,18 @@ export const removeItem = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({ message: 'Đã xóa khỏi giỏ hàng' });
+    res.status(200).json({ message: 'Removed from cart successfully' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi xóa sản phẩm:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
 export const clearCart = async (req: Request, res: Response) => {
   try {
     const customerId = (req as any).user.IDTaiKhoan;
-    if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
 
     const cart = await prisma.gioHang.findUnique({
       where: { IDTaiKhoan: customerId },
@@ -220,9 +225,10 @@ export const clearCart = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({ message: 'Đã xóa giỏ hàng' });
+    res.status(200).json({ message: 'Cart cleared successfully' });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Lỗi xóa giỏ hàng:', error);
-    res.status(500).json({ message: 'Lỗi server' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };

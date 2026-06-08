@@ -11,6 +11,7 @@ export const getLogs = async (req: Request, res: Response) => {
     const logs = await LogService.getLogs(filters);
     res.status(200).json(logs);
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };

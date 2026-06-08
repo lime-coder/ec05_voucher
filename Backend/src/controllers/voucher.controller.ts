@@ -149,12 +149,10 @@ export const getAllVouchers =
 
       res.json(mapped);
     } catch (error) {
+    console.error('Server error:', error);
       console.error(error);
 
-      res.status(500).json({
-        message:
-          "Failed to fetch vouchers",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -353,12 +351,10 @@ export const getVoucherById = async (
       mapped
     );
   } catch (error) {
+    console.error('Server error:', error);
     console.error(error);
 
-    res.status(500).json({
-      message:
-        "Failed to fetch voucher",
-    });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -369,8 +365,9 @@ export const createVoucher = async (req: Request, res: Response) => {
     const newVoucher = await VoucherService.createVoucher(data);
     res.status(201).json(newVoucher);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -381,8 +378,9 @@ export const updateVoucher = async (req: Request, res: Response) => {
     const updatedVoucher = await VoucherService.updateVoucher(parseInt(id, 10), data);
     res.status(200).json(updatedVoucher);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -392,8 +390,9 @@ export const getVouchersByPartnerId = async (req: Request, res: Response) => {
     const vouchers = await VoucherService.getVouchersByPartnerId(partnerId);
     res.status(200).json(vouchers);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -404,8 +403,9 @@ export const deleteVoucher = async (req: Request, res: Response) => {
     await VoucherService.softDeleteVoucher(parseInt(id, 10));
     res.status(200).json({ message: "Voucher deleted successfully" });
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -415,8 +415,9 @@ export const restoreVoucher = async (req: Request, res: Response) => {
     await VoucherService.restoreVoucher(parseInt(id, 10));
     res.status(200).json({ message: "Voucher restored successfully" });
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -436,8 +437,9 @@ export const verifyVoucher = async (req: Request, res: Response) => {
     
     res.status(200).json(result);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -457,6 +459,7 @@ export const confirmVoucher = async (req: Request, res: Response) => {
     );
     res.status(200).json(result);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
     if (error.message.includes('không tồn tại')) {
       return res.status(404).json({ message: error.message });
@@ -464,7 +467,7 @@ export const confirmVoucher = async (req: Request, res: Response) => {
     if (error.message.includes('đã được sử dụng') || error.message.includes('hết hạn')) {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -479,8 +482,9 @@ export const getVerifyHistory = async (req: Request, res: Response) => {
     const history = await VoucherService.getVerificationHistory(partnerId);
     res.status(200).json(history);
   } catch (error: any) {
+    console.error('Server error:', error);
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -498,8 +502,9 @@ export const uploadVoucherImage = async (req: Request, res: Response) => {
       imageUrl: relativeUrl 
     });
   } catch (error) {
+    console.error('Server error:', error);
     console.error('Error uploading voucher image:', error);
-    res.status(500).json({ message: 'Internal server error during upload.' });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 // === Admin functions ===
@@ -528,7 +533,8 @@ export const getPendingVouchers = async (req: Request, res: Response) => {
 
     res.json(mapped);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -542,7 +548,8 @@ export const approveVoucher = async (req: Request, res: Response) => {
     logActivity('admin@voucher.vn', 'Phê duyệt voucher', voucher.TenVoucher, req.ip || '127.0.0.1');
     res.json(voucher);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -560,7 +567,8 @@ export const rejectVoucher = async (req: Request, res: Response) => {
     console.log(`Từ chối voucher ${id} với lý do: ${lyDo}`);
     res.json(voucher);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error('Server error:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
 
   }
 };
@@ -602,12 +610,10 @@ export const getCategories = async (
 
     res.json(mapped);
   } catch (error) {
+    console.error('Server error:', error);
     console.error(error);
 
-    res.status(500).json({
-      message:
-        "Failed to fetch categories",
-    });
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -746,12 +752,10 @@ export const searchVouchers =
       // Trả dữ liệu về frontend
       res.json(mapped);
     } catch (error) {
+    console.error('Server error:', error);
       console.error(error);
 
-      res.status(500).json({
-        message:
-          "Failed to search vouchers",
-      });
+      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
     }
   };
 

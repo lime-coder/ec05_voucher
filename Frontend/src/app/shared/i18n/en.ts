@@ -894,4 +894,20 @@ export const en = {
   'partner.dash.revenue_y': 'Million VND',
   'partner.dash.vouchers_y': 'Quantity',
   'common.month_prefix': 'M',
+
+  // Error & Toast Messages
+  'error.invalid_partner_id': 'Invalid partner ID',
+  'error.branch_name_required': 'Branch name is required',
+  'error.invalid_branch_id': 'Invalid branch ID',
+  'error.cart_not_found': 'Cart not found',
+  'error.item_not_in_cart': 'Item not in cart',
+  'error.missing_passwords': 'Please provide both old and new passwords',
+  'error.old_password_incorrect': 'Old password is incorrect',
+  'error.unauthorized': 'Unauthorized',
+  'error.user_not_found': 'User not found',
+  'error.invalid_credentials': 'Invalid credentials',
+  'error.invalid_token': 'Invalid token',
+  'error.user_exists': 'Username or Email already exists',
+  'error.unknown': 'An unknown error occurred',
+  'auth.login_required': 'Please login to continue',
 };

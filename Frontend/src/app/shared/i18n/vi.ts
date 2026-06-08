@@ -893,4 +893,20 @@ export const vi = {
   'partner.dash.revenue_y': 'Triệu VNĐ',
   'partner.dash.vouchers_y': 'Số lượng',
   'common.month_prefix': 'T',
+
+  // Error & Toast Messages
+  'error.invalid_partner_id': 'Mã đối tác không hợp lệ',
+  'error.branch_name_required': 'Tên chi nhánh là bắt buộc',
+  'error.invalid_branch_id': 'Mã chi nhánh không hợp lệ',
+  'error.cart_not_found': 'Không tìm thấy giỏ hàng',
+  'error.item_not_in_cart': 'Sản phẩm không có trong giỏ hàng',
+  'error.missing_passwords': 'Vui lòng nhập đầy đủ mật khẩu cũ và mới',
+  'error.old_password_incorrect': 'Mật khẩu cũ không chính xác',
+  'error.unauthorized': 'Không có quyền truy cập',
+  'error.user_not_found': 'Không tìm thấy người dùng',
+  'error.invalid_credentials': 'Thông tin đăng nhập không hợp lệ',
+  'error.invalid_token': 'Token không hợp lệ',
+  'error.user_exists': 'Tên đăng nhập hoặc Email đã tồn tại',
+  'error.unknown': 'Có lỗi xảy ra',
+  'auth.login_required': 'Vui lòng đăng nhập để tiếp tục',
 };
