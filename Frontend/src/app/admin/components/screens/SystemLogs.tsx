@@ -62,7 +62,7 @@ export function SystemLogs() {
   const [actionFilter, setActionFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     fetchLogs();
@@ -96,7 +96,8 @@ export function SystemLogs() {
   const processedLogs = logs.map(log => ({
     ...log,
     englishAction: mapLogActionToEnglish(log.action || log.HanhDong || ''),
-    englishStatus: (log.status || log.TrangThai) === 'Thành công' ? 'Success' : (log.status || log.TrangThai)
+    englishStatus: (log.status || log.TrangThai) === 'Thành công' ? 'Success' :
+                   (log.status || log.TrangThai) === 'Thất bại' ? 'Failed' : (log.status || log.TrangThai)
   }));
 
   const filteredLogs = processedLogs.filter((log) => {
@@ -134,10 +135,10 @@ export function SystemLogs() {
     return matchesSearch && matchesAction && matchesDate;
   });
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
   const currentLogs = filteredLogs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   const formatDate = (dateString: string) => {
@@ -274,7 +275,7 @@ export function SystemLogs() {
                 return (
                   <TableRow key={log.MaLog || log.id || index} className="hover:bg-gray-50/50">
                     <TableCell className="text-gray-500">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
+                      {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                     </TableCell>
                     <TableCell className="text-gray-700">{userStr}</TableCell>
                     <TableCell className="font-medium text-gray-900">
@@ -283,7 +284,11 @@ export function SystemLogs() {
                     <TableCell className="text-gray-700">{targetStr}</TableCell>
                     <TableCell className="text-gray-500">{formatDate(timeStr) || timeStr}</TableCell>
                     <TableCell>
-                      <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
+                      <Badge variant="default" className={
+                        (log.englishStatus === 'Failed' || statusStr === 'Thất bại')
+                          ? "bg-red-100 text-red-700 hover:bg-red-100 shadow-none border-transparent"
+                          : "bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent"
+                      }>
                         {tText(log.englishStatus, statusStr)}
                       </Badge>
                     </TableCell>
@@ -293,36 +298,39 @@ export function SystemLogs() {
             )}
           </TableBody>
         </Table>
-
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-            <div className="text-sm text-gray-500">
-              {tText(
-                `Showing ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} of ${filteredLogs.length}`,
-                `Hiển thị ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} / ${filteredLogs.length}`
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                {tText("Previous", "Trước")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                {tText("Next", "Sau")}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-gray-500">
+            {tText(
+              `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} to ${Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of ${filteredLogs.length} entries`,
+              `Đang hiển thị ${(currentPage - 1) * ITEMS_PER_PAGE + 1} đến ${Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} trong số ${filteredLogs.length} mục`
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              {tText("Previous", "Trước")}
+            </Button>
+            <div className="text-sm font-medium">
+              {currentPage} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              {tText("Next", "Tiếp")}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

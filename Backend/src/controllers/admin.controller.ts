@@ -6,6 +6,16 @@ import path from 'path';
 
 const LOG_FILE_PATH = path.join(process.cwd(), 'logs.json');
 
+export const deleteImageFile = (imagePath: string | null | undefined) => {
+  if (!imagePath || imagePath.startsWith('http')) return;
+  try {
+    const filePath = path.join(process.cwd(), 'public', imagePath);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch (e) {
+    console.error('Delete image error:', e);
+  }
+};
+
 export const logActivity = (user: string, action: string, target: string, ip: string, status: string = 'Thành công') => {
   try {
     let logs = [];
@@ -426,6 +436,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     });
 
     const recentOrders = recentOrdersRaw.map(o => {
+      let orderStatus = 'PENDING';
+      if (o.TrangThaiThanhToan === 'Đã thanh toán') orderStatus = 'PAID';
+      else if (o.TrangThaiThanhToan === 'Đã hoàn tiền' || o.TrangThaiThanhToan === 'REFUNDED') orderStatus = 'REFUNDED';
+      else if (o.TrangThaiDonHang === 'Đã hủy' || o.TrangThaiDonHang === 'CANCELLED') orderStatus = 'CANCELLED';
+
       const timeStr = o.ThoiGianThanhToan
         ? new Date(o.ThoiGianThanhToan).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(o.ThoiGianThanhToan).toLocaleDateString('vi-VN')
         : '';
@@ -433,7 +448,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         id: `ORD-${o.MaDonHang}`,
         customer: o.TaiKhoan?.HoTenNguoiDung || o.TaiKhoan?.TenDangNhap || 'Khách vãng lai',
         total: Number(o.TongTien || 0).toLocaleString('vi-VN') + 'đ',
-        status: o.TrangThaiThanhToan || o.TrangThaiDonHang || 'PENDING',
+        status: orderStatus,
         time: timeStr
       };
     });
@@ -549,10 +564,14 @@ export const updateContent = async (req: Request, res: Response) => {
       if (updateData.ThuTu !== undefined) {
         updateData.ThuTu = Number(updateData.ThuTu);
       }
+      const oldBanner = await prisma.banner.findUnique({ where: { MaBanner: Number(id) } });
       const banner = await prisma.banner.update({
         where: { MaBanner: Number(id) },
         data: updateData
       });
+      if (oldBanner && updateData.HinhAnh && oldBanner.HinhAnh !== updateData.HinhAnh) {
+        deleteImageFile(oldBanner.HinhAnh);
+      }
       return res.json(banner);
     } else if (type === 'article') {
       const { MaBaiViet, ...updateData } = data;
@@ -600,23 +619,18 @@ export const deleteContent = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { type } = req.query;
 
-    const deleteImageFile = (imagePath: string | null | undefined) => {
-      if (!imagePath || imagePath.startsWith('http')) return; // bỏ qua URL ngoài
-      try {
-        const filePath = path.join(process.cwd(), imagePath);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (e) {
-    console.error('Server error:', e); console.error('Delete image error:', e); }
-    };
-
     if (type === 'banner') {
       const rec = await prisma.banner.findUnique({ where: { MaBanner: Number(id) } });
-      deleteImageFile(rec?.HinhAnh);
+      if (rec?.HinhAnh) {
+        deleteImageFile(rec.HinhAnh);
+      }
       await prisma.banner.delete({ where: { MaBanner: Number(id) } });
       return res.json({ message: 'Banner deleted successfully' });
     } else if (type === 'article') {
       const rec = await prisma.baiViet.findUnique({ where: { MaBaiViet: Number(id) } });
-      deleteImageFile((rec as any)?.HinhAnh);
+      if ((rec as any)?.HinhAnh) {
+        deleteImageFile((rec as any).HinhAnh);
+      }
       await prisma.baiViet.delete({ where: { MaBaiViet: Number(id) } });
       return res.json({ message: 'Article deleted successfully' });
     } else if (type === 'faq') {
@@ -653,11 +667,11 @@ export const getPartners = async (req: Request, res: Response) => {
         category: p.LinhVucKinhDoanh || 'Khác',
         vouchers: p.Vouchers.length,
         revenue: totalRevenue.toLocaleString('vi-VN') + 'đ',
-        status: p.TrangThaiHoatDong || 'ACTIVE',
+        status: p.TrangThaiHoatDong === 'Hoạt động' ? 'ACTIVE' : (p.TrangThaiHoatDong === 'Bị khóa' ? 'LOCKED' : 'PENDING'),
         date: '01/03/2026',
         taxCode: p.MaSoThue || '',
         representative: p.CaNhanDaiDien || '',
-        approvalStatus: p.TrangThaiPheDuyet || 'PENDING'
+        approvalStatus: p.TrangThaiPheDuyet === 'Đã duyệt' ? 'APPROVED' : (p.TrangThaiPheDuyet === 'Từ chối' ? 'REJECTED' : 'PENDING')
       };
     });
 
@@ -756,7 +770,7 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
     if (!partner) {
       return res.status(404).json({ error: 'Không tìm thấy đối tác' });
     }
-    const nextStatus = partner.TrangThaiHoatDong === 'Bị khóa' ? 'ACTIVE' : 'LOCKED';
+    const nextStatus = partner.TrangThaiHoatDong === 'Bị khóa' ? 'Hoạt động' : 'Bị khóa';
     const updated = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
       data: { TrangThaiHoatDong: nextStatus }
@@ -771,13 +785,13 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
     if (accountIds.length > 0) {
       await prisma.taiKhoan.updateMany({
         where: { IDTaiKhoan: { in: accountIds } },
-        data: { TrangThaiTaiKhoan: nextStatus === 'LOCKED' ? 'Bị khóa' : 'Hoạt động' }
+        data: { TrangThaiTaiKhoan: nextStatus }
       });
     }
 
     logActivity(
       'admin@voucher.vn',
-      nextStatus === 'LOCKED' ? 'Khóa đối tác' : 'Mở khóa đối tác',
+      nextStatus === 'Bị khóa' ? 'Khóa đối tác' : 'Mở khóa đối tác',
       updated.TenDoanhNghiep || `ID: ${id}`,
       req.ip || '127.0.0.1'
     );
@@ -862,7 +876,9 @@ export const getAdminVouchers = async (req: Request, res: Response) => {
       quantitySold: v.SoLuongDaBan || 0,
       quantityTotal: v.SoLuongChoPhep,
       date: v.ThoiGianBatDau ? new Date(v.ThoiGianBatDau).toLocaleDateString('vi-VN') : '',
-      status: v.TrangThaiVoucher             // raw: PENDING_APPROVAL | ACTIVE | REJECTED | SUSPENDED
+      status: v.TrangThaiVoucher === 'Đang hoạt động' ? 'ACTIVE' :
+              v.TrangThaiVoucher === 'Từ chối' ? 'REJECTED' :
+              v.TrangThaiVoucher === 'Tạm ngưng' ? 'SUSPENDED' : 'PENDING_APPROVAL'
     }));
     res.json(mapped);
   } catch (error) {

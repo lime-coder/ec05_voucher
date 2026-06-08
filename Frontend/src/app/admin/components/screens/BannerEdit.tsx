@@ -23,6 +23,7 @@ export function BannerEdit() {
     link: '',
     imageUrl: ''
   });
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
 
   // Fetch banner data if editing
   useEffect(() => {
@@ -40,6 +41,7 @@ export function BannerEdit() {
                 link: found.LinkURL || '',
                 imageUrl: found.HinhAnh || ''
               });
+              setOriginalImageUrl(found.HinhAnh || '');
             }
           }
         })
@@ -57,6 +59,19 @@ export function BannerEdit() {
     fileInputRef.current?.click();
   };
 
+  const deleteDraftImage = async (path: string) => {
+    if (!path || path === originalImageUrl) return;
+    try {
+      await fetch('/api/content/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ imagePath: path })
+      });
+    } catch (e) {
+      console.error('Failed to delete draft image', e);
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isViewOnly) return;
     const file = e.target.files?.[0];
@@ -68,10 +83,14 @@ export function BannerEdit() {
     try {
       const response = await fetch('/api/content/upload', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: bodyData
       });
       if (response.ok) {
         const data = await response.json();
+        if (formData.imageUrl && formData.imageUrl !== originalImageUrl) {
+          deleteDraftImage(formData.imageUrl);
+        }
         setFormData(prev => ({ ...prev, imageUrl: data.path }));
         toast.success(tText('Image uploaded successfully!', 'Tải ảnh lên thành công!'));
       } else {
@@ -81,6 +100,20 @@ export function BannerEdit() {
       console.error('File upload error:', err);
       toast.error(tText('An error occurred while uploading image!', 'Có lỗi xảy ra khi tải ảnh lên!'));
     }
+  };
+
+  const handleRemoveImage = () => {
+    if (formData.imageUrl && formData.imageUrl !== originalImageUrl) {
+      deleteDraftImage(formData.imageUrl);
+    }
+    setFormData(prev => ({...prev, imageUrl: ''}));
+  };
+
+  const handleCancel = () => {
+    if (formData.imageUrl && formData.imageUrl !== originalImageUrl) {
+      deleteDraftImage(formData.imageUrl);
+    }
+    navigate('/admin/content');
   };
 
   const handleSave = async () => {
@@ -208,7 +241,7 @@ export function BannerEdit() {
                   <img src={formData.imageUrl} alt="Banner Preview" className="w-full h-auto object-cover max-h-[300px]" />
                 </div>
                 {!isViewOnly && (
-                  <Button variant="outline" className="w-full" onClick={() => setFormData(prev => ({...prev, imageUrl: ''}))}>
+                  <Button variant="outline" className="w-full" onClick={handleRemoveImage}>
                     {tText('Change Image', 'Thay đổi hình ảnh')}
                   </Button>
                 )}
@@ -255,7 +288,7 @@ export function BannerEdit() {
                   {tText('Save Changes', 'Lưu Thay Đổi')}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => navigate('/admin/content')} className="w-full" size="lg">
+              <Button variant="outline" onClick={handleCancel} className="w-full" size="lg">
                 {isViewOnly ? tText('Back', 'Quay lại') : tText('Cancel', 'Hủy bỏ')}
               </Button>
             </div>

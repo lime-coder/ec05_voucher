@@ -197,8 +197,25 @@ export const incrementBaiVietView = async (req: Request, res: Response) => {
 export const getCategories = async (req: Request, res: Response) => {
   try {
     const categories = await prisma.danhMuc.findMany({
+      where: {
+        NOT: { MoTa: { contains: '"isDeleted":true' } }
+      },
       include: {
-        Vouchers: true
+        _count: {
+          select: { Vouchers: true }
+        },
+        Vouchers: {
+          where: {
+            OR: [
+              { TrangThaiVoucher: 'Đang hoạt động' },
+              {
+                TrangThaiVoucher: 'Tạm ngưng',
+                ThoiGianKetThuc: { gt: new Date() }
+              }
+            ]
+          },
+          select: { VoucherID: true }
+        }
       }
     });
     const mapped = categories.map(c => {
@@ -220,7 +237,8 @@ export const getCategories = async (req: Request, res: Response) => {
         id: c.MaDanhMuc,
         name: c.TenDanhMuc,
         moTa: moTa,
-        vouchers: c.Vouchers.length,
+        vouchers: c._count.Vouchers,
+        activeVouchers: c.Vouchers.length,
         icon: icon,
         status: 'Hiển thị'
       };
@@ -271,13 +289,41 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const count = await prisma.voucher.count({
-      where: { MaDanhMuc: Number(id) }
+    const activeCount = await prisma.voucher.count({
+      where: {
+        MaDanhMuc: Number(id),
+        OR: [
+          { TrangThaiVoucher: 'Đang hoạt động' },
+          {
+            TrangThaiVoucher: 'Tạm ngưng',
+            ThoiGianKetThuc: { gt: new Date() }
+          }
+        ]
+      }
     });
-    if (count > 0) {
-      return res.status(400).json({ error: 'Không thể xóa danh mục này vì đang có voucher thuộc danh mục.' });
+    if (activeCount > 0) {
+      return res.status(400).json({ error: 'Không thể xóa danh mục này vì đang có voucher hoạt động.' });
     }
-    await prisma.danhMuc.delete({ where: { MaDanhMuc: Number(id) } });
+
+    const category = await prisma.danhMuc.findUnique({ where: { MaDanhMuc: Number(id) } });
+    if (!category) return res.status(404).json({ error: 'Không tìm thấy danh mục' });
+
+    let moTaObj: any = { icon: 'Tag', text: '' };
+    try {
+      if (category.MoTa && category.MoTa.startsWith('{')) {
+        moTaObj = JSON.parse(category.MoTa);
+      } else {
+        moTaObj.text = category.MoTa || '';
+      }
+    } catch(e) {}
+    
+    moTaObj.isDeleted = true;
+
+    await prisma.danhMuc.update({
+      where: { MaDanhMuc: Number(id) },
+      data: { MoTa: JSON.stringify(moTaObj) }
+    });
+
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Server error:', error);

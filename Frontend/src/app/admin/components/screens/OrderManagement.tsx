@@ -31,6 +31,8 @@ export function OrderManagement() {
   const [endDate, setEndDate] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // Custom Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -92,6 +94,11 @@ export function OrderManagement() {
     fetchOrders();
   }, [startDate, endDate]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, startDate, endDate]);
+
   const handleUpdateStatus = (orderId: number, nextStatus: string) => {
     const statusTextEn = nextStatus === 'PAID' ? 'process payment' : nextStatus === 'CANCELLED' ? 'cancel order' : 'refund';
     const statusTextVi = nextStatus === 'PAID' ? 'xử lý thanh toán' : nextStatus === 'CANCELLED' ? 'hủy đơn hàng' : 'hoàn tiền';
@@ -152,6 +159,12 @@ export function OrderManagement() {
 
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="space-y-6">
@@ -218,7 +231,7 @@ export function OrderManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
+            {paginatedOrders.map((order) => (
               <TableRow key={order.id} className="hover:bg-gray-50/50">
                 <TableCell className="font-medium text-gray-900">{order.id}</TableCell>
                 <TableCell>{order.customer}</TableCell>
@@ -276,7 +289,7 @@ export function OrderManagement() {
                 </TableCell>
               </TableRow>
             ))}
-            {filteredOrders.length === 0 && (
+            {paginatedOrders.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                   {tText("No orders found.", "Không tìm thấy đơn hàng nào.")}
@@ -286,6 +299,38 @@ export function OrderManagement() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-gray-500">
+            {tText(
+              `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} to ${Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} of ${filteredOrders.length} entries`,
+              `Đang hiển thị ${(currentPage - 1) * ITEMS_PER_PAGE + 1} đến ${Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} trong số ${filteredOrders.length} mục`
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              {tText('Previous', 'Trước')}
+            </Button>
+            <div className="text-sm font-medium">
+              {currentPage} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              {tText('Next', 'Tiếp')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* --- View Order Details Dialog --- */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>

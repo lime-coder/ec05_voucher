@@ -549,7 +549,8 @@ export function ContentManagement() {
                       <TableHead>Icon</TableHead>
                       <TableHead>{tText('Category Name', 'Tên danh mục')}</TableHead>
                       <TableHead>{tText('Description', 'Mô tả')}</TableHead>
-                      <TableHead>{tText('Vouchers', 'Số voucher')}</TableHead>
+                      <TableHead>{tText('Total Vouchers', 'Tổng voucher')}</TableHead>
+                      <TableHead>{tText('Active Vouchers', 'Voucher hoạt động')}</TableHead>
                       <TableHead>{tText('Status', 'Trạng thái')}</TableHead>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">{tText('Actions', 'Hành động')}</th>
                     </TableRow>
@@ -575,6 +576,7 @@ export function ContentManagement() {
                           </TableCell>
                           <TableCell className="max-w-xs truncate" title={category.moTa}>{category.moTa || tText('No description provided', 'Không có mô tả')}</TableCell>
                           <TableCell>{category.vouchers}</TableCell>
+                          <TableCell>{category.activeVouchers}</TableCell>
                           <TableCell>
                             <Badge
                               variant={category.status === 'Hiển thị' ? 'default' : 'secondary'}

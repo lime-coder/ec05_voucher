@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import * as C from '../controllers/content.controller';
-import { uploadImage } from '../controllers/upload.controller';
+import { uploadImage, deleteUploadedImage } from '../controllers/upload.controller';
 import { uploadGeneralMiddleware } from '../middlewares/upload.middleware';
 
 const router = Router();
@@ -35,5 +35,6 @@ router.delete('/categories/:id', adminAuth, C.deleteCategory);
 
 // === Upload ===
 router.post('/upload', requireAuth, requireRole('admin'), uploadGeneralMiddleware, uploadImage);
+router.delete('/upload', requireAuth, requireRole('admin'), deleteUploadedImage);
 
 export default router;

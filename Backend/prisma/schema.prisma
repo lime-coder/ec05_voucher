@@ -182,7 +182,7 @@ model TaiKhoan {
 
 model Voucher {
   VoucherID         Int                @id(map: "PK__Voucher__3AEE79C1B53D81DF") @default(autoincrement())
-  MaDanhMuc         Int
+  MaDanhMuc         Int?
   MaDoiTac          Int
   TenVoucher        String             @db.NVarChar(255)
   MoTaVoucher       String?            @db.NVarChar(Max)
@@ -200,7 +200,7 @@ model Voucher {
   ChiTietDonHangs   ChiTietDonHang[]
   ChiTietGioHangs   ChiTietGioHang[]
   DanhGias          DanhGia[]
-  DanhMuc           DanhMuc            @relation(fields: [MaDanhMuc], references: [MaDanhMuc], onUpdate: NoAction, map: "FK_Voucher_DanhMuc")
+  DanhMuc           DanhMuc?           @relation(fields: [MaDanhMuc], references: [MaDanhMuc], onDelete: SetNull, onUpdate: NoAction, map: "FK_Voucher_DanhMuc")
   DoiTac            DoiTac             @relation(fields: [MaDoiTac], references: [MaDoiTac], onUpdate: NoAction, map: "FK_Voucher_DoiTac")
   ChiNhanhs         Voucher_ChiNhanh[]
 }
