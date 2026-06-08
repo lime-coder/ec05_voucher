@@ -202,7 +202,7 @@ export function OrderDetailPage() {
                       <div className="text-right mr-4">
                         <p className="text-sm text-muted">{t('order.total_price')}</p>
                         <p className="font-bold text-lg">
-                          ${Number(voucher.DonGia || 0).toFixed(2)}
+                          {Number(voucher.DonGia || 0).toLocaleString('vi-VN')} VND
                         </p>
                       </div>
 
@@ -258,7 +258,7 @@ export function OrderDetailPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
-                            <p className="font-semibold">${Number(voucher.DonGia || 0).toFixed(2)}</p>
+                            <p className="font-semibold">{Number(voucher.DonGia || 0).toLocaleString('vi-VN')} VND</p>
                             <StatusBadge
                               status={
                                 codeItem.TrangThaiSuDung === "USED" || codeItem.TrangThaiSuDung === "Đã sử dụng"
@@ -301,7 +301,7 @@ export function OrderDetailPage() {
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground uppercase">{t('order.unit_price')}</p>
                         <p className="font-semibold">
-                          ${Number(voucher.DonGia || 0 ).toFixed(2)}
+                          {Number(voucher.DonGia || 0).toLocaleString('vi-VN')} VND
                         </p>
                       </div>
 

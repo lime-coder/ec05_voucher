@@ -427,7 +427,7 @@ export const en = {
   'review.success_desc': 'Thank you for your valuable feedback. It helps our community make better decisions.',
 
   // Auth & Login
-  'auth.invalid_credentials': 'Invalid credentials. Try admin/123, partner/123, or customer/123',
+  'auth.invalid_credentials': 'Invalid username or password',
   'auth.hero_title': 'Discover Extraordinary Experiences',
   'auth.hero_desc': 'Join our premium ecosystem to unlock exclusive vouchers for dining, spas, and entertainment.',
   'auth.welcome_back': 'Welcome Back',

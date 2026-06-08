@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { toast } from "sonner";
 import { Mail, Lock, User, ShieldCheck, Ticket, Zap } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,12 +11,21 @@ import { loginSchema, type LoginInput, forgotPasswordSchema, type ForgotPassword
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot_password">("login");
   const [loginError, setLoginError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("expired") === "true") {
+      toast.error(language === 'vi' ? 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.' : 'Your session has expired. Please log in again.');
+      navigate("/login", { replace: true });
+    }
+  }, [location, navigate, language]);
 
   const {
     register: registerLogin,

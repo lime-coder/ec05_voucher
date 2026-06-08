@@ -140,8 +140,33 @@ export default function VoucherManagement() {
     setUploadingImage(false);
   };
 
-  const handleRemoveEditImage = (id: string) => {
+  const handleRemoveEditImage = async (id: string) => {
+    const imgToRemove = editImages.find(img => img.id === id);
+    if (imgToRemove && imgToRemove.url.includes('/uploads/vouchers/')) {
+      try {
+        await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(imgToRemove.url)}`);
+      } catch (error) {
+        console.error('Failed to delete image from server', error);
+      }
+    }
     setEditImages(prev => prev.filter(img => img.id !== id));
+  };
+
+  const handleCancelEdit = async () => {
+    const originalUrls = selectedVoucher?.imageUrl ? selectedVoucher.imageUrl.split(',').map(u => u.startsWith('http') ? u : `http://localhost:5000${u}`) : [];
+    const newImages = editImages.filter(img => !originalUrls.includes(img.url));
+    
+    for (const img of newImages) {
+      if (img.url.includes('/uploads/vouchers/')) {
+        try {
+          await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(img.url)}`);
+        } catch (e) {
+          console.error('Failed to clean up new image', e);
+        }
+      }
+    }
+
+    setEditDialogOpen(false);
   };
 
   const fetchVouchers = () => {
@@ -511,7 +536,7 @@ export default function VoucherManagement() {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
                         } border-transparent shadow-none`}
                     >
-                      {language === 'en' ? (voucher.status === 'active' ? 'Active' : voucher.status === 'pending' ? 'Pending' : 'Paused') : (statusTranslations[voucher.status] || voucher.status)}
+                      {language === 'en' ? (voucher.status.charAt(0).toUpperCase() + voucher.status.slice(1)) : (statusTranslations[voucher.status] || voucher.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -559,148 +584,195 @@ export default function VoucherManagement() {
       </div>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>{t('partner.vouchers.details_title')}</DialogTitle>
+        <DialogContent className="sm:max-w-[750px] p-0 overflow-hidden bg-white rounded-2xl">
+          <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <DialogTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Eye className="w-5 h-5 text-blue-500" />
+              {t('partner.vouchers.details_title')}
+            </DialogTitle>
           </DialogHeader>
           {selectedVoucher && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-              <div className="sm:col-span-2">
-                <p className="text-sm font-semibold text-gray-700 mb-1">{t('partner.vouchers.image_label') || 'Ảnh Voucher'}</p>
-                <div className="w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center min-h-[150px]">
-                  {selectedVoucher.imageUrl ? (
-                    <div className="flex flex-col overflow-y-auto max-h-[250px] gap-4 p-2 w-full snap-y custom-scrollbar">
-                      {selectedVoucher.imageUrl.split(',').map((url, i) => {
-                        const fullUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
-                        return (
-                          <div key={i} className="relative w-full rounded-md overflow-hidden border bg-white group shrink-0 snap-center">
-                            <img src={fullUrl} alt="Voucher" className="w-full max-h-[200px] object-contain cursor-pointer" onClick={() => setPreviewImage(fullUrl)} />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
-                              <Eye className="text-white w-8 h-8 drop-shadow-md" />
-                            </div>
+            <div className="max-h-[75vh] overflow-y-auto custom-scrollbar">
+              {/* Header section with image and key info */}
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50/30 border-b border-gray-100">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Image Gallery */}
+                  <div className="w-full md:w-1/3 shrink-0">
+                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-sm border border-white flex items-center justify-center relative group">
+                      {selectedVoucher.imageUrl ? (
+                        <div className="flex flex-col h-full w-full overflow-y-auto snap-y custom-scrollbar">
+                          {selectedVoucher.imageUrl.split(',').map((url, i) => {
+                            const fullUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+                            return (
+                              <div key={i} className="relative w-full h-full shrink-0 snap-center">
+                                <img src={fullUrl} alt="Voucher" className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105" onClick={() => setPreviewImage(fullUrl)} />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
+                                  <Eye className="text-white w-8 h-8 drop-shadow-md" />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-gray-400">
+                          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                            <Eye className="w-5 h-5 text-gray-300" />
                           </div>
-                        );
-                      })}
+                          <span className="text-sm font-medium">{t('partner.vouchers.no_image') || 'Chưa có ảnh'}</span>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-sm text-gray-500 py-10">{t('partner.vouchers.no_image') || 'Chưa có ảnh'}</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.code_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="font-medium text-lg text-blue-600">{selectedVoucher.id}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.status_label')}</p>
-                <Badge
-                  className={`mt-1 ${selectedVoucher.status === 'active'
-                    ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                    : selectedVoucher.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                      : ['deleted', 'rejected', 'expired'].includes(selectedVoucher.status as string)
-                        ? 'bg-red-100 text-red-700 hover:bg-red-100'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
-                    } border-transparent shadow-none`}
-                >
-                  {language === 'en' ? (selectedVoucher.status === 'active' ? 'Active' : selectedVoucher.status === 'pending' ? 'Pending' : 'Paused') : (statusTranslations[selectedVoucher.status] || selectedVoucher.status)}
-                </Badge>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.name_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="font-medium text-lg">{selectedVoucher.name}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.original_price_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p>{selectedVoucher.originalPrice.toLocaleString('vi-VN')}₫</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.sale_price_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="font-semibold text-red-500">
-                    {selectedVoucher.salePrice.toLocaleString('vi-VN')}₫
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.sale_time_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm">
-                    {selectedVoucher.validFrom} → {selectedVoucher.validTo}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.sold_total_label')}</p>
-                <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p>
-                    {selectedVoucher.sold} / {selectedVoucher.quantity}
-                  </p>
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.category_label')}</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedVoucher.categories.map((cat) => (
-                    <Badge key={cat} variant="secondary" className="font-normal shadow-none">
-                      {cat}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div className="sm:col-span-2 mt-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.description_label') || 'Mô tả'}</p>
-                <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">{selectedVoucher.description || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
-                </div>
-              </div>
-              <div className="sm:col-span-2 mt-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.terms_label') || 'Điều kiện áp dụng'}</p>
-                <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">{selectedVoucher.terms || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
-                </div>
-              </div>
-              <div className="sm:col-span-2 mt-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.create.refund_policy_label') || 'Chính sách hoàn tiền'}</p>
-                <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">{selectedVoucher.refundPolicy || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
-                </div>
-              </div>
-              <div className="sm:col-span-2 mt-2">
-                <p className="text-sm font-semibold text-gray-700">{t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}</p>
-                <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm whitespace-pre-wrap">{selectedVoucher.usageInstructions || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
-                </div>
-              </div>
-              {selectedVoucher.branches && (
-                <div className="sm:col-span-2">
-                  <p className="text-sm font-semibold text-gray-700">{t('partner.vouchers.branches_label')}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedVoucher.branches.map((branch) => (
-                      <Badge key={branch} variant="outline" className="font-normal text-primary border-primary">
-                        {branch}
-                      </Badge>
-                    ))}
+                  </div>
+                  
+                  {/* Key Info */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <div className="flex justify-between items-start gap-4 mb-2">
+                        <h3 className="text-2xl font-bold text-gray-900 leading-tight">{selectedVoucher.name}</h3>
+                        <Badge
+                          className={`shrink-0 px-3 py-1 text-sm font-medium rounded-full shadow-sm ${selectedVoucher.status === 'active'
+                            ? 'bg-green-100 text-green-700 hover:bg-green-100 border-green-200'
+                            : selectedVoucher.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200'
+                              : ['deleted', 'rejected', 'expired'].includes(selectedVoucher.status as string)
+                                ? 'bg-red-100 text-red-700 hover:bg-red-100 border-red-200'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-100 border-gray-200'
+                            }`}
+                        >
+                          {language === 'en' ? (selectedVoucher.status === 'active' ? 'Active' : selectedVoucher.status === 'pending' ? 'Pending' : 'Paused') : (statusTranslations[selectedVoucher.status] || selectedVoucher.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                        <span className="bg-white/60 px-2 py-1 rounded-md border border-gray-200/60 font-mono text-xs">{selectedVoucher.id}</span>
+                        <span>•</span>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedVoucher.categories.map((cat) => (
+                            <Badge key={cat} variant="secondary" className="bg-white/60 hover:bg-white text-gray-600 font-normal shadow-none border-gray-200/60">
+                              {cat}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 bg-white/60 p-4 rounded-xl border border-gray-100 backdrop-blur-sm">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('partner.vouchers.sale_price_label')}</p>
+                        <p className="text-2xl font-bold text-red-600">{selectedVoucher.salePrice.toLocaleString('vi-VN')}₫</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{t('partner.vouchers.original_price_label')}</p>
+                        <p className="text-lg font-semibold text-gray-400 line-through decoration-gray-300">{selectedVoucher.originalPrice.toLocaleString('vi-VN')}₫</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Details Sections */}
+              <div className="p-6 space-y-8">
+                {/* Metrics & Dates Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.vouchers.sold_total_label')}</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-xl font-bold text-gray-900">{selectedVoucher.sold}</p>
+                      <p className="text-sm text-gray-500 mb-1">/ {selectedVoucher.quantity}</p>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all duration-500 group-hover:bg-blue-600" style={{ width: `${(selectedVoucher.sold / selectedVoucher.quantity) * 100}%` }} />
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow sm:col-span-3 flex flex-col justify-center">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.vouchers.sale_time_label')}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                        <span className="text-sm font-medium text-gray-800">{selectedVoucher.validFrom}</span>
+                      </div>
+                      <span className="text-gray-400 font-medium">→</span>
+                      <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                        <span className="text-sm font-medium text-gray-800">{selectedVoucher.validTo}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Content Sections */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <section>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+                        {t('partner.vouchers.description_label') || 'Mô tả'}
+                      </h4>
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.description || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
+                      </div>
+                    </section>
+                    <section>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-purple-500 rounded-full"></span>
+                        {t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}
+                      </h4>
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.usageInstructions || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
+                      </div>
+                    </section>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <section>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-orange-500 rounded-full"></span>
+                        {t('partner.vouchers.terms_label') || 'Điều kiện áp dụng'}
+                      </h4>
+                      <div className="p-4 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.terms || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
+                      </div>
+                    </section>
+                    <section>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-green-500 rounded-full"></span>
+                        {t('partner.create.refund_policy_label') || 'Chính sách hoàn tiền'}
+                      </h4>
+                      <div className="p-4 bg-green-50/30 rounded-xl border border-green-100/50">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.refundPolicy || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+
+                {/* Branches */}
+                {selectedVoucher.branches && selectedVoucher.branches.length > 0 && (
+                  <section>
+                    <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-teal-500 rounded-full"></span>
+                      {t('partner.vouchers.branches_label')}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedVoucher.branches.map((branch) => (
+                        <div key={branch} className="px-3 py-1.5 bg-teal-50 text-teal-700 text-sm font-medium rounded-lg border border-teal-100 flex items-center gap-1.5 shadow-sm">
+                          <div className="w-1.5 h-1.5 rounded-full bg-teal-500"></div>
+                          {branch}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button onClick={() => setDetailDialogOpen(false)}>{t('partner.vouchers.close')}</Button>
+          <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 sm:justify-between items-center">
+            <p className="text-xs text-gray-400 hidden sm:block">ID: {selectedVoucher?.id}</p>
+            <Button variant="outline" className="px-6 rounded-full hover:bg-gray-100 font-medium border-gray-200" onClick={() => setDetailDialogOpen(false)}>{t('partner.vouchers.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { if (!open) handleCancelEdit(); else setEditDialogOpen(true); }}>
         <DialogContent
-          className="sm:max-w-[700px]"
+          className="sm:max-w-[800px] p-0 overflow-hidden bg-white rounded-2xl"
           onInteractOutside={(e) => {
             if (previewImage) {
               e.preventDefault();
@@ -712,215 +784,257 @@ export default function VoucherManagement() {
             }
           }}
         >
-          <DialogHeader>
-            <DialogTitle>{t('partner.vouchers.edit_title')}</DialogTitle>
+          <DialogHeader className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <DialogTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Edit className="w-5 h-5 text-blue-500" />
+              {t('partner.vouchers.edit_title')}
+            </DialogTitle>
           </DialogHeader>
           {selectedVoucher && (
-            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+            <div className="max-h-[75vh] overflow-y-auto px-6 py-6 space-y-8 custom-scrollbar">
               {editingVoucher?.status === 'draft' && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{t('partner.vouchers.draft_label') || 'Bản nháp:'}</span>
-                    <span className="text-sm">{t('partner.vouchers.draft_not_submitted') || 'Voucher này chưa được gửi duyệt.'}</span>
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-yellow-100 p-2 rounded-lg">
+                      <Edit className="w-4 h-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <span className="font-semibold block text-sm">{t('partner.vouchers.draft_label') || 'Bản nháp'}</span>
+                      <span className="text-sm text-yellow-700">{t('partner.vouchers.draft_not_submitted') || 'Voucher này chưa được gửi duyệt.'}</span>
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="sm:w-1/3 flex flex-col gap-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.image_label') || 'Ảnh Voucher'}</label>
-                  {editImages.length === 0 ? (
-                    <label htmlFor="edit-voucher-image" className="border-2 border-dashed rounded-lg p-2 text-center relative overflow-hidden bg-gray-50 flex flex-col items-center justify-center min-h-[150px] cursor-pointer hover:bg-gray-100 transition-colors group">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-primary hover:underline font-medium text-sm">{t('partner.vouchers.choose_file') || 'Chọn tệp'}</span>
-                        <span className="text-xs text-gray-500">{t('partner.vouchers.no_image') || 'Chưa có ảnh'}</span>
-                      </div>
-                      {uploadingImage && <div className="absolute inset-0 bg-white/50 flex items-center justify-center text-sm font-bold">{t('partner.vouchers.uploading') || 'Đang tải...'}</div>}
-                    </label>
-                  ) : (
-                    <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                      {editImages.map((img) => (
-                        <div key={img.id} className="relative border rounded-lg overflow-hidden bg-white group">
-                          <img
-                            src={img.url}
-                            alt="Voucher"
-                            className="w-full h-32 object-cover cursor-pointer"
-                            onClick={() => setPreviewImage(img.url)}
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
-                            <Eye className="text-white w-6 h-6" />
+              {/* Basic Info Section */}
+              <section className="space-y-6">
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
+                  <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+                  {t('partner.create.basic_info') || 'Thông tin cơ bản'}
+                </h4>
+                
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Image Upload */}
+                  <div className="md:w-1/3 flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.image_label') || 'Ảnh Voucher'}</label>
+                    {editImages.length === 0 ? (
+                      <label htmlFor="edit-voucher-image" className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center relative overflow-hidden bg-gray-50 flex flex-col items-center justify-center aspect-square cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all group">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Plus className="w-5 h-5" />
                           </div>
-                          <button
-                            type="button"
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-md p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
-                            onClick={() => handleRemoveEditImage(img.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <span className="text-blue-600 font-medium text-sm">{t('partner.vouchers.choose_file') || 'Chọn tệp'}</span>
                         </div>
-                      ))}
-                      <label className="cursor-pointer flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors gap-2">
-                        <Plus className="w-4 h-4" />
-                        {t('partner.vouchers.add_more_image') || 'Thêm ảnh khác'}
-                        <input type="file" className="hidden" accept="image/jpeg, image/png" multiple onChange={handleEditImageUpload} />
+                        {uploadingImage && <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center text-sm font-bold text-blue-600">{t('partner.vouchers.uploading') || 'Đang tải...'}</div>}
                       </label>
-                      {uploadingImage && <div className="text-center text-xs text-primary font-medium">{t('partner.vouchers.uploading') || 'Đang tải...'}</div>}
+                    ) : (
+                      <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                        {editImages.map((img) => (
+                          <div key={img.id} className="relative border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm group">
+                            <img
+                              src={img.url}
+                              alt="Voucher"
+                              className="w-full h-32 object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                              onClick={() => setPreviewImage(img.url)}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
+                              <Eye className="text-white w-6 h-6" />
+                            </div>
+                            <button
+                              type="button"
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-md p-1.5 opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:bg-red-600 hover:scale-110 z-10"
+                              onClick={() => handleRemoveEditImage(img.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <label className="cursor-pointer flex items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all gap-2">
+                          <Plus className="w-4 h-4" />
+                          {t('partner.vouchers.add_more_image') || 'Thêm ảnh khác'}
+                          <input type="file" className="hidden" accept="image/jpeg, image/png" multiple onChange={handleEditImageUpload} />
+                        </label>
+                        {uploadingImage && <div className="text-center text-xs text-blue-600 font-medium">{t('partner.vouchers.uploading') || 'Đang tải...'}</div>}
+                      </div>
+                    )}
+                    <input type="file" id="edit-voucher-image" accept="image/jpeg, image/png" onChange={handleEditImageUpload} className="hidden" multiple />
+                  </div>
+                  
+                  {/* Name and Categories */}
+                  <div className="md:w-2/3 space-y-5">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.name_req')}</label>
+                      <Input
+                        className="rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                        value={editingVoucher?.name || ''}
+                        onChange={e => setEditingVoucher(prev => ({ ...prev, name: e.target.value }))}
+                      />
                     </div>
-                  )}
-                  <input type="file" id="edit-voucher-image" accept="image/jpeg, image/png" onChange={handleEditImageUpload} className="hidden" multiple />
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.category_label') || 'Danh mục'}</label>
+                        <div className="border border-gray-300 rounded-lg p-3 max-h-[140px] overflow-y-auto space-y-2 bg-gray-50 shadow-inner custom-scrollbar">
+                          {voucherCategories.map((cat) => (
+                            <label key={cat.id} className="flex items-center gap-3 cursor-pointer hover:bg-white p-2 rounded-md transition-colors border border-transparent hover:border-gray-200">
+                              <input
+                                type="checkbox"
+                                checked={(editingVoucher?.categories || []).includes(cat.name)}
+                                onChange={() => handleEditCategoryToggle(cat.name)}
+                                className="rounded border-gray-300 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-medium text-gray-700">{cat.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {editingVoucher?.status !== 'draft' && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.status_label')}</label>
+                          {editingVoucher?.status === 'pending' ? (
+                            <div className="flex h-[42px] w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 font-medium">
+                              {t('partner.vouchers.tab_pending')}
+                            </div>
+                          ) : (
+                            <select
+                              className="flex h-[42px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                              value={editingVoucher?.status || 'active'}
+                              onChange={e => setEditingVoucher(prev => ({ ...prev, status: e.target.value as any }))}
+                            >
+                              {(selectedVoucher?.status === 'active' || selectedVoucher?.status === 'paused') && (
+                                <>
+                                  <option value="active">{t('partner.vouchers.tab_active')}</option>
+                                  <option value="paused">{t('partner.vouchers.tab_inactive')}</option>
+                                </>
+                              )}
+                              {(selectedVoucher?.status as any !== 'draft' && selectedVoucher?.status as any !== 'pending' && selectedVoucher?.status !== 'active' && selectedVoucher?.status !== 'paused') && (
+                                <option value={selectedVoucher?.status || 'active'}>
+                                  {statusTranslations[selectedVoucher?.status || 'active'] || selectedVoucher?.status}
+                                </option>
+                              )}
+                            </select>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="sm:w-2/3 space-y-4">
+              </section>
+
+              {/* Pricing & Limits Section */}
+              <section className="space-y-6">
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
+                  <span className="w-1.5 h-4 bg-purple-500 rounded-full"></span>
+                  Pricing & Limits
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.vouchers.name_req')}</label>
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.original_price_req')}</label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        className="rounded-lg border-gray-300 pr-8 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        value={editingVoucher?.originalPrice || 0}
+                        onChange={e => setEditingVoucher(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) }))}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₫</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.sale_price_req')}</label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        className="rounded-lg border-red-300 text-red-600 font-semibold pr-8 shadow-sm focus:ring-red-500 focus:border-red-500"
+                        value={editingVoucher?.salePrice || 0}
+                        onChange={e => setEditingVoucher(prev => ({ ...prev, salePrice: parseFloat(e.target.value) }))}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 font-medium">₫</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.total_req')}</label>
                     <Input
-                      value={editingVoucher?.name || ''}
-                      onChange={e => setEditingVoucher(prev => ({ ...prev, name: e.target.value }))}
+                      type="number"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      value={editingVoucher?.quantity || 0}
+                      onChange={e => setEditingVoucher(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) }))}
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border rounded-lg p-4 bg-gray-50/50">
-                <div className={`space-y-2 ${editingVoucher?.status === 'draft' ? 'col-span-1 sm:col-span-2' : ''}`}>
-                  <label className="text-sm font-medium">{t('partner.vouchers.category_label') || 'Danh mục'}</label>
-                  <div className="border border-input rounded-md p-3 max-h-[120px] overflow-y-auto space-y-2 bg-white shadow-sm">
-                    {voucherCategories.map((cat) => (
-                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={(editingVoucher?.categories || []).includes(cat.name)}
-                          onChange={() => handleEditCategoryToggle(cat.name)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
-                        />
-                        <span className="text-sm">{cat.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {editingVoucher?.categories && editingVoucher.categories.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {editingVoucher.categories.map((cat) => (
-                        <Badge key={cat} variant="secondary">{cat}</Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {editingVoucher?.status !== 'draft' && (
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">{t('partner.vouchers.status_label')}</label>
-                    {editingVoucher?.status === 'pending' ? (
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 px-3 py-2 text-sm text-gray-500">
-                        {t('partner.vouchers.tab_pending')}
-                      </div>
-                    ) : (
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:opacity-50"
-                        value={editingVoucher?.status || 'active'}
-                        onChange={e => setEditingVoucher(prev => ({ ...prev, status: e.target.value as any }))}
-                      >
-                        {(selectedVoucher?.status === 'active' || selectedVoucher?.status === 'paused') && (
-                          <>
-                            <option value="active">{t('partner.vouchers.tab_active')}</option>
-                            <option value="paused">{t('partner.vouchers.tab_inactive')}</option>
-                          </>
-                        )}
-                        {(selectedVoucher?.status as any !== 'draft' && selectedVoucher?.status as any !== 'pending' && selectedVoucher?.status !== 'active' && selectedVoucher?.status !== 'paused') && (
-                          <option value={selectedVoucher?.status || 'active'}>
-                            {statusTranslations[selectedVoucher?.status || 'active'] || selectedVoucher?.status}
-                          </option>
-                        )}
-                      </select>
-                    )}
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.start_date') || 'Bắt đầu'}</label>
+                    <Input
+                      type="date"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      value={editingVoucher?.validStartDateRaw ? new Date(editingVoucher.validStartDateRaw as string).toISOString().split('T')[0] : ''}
+                      onChange={e => setEditingVoucher(prev => ({ ...prev, validStartDateRaw: e.target.value }))}
+                    />
                   </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.original_price_req')}</label>
-                  <Input
-                    type="number"
-                    value={editingVoucher?.originalPrice || 0}
-                    onChange={e => setEditingVoucher(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) }))}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.end_date') || 'Kết thúc'}</label>
+                    <Input
+                      type="date"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      value={editingVoucher?.validEndDateRaw ? new Date(editingVoucher.validEndDateRaw as string).toISOString().split('T')[0] : ''}
+                      onChange={e => setEditingVoucher(prev => ({ ...prev, validEndDateRaw: e.target.value }))}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.sale_price_req')}</label>
-                  <Input
-                    type="number"
-                    value={editingVoucher?.salePrice || 0}
-                    onChange={e => setEditingVoucher(prev => ({ ...prev, salePrice: parseFloat(e.target.value) }))}
-                  />
+              </section>
+
+              {/* Descriptions Section */}
+              <section className="space-y-6">
+                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
+                  <span className="w-1.5 h-4 bg-orange-500 rounded-full"></span>
+                  Details & Terms
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.description_label') || 'Mô tả'}</label>
+                    <textarea
+                      className="flex min-h-[120px] w-full rounded-xl border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 resize-y custom-scrollbar"
+                      value={editingVoucher?.description || ''}
+                      onChange={e => setEditingVoucher(prev => prev ? { ...prev, description: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}</label>
+                    <textarea
+                      className="flex min-h-[120px] w-full rounded-xl border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 resize-y custom-scrollbar"
+                      value={editingVoucher?.usageInstructions || ''}
+                      onChange={e => setEditingVoucher(prev => prev ? { ...prev, usageInstructions: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.terms_label') || 'Điều kiện'}</label>
+                    <textarea
+                      className="flex min-h-[120px] w-full rounded-xl border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus-visible:border-orange-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500 resize-y custom-scrollbar"
+                      value={editingVoucher?.terms || ''}
+                      onChange={e => setEditingVoucher(prev => prev ? { ...prev, terms: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.refund_policy_label') || 'Chính sách hoàn tiền'}</label>
+                    <textarea
+                      className="flex min-h-[120px] w-full rounded-xl border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus-visible:border-green-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500 resize-y custom-scrollbar"
+                      value={editingVoucher?.refundPolicy || ''}
+                      onChange={e => setEditingVoucher(prev => prev ? { ...prev, refundPolicy: e.target.value } : null)}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.total_req')}</label>
-                  <Input
-                    type="number"
-                    value={editingVoucher?.quantity || 0}
-                    onChange={e => setEditingVoucher(prev => ({ ...prev, quantity: parseInt(e.target.value, 10) }))}
-                  />
-                </div>
-                {/* removed status */}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.start_date') || 'Bắt đầu'}</label>
-                  <Input
-                    type="date"
-                    value={editingVoucher?.validStartDateRaw ? new Date(editingVoucher.validStartDateRaw as string).toISOString().split('T')[0] : ''}
-                    onChange={e => setEditingVoucher(prev => ({ ...prev, validStartDateRaw: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('partner.vouchers.end_date') || 'Kết thúc'}</label>
-                  <Input
-                    type="date"
-                    value={editingVoucher?.validEndDateRaw ? new Date(editingVoucher.validEndDateRaw as string).toISOString().split('T')[0] : ''}
-                    onChange={e => setEditingVoucher(prev => ({ ...prev, validEndDateRaw: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.vouchers.description_label') || 'Mô tả'}</label>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  value={editingVoucher?.description || ''}
-                  onChange={e => setEditingVoucher(prev => prev ? { ...prev, description: e.target.value } : null)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.vouchers.terms_label') || 'Điều kiện'}</label>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  value={editingVoucher?.terms || ''}
-                  onChange={e => setEditingVoucher(prev => prev ? { ...prev, terms: e.target.value } : null)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.create.refund_policy_label') || 'Chính sách hoàn tiền'}</label>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  value={editingVoucher?.refundPolicy || ''}
-                  onChange={e => setEditingVoucher(prev => prev ? { ...prev, refundPolicy: e.target.value } : null)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}</label>
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border-2 border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  value={editingVoucher?.usageInstructions || ''}
-                  onChange={e => setEditingVoucher(prev => prev ? { ...prev, usageInstructions: e.target.value } : null)}
-                />
-              </div>
+              </section>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t('common.cancel')}</Button>
+          <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex flex-row justify-end gap-3 items-center">
+            <Button variant="outline" className="rounded-full px-6 font-medium border-gray-300 hover:bg-gray-100" onClick={() => handleCancelEdit()}>{t('common.cancel')}</Button>
             {editingVoucher?.status === 'draft' && (
               <Button
                 variant="default"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-medium shadow-md hover:shadow-lg transition-all"
                 onClick={() => {
                   if (!editingVoucher) return;
                   setConfirmModalState({
@@ -975,7 +1089,7 @@ export default function VoucherManagement() {
                 {t('voucher.submit_approval.title') || 'Gửi duyệt'}
               </Button>
             )}
-            <Button onClick={async () => {
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 font-medium shadow-md hover:shadow-lg transition-all" onClick={async () => {
               if (!editingVoucher) return;
               try {
                 if (!editingVoucher.name || !editingVoucher.originalPrice || !editingVoucher.salePrice || !editingVoucher.validStartDateRaw || !editingVoucher.validEndDateRaw || !editingVoucher.quantity) {

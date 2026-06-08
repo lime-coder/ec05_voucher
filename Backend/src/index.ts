@@ -49,6 +49,7 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/brands', require('./routes/brand.routes').default);
 
 // Start the server
 app.listen(PORT, () => {

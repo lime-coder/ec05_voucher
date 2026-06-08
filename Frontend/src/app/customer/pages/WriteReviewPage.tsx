@@ -133,7 +133,7 @@ export function WriteReviewPage() {
           {/* Back Link */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted hover:text-foreground mb-6"
+            className="flex items-center gap-2 text-orange-500 hover:text-orange-600 mb-6 font-medium"
           >
             <ChevronLeft className="w-5 h-5" />
             {t('review.back_history')}

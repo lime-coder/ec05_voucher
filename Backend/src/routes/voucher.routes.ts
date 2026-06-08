@@ -16,7 +16,8 @@ import {
   getVerifyHistory,
   deleteVoucher,
   restoreVoucher,
-  uploadVoucherImage
+  uploadVoucherImage,
+  deleteVoucherImage
 } from '../controllers/voucher.controller';
 import { uploadVoucherMiddleware } from '../middlewares/upload.middleware';
 
@@ -35,6 +36,7 @@ router.get('/verify/:code', requireAuth, requireRole('partner'), verifyVoucher);
 router.post('/verify/:code/confirm', requireAuth, requireRole('partner'), confirmVoucher);
 
 router.post('/upload-image', requireAuth, requireRole('partner'), uploadVoucherMiddleware, uploadVoucherImage);
+router.delete('/upload-image', requireAuth, requireRole('partner'), deleteVoucherImage);
 router.get('/:id', getVoucherById);
 router.post('/', requireAuth, requireRole('partner'), createVoucher);
 router.patch('/:id/approve', requireAuth, requireRole('admin'), approveVoucher);

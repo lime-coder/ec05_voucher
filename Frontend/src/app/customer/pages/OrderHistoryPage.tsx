@@ -344,7 +344,7 @@ interface Order {
                       )}
                     </TableCell>
                     <TableCell className="text-right font-bold">
-                      ${order.total.toFixed(2)}
+                      {order.total.toLocaleString('vi-VN')} VND
                     </TableCell>
                     <TableCell className="text-center h-full py-4">
                       <Button

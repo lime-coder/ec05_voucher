@@ -178,11 +178,28 @@ export default function CreateVoucher() {
     setImages(images.map(img => img.id === id ? { ...img, description } : img));
   };
 
-  const handleRemoveImage = (id: string) => {
+  const handleRemoveImage = async (id: string) => {
+    const imgToRemove = images.find(img => img.id === id);
+    if (imgToRemove && imgToRemove.url.includes('/uploads/vouchers/')) {
+      try {
+        await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(imgToRemove.url)}`);
+      } catch (error) {
+        console.error('Failed to delete image from server', error);
+      }
+    }
     setImages(images.filter(img => img.id !== id));
   };
 
-  const handleClearDraft = () => {
+  const handleClearDraft = async () => {
+    for (const img of images) {
+      if (img.url.includes('/uploads/vouchers/')) {
+        try {
+          await api.delete(`/vouchers/upload-image?url=${encodeURIComponent(img.url)}`);
+        } catch (e) {
+          console.error('Failed to clean up image on draft clear', e);
+        }
+      }
+    }
     setFormData(initialCreateVoucherForm);
     setImages([]);
     localStorage.removeItem('voucher_draft');

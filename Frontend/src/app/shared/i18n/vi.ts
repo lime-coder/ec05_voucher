@@ -426,7 +426,7 @@ export const vi = {
   'review.success_desc': 'Cảm ơn bạn đã đóng góp phản hồi quý báu. Điều này giúp cộng đồng của chúng tôi đưa ra quyết định tốt hơn.',
 
   // Auth & Login
-  'auth.invalid_credentials': 'Thông tin đăng nhập không hợp lệ. Thử admin/123, partner/123, hoặc customer/123',
+  'auth.invalid_credentials': 'Tên đăng nhập hoặc mật khẩu không đúng',
   'auth.hero_title': 'Khám Phá Những Trải Nghiệm Tuyệt Vời',
   'auth.hero_desc': 'Tham gia hệ sinh thái cao cấp của chúng tôi để mở khóa các voucher độc quyền cho ăn uống, spa và giải trí.',
   'auth.welcome_back': 'Chào Mừng Trở Lại',

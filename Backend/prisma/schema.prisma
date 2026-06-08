@@ -95,6 +95,12 @@ model DoiTac {
   TrangThaiPheDuyet String?          @db.NVarChar(50)
   TrangThaiHoatDong String?          @db.NVarChar(50)
   AvatarUrl         String?          @db.NVarChar(500)
+  MoTa              String           @default("N'Chưa có mô tả'", map: "DF__DoiTac__MoTa__7D0E9093") @db.NVarChar(Max)
+  NgayThamGia       DateTime         @default(now(), map: "DF__DoiTac__NgayTham__7E02B4CC") @db.DateTime
+  EmailLienHe       String           @default("contact@domain.com", map: "DF__DoiTac__EmailLie__7EF6D905") @db.VarChar(255)
+  SDTLienHe         String           @default("0000000000", map: "DF__DoiTac__SDTLienH__7FEAFD3E") @db.VarChar(15)
+  GioMoCua          DateTime         @default(dbgenerated("08:00"), map: "DF_DoiTac_GioMoCua") @db.Time
+  GioDongCua        DateTime         @default(dbgenerated("22:00"), map: "DF_DoiTac_GioDongCua") @db.Time
   ChiNhanh          ChiNhanh[]
   NhanViens         NhanVienDoiTac[]
   Vouchers          Voucher[]
@@ -135,6 +141,7 @@ model KhachHang {
   NgaySinh        DateTime? @db.Date
   GioiTinh        String?   @db.NVarChar(10)
   DiaChiKhachHang String?   @db.NVarChar(500)
+  TaiKhoan        TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_KhachHang_TaiKhoan")
 }
 
 model MaVoucher {
@@ -164,6 +171,7 @@ model TaiKhoan {
   Email             String           @unique(map: "UQ__TaiKhoan__A9D1053492A35299") @db.VarChar(255)
   HoTenNguoiDung    String?          @db.NVarChar(255)
   TrangThaiTaiKhoan String?          @db.NVarChar(50)
+  KhachHang         KhachHang?
   Admin             Admin?
   DanhGias          DanhGia[]
   DonHangs          DonHang[]

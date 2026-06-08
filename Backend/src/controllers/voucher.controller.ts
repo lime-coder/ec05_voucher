@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { VoucherService } from '../services/voucher.service';
 import prisma from '../config/db';
 import { logActivity } from './admin.controller';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Controller handles the HTTP Request/Response flow.
@@ -509,6 +511,32 @@ export const uploadVoucherImage = async (req: Request, res: Response) => {
     console.error('Server error:', error);
     console.error('Error uploading voucher image:', error);
     res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+export const deleteVoucherImage = async (req: Request, res: Response) => {
+  try {
+    const imageUrl = req.query.url as string;
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'No image URL provided.' });
+    }
+
+    const filename = imageUrl.split('/').pop();
+    if (!filename) {
+      return res.status(400).json({ message: 'Invalid image URL.' });
+    }
+
+    const filePath = path.join(process.cwd(), 'uploads', 'vouchers', filename);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return res.status(200).json({ message: 'Image deleted successfully' });
+    } else {
+      return res.status(404).json({ message: 'Image not found on server' });
+    }
+  } catch (error) {
+    console.error('Error deleting voucher image:', error);
+    res.status(500).json({ message: 'An error occurred while deleting the image.' });
   }
 };
 // === Admin functions ===
