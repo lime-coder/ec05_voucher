@@ -37,7 +37,12 @@ export default function DashboardView() {
     const fetchStats = async () => {
       try {
         const partnerId = localStorage.getItem('partnerId') || '1';
-        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/statistics`);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/statistics`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           // Merge with mockTopVouchers if backend doesn't return topVouchers or returns empty array

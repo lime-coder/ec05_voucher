@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import api from "../../lib/api";
+import { useCartStore } from "../../store/useCartStore";
 
 type Role = "admin" | "partner" | "customer" | null;
 
@@ -9,6 +10,7 @@ interface User {
   TenDangNhap: string;
   Email: string;
   HoTenNguoiDung: string;
+  MaDoiTac?: number;
 }
 
 interface AuthContextType {
@@ -25,12 +27,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const verifyToken = async () => {
+      const storedToken = localStorage.getItem("token");
+      if (storedToken) {
+        try {
+          const response = await api.get('/auth/me');
+          const userData = response.data.user;
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+          
+          if (userData.role === 'customer') {
+            useCartStore.getState().syncCartWithServer();
+          }
+        } catch (error) {
+          console.error("Token verification failed:", error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+    verifyToken();
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -41,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
+      
+      if (userData.role === 'customer') {
+        useCartStore.getState().syncCartWithServer();
+      }
       
       return { success: true, user: userData };
     } catch (error: any) {
@@ -55,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    useCartStore.getState().clearCart();
   };
 
   return (

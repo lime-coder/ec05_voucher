@@ -67,3 +67,14 @@ export const logout = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+export const me = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const result = await AuthService.me(user.IDTaiKhoan, user.role);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(401).json({ message: error.message || 'Invalid token' });
+  }
+};
+

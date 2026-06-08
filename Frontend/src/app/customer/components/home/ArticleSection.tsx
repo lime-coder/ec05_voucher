@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Newspaper, Eye, User, Calendar, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import useEmblaCarousel from 'embla-carousel-react';
 import {
   Dialog,
   DialogContent,
@@ -41,19 +42,31 @@ export function ArticleSection() {
               const dateB = b.NgayTao ? new Date(b.NgayTao).getTime() : 0;
               return dateB - dateA;
             });
-          setArticles(published.slice(0, 3)); // Display top 3 latest
+          setArticles(published);
         }
       })
       .catch((err) => console.error('Fetch articles error:', err));
   }, []);
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start' });
+
+  const scrollPrev = () => emblaApi && emblaApi.scrollPrev();
+  const scrollNext = () => emblaApi && emblaApi.scrollNext();
+
   const handleReadMore = (article: ArticleItem) => {
     setSelectedArticle(article);
     setShowModal(true);
     
-    // Increment view count locally/API if possible, or just open modal
-    // For premium feel, we can just trigger a background POST to update views if there's an API, 
-    // but a visual increment is sufficient for client display.
+    // Increment view count
+    fetch(`/api/content/baiviet/${article.MaBaiViet}/view`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.views) {
+          setArticles(prev => prev.map(a => a.MaBaiViet === article.MaBaiViet ? { ...a, LuotXem: data.views } : a));
+          setSelectedArticle(prev => prev ? { ...prev, LuotXem: data.views } : prev);
+        }
+      })
+      .catch(err => console.error('Failed to increment views', err));
   };
 
   if (articles.length === 0) return null;
@@ -85,80 +98,99 @@ export function ArticleSection() {
         </div>
 
         {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {articles.map((article, idx) => {
-            const dateStr = article.NgayTao
-              ? new Date(article.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric'
-                })
-              : '';
-            
-            const excerpt = article.NoiDung
-              ? article.NoiDung.length > 120
-                ? article.NoiDung.substring(0, 120) + '...'
-                : article.NoiDung
-              : tText('No content available.', 'Không có nội dung.');
+        {/* Articles Carousel */}
+        <div className="relative group/carousel">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex -ml-4">
+              {articles.map((article, idx) => {
+                const dateStr = article.NgayTao
+                  ? new Date(article.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    })
+                  : '';
+                
+                const excerpt = article.NoiDung
+                  ? article.NoiDung.length > 120
+                    ? article.NoiDung.substring(0, 120) + '...'
+                    : article.NoiDung
+                  : tText('No content available.', 'Không có nội dung.');
 
-            const cardGradient = gradients[idx % gradients.length];
+                const cardGradient = gradients[idx % gradients.length];
 
-            return (
-              <div
-                key={article.MaBaiViet}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-              >
-                {/* Visual Cover Gradient Card */}
-                <div className={`h-48 bg-gradient-to-r ${cardGradient} p-6 flex flex-col justify-between text-white relative overflow-hidden`}>
-                  <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                    <Newspaper className="w-48 h-48" />
-                  </div>
-                  
-                  <div className="flex justify-between items-center z-10">
-                    <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium">
-                      {tText('Article', 'Bài viết')}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs opacity-90">
-                      <Eye className="w-3.5 h-3.5" />
-                      {article.LuotXem || 0}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-lg leading-snug line-clamp-2 z-10 group-hover:underline cursor-pointer" onClick={() => handleReadMore(article)}>
-                    {article.TieuDe}
-                  </h3>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <p className="text-gray-600 text-xs leading-relaxed flex-1">
-                    {excerpt}
-                  </p>
-
-                  <div className="flex items-center justify-between border-t border-gray-50 pt-4 text-[11px] text-gray-400">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3.5 h-3.5" />
-                        {article.TacGia || 'Admin'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {dateStr}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handleReadMore(article)}
-                      className="text-primary font-semibold flex items-center gap-0.5 hover:gap-1 transition-all"
+                return (
+                  <div key={article.MaBaiViet} className="pl-4 flex-[0_0_100%] sm:flex-[0_0_50%] md:flex-[0_0_33.333%]">
+                    <div
+                      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-full"
                     >
-                      {tText('Read More', 'Đọc thêm')}
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                      {/* Visual Cover Gradient Card */}
+                      <div className={`h-48 bg-gradient-to-r ${cardGradient} p-6 flex flex-col justify-between text-white relative overflow-hidden`}>
+                        <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                          <Newspaper className="w-48 h-48" />
+                        </div>
+                        
+                        <div className="flex justify-between items-center z-10">
+                          <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium">
+                            {tText('Article', 'Bài viết')}
+                          </span>
+                          <span className="flex items-center gap-1 text-xs opacity-90">
+                            <Eye className="w-3.5 h-3.5" />
+                            {article.LuotXem || 0}
+                          </span>
+                        </div>
+
+                        <h3 className="font-bold text-lg leading-snug line-clamp-2 z-10 group-hover:underline cursor-pointer" onClick={() => handleReadMore(article)}>
+                          {article.TieuDe}
+                        </h3>
+                      </div>
+
+                      {/* Card Body */}
+                      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                        <p className="text-gray-600 text-xs leading-relaxed flex-1">
+                          {excerpt}
+                        </p>
+
+                        <div className="flex items-center justify-between border-t border-gray-50 pt-4 text-[11px] text-gray-400">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <User className="w-3.5 h-3.5" />
+                              {article.TacGia || 'Admin'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {dateStr}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleReadMore(article)}
+                            className="text-primary font-semibold flex items-center gap-0.5 hover:gap-1 transition-all"
+                          >
+                            {tText('Read More', 'Đọc thêm')}
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
+          
+          <button 
+            onClick={scrollPrev} 
+            className="absolute top-1/2 -left-12 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-primary transition-colors opacity-0 group-hover/carousel:opacity-100 disabled:opacity-0 z-10"
+          >
+            <ChevronRight className="w-6 h-6 rotate-180" />
+          </button>
+          <button 
+            onClick={scrollNext} 
+            className="absolute top-1/2 -right-12 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-primary transition-colors opacity-0 group-hover/carousel:opacity-100 disabled:opacity-0 z-10"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
       </div>
 
@@ -169,7 +201,7 @@ export function ArticleSection() {
             <>
               <DialogHeader>
                 <div className="flex items-center gap-2 text-xs text-primary font-semibold mb-2">
-                  <span className="bg-primary/10 px-2.5 py-1 rounded-full">{tText('NEWS & BLOG', 'TIN TỨC & CẨM NANG')}</span>
+                  <span className="bg-primary/10 px-2.5 py-1 rounded-full">{tText('Article', 'Bài viết')}</span>
                 </div>
                 <DialogTitle className="text-2xl font-bold text-gray-900 leading-tight">
                   {selectedArticle.TieuDe}

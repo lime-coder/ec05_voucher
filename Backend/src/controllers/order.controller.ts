@@ -20,10 +20,12 @@ export const createOrder =
     try {
 
       const {
-        customerId,
         items,
         paymentMethod,
       } = req.body;
+
+      const customerId = (req as any).user?.IDTaiKhoan;
+      if (!customerId) return res.status(401).json({ message: "Unauthorized" });
 
       // =====================
       // Validate cart
@@ -41,232 +43,246 @@ export const createOrder =
           });
       }
 
-      // =====================
-      // Tổng tiền
-      // =====================
-      let totalPrice = 0;
-
-      // =====================
-      // Validate voucher
-      // =====================
-      for (const item of items) {
-
-        const voucher =
-          await prisma.voucher.findUnique(
-            {
-              where: {
-                VoucherID:
-                  Number(
-                    item.voucherId
-                  ),
-              },
-            }
-          );
-
-        // Voucher không tồn tại
-        if (!voucher) {
-          return res
-            .status(404)
-            .json({
-              message:
-                "Voucher không tồn tại",
-            });
-        }
-
-        // Stock thật
-        const stock =
-          Number(
-            voucher.SoLuongChoPhep
-          ) -
-          Number(
-            voucher.SoLuongDaBan || 0
-          );
-
-        // Không đủ số lượng
-        if (
-          stock <
-          Number(
-            item.quantity
-          )
-        ) {
-          return res
-            .status(400)
-            .json({
-              message:
-                `${voucher.TenVoucher} không đủ số lượng`,
-            });
-        }
-
+      await prisma.$transaction(async (tx) => {
+        // =====================
         // Tổng tiền
-        totalPrice +=
-          Number(
-            voucher.GiaBan
-          ) *
-          Number(
-            item.quantity
-          );
-      }
+        // =====================
+        let totalPrice = 0;
 
-      // =====================
-      // Tạo đơn hàng
-      // =====================
-      const order =
-        await prisma.donHang.create(
-          {
-            data: {
+        // =====================
+        // Validate voucher
+        // =====================
+        for (const item of items) {
 
-              IDTaiKhoan:
-                Number(
-                  customerId
-                ),
+          const voucher =
+            await tx.voucher.findUnique(
+              {
+                where: {
+                  VoucherID:
+                    Number(
+                      item.voucherId
+                    ),
+                },
+              }
+            );
 
-              TongTien:
-                totalPrice,
-
-              ThoiGianThanhToan:
-                new Date(),
-
-              PhuongThucThanhToan:
-                paymentMethod ||
-                "COD",
-
-              TrangThaiDonHang:
-                "COMPLETED",
-
-              TrangThaiThanhToan:
-                "PAID",
-            },
+          // Voucher không tồn tại
+          if (!voucher) {
+            throw new Error(`404:Voucher không tồn tại`);
           }
-        );
 
-      // =====================
-      // Tạo chi tiết đơn hàng
-      // =====================
-      for (const item of items) {
+          // Stock thật
+          const stock =
+            Number(
+              voucher.SoLuongChoPhep
+            ) -
+            Number(
+              voucher.SoLuongDaBan || 0
+            );
 
-        const voucher =
-          await prisma.voucher.findUnique(
+          // Không đủ số lượng
+          if (
+            stock <
+            Number(
+              item.quantity
+            )
+          ) {
+            throw new Error(`400:${voucher.TenVoucher} không đủ số lượng`);
+          }
+
+          // Tổng tiền
+          totalPrice +=
+            Number(
+              voucher.GiaBan
+            ) *
+            Number(
+              item.quantity
+            );
+        }
+
+        // =====================
+        // Tạo đơn hàng
+        // =====================
+        const order =
+          await tx.donHang.create(
             {
-              where: {
-                VoucherID:
+              data: {
+
+                IDTaiKhoan:
                   Number(
-                    item.voucherId
+                    customerId
                   ),
+
+                TongTien:
+                  totalPrice,
+
+                ThoiGianThanhToan:
+                  new Date(),
+
+                PhuongThucThanhToan:
+                  paymentMethod ||
+                  "COD",
+
+                TrangThaiDonHang:
+                  "COMPLETED",
+
+                TrangThaiThanhToan:
+                  "PAID",
               },
             }
-          );
-
-        if (!voucher)
-          continue;
-
-        // Thành tiền
-        const thanhTien =
-          Number(
-            voucher.GiaBan
-          ) *
-          Number(
-            item.quantity
           );
 
         // =====================
         // Tạo chi tiết đơn hàng
         // =====================
-        const orderDetail =
-          await prisma.chiTietDonHang.create(
+        for (const item of items) {
+
+          const voucher =
+            await tx.voucher.findUnique(
+              {
+                where: {
+                  VoucherID:
+                    Number(
+                      item.voucherId
+                    ),
+                },
+              }
+            );
+
+          if (!voucher)
+            continue;
+
+          // Thành tiền
+          const thanhTien =
+            Number(
+              voucher.GiaBan
+            ) *
+            Number(
+              item.quantity
+            );
+
+          // =====================
+          // Tạo chi tiết đơn hàng
+          // =====================
+          const orderDetail =
+            await tx.chiTietDonHang.create(
+              {
+                data: {
+
+                  MaDonHang:
+                    order.MaDonHang,
+
+                  VoucherID:
+                    voucher.VoucherID,
+
+                  SoLuongMua:
+                    Number(
+                      item.quantity
+                    ),
+
+                  DonGia:
+                    Number(
+                      voucher.GiaBan
+                    ),
+
+                  ThanhTien:
+                    thanhTien,
+                },
+              }
+            );
+
+          // =====================
+          // Update sold
+          // =====================
+          await tx.voucher.update(
             {
-              data: {
-
-                MaDonHang:
-                  order.MaDonHang,
-
+              where: {
                 VoucherID:
                   voucher.VoucherID,
-
-                SoLuongMua:
-                  Number(
-                    item.quantity
-                  ),
-
-                DonGia:
-                  Number(
-                    voucher.GiaBan
-                  ),
-
-                ThanhTien:
-                  thanhTien,
               },
-            }
-          );
 
-        // =====================
-        // Update sold
-        // =====================
-        await prisma.voucher.update(
-          {
-            where: {
-              VoucherID:
-                voucher.VoucherID,
-            },
-
-            data: {
-              SoLuongDaBan: {
-                increment:
-                  Number(
-                    item.quantity
-                  ),
-              },
-            },
-          }
-        );
-
-        // =====================
-        // Tạo mã voucher
-        // =====================
-        for (
-          let i = 0;
-          i <
-          Number(
-            item.quantity
-          );
-          i++
-        ) {
-
-          await prisma.maVoucher.create(
-            {
               data: {
-
-                SoMaVoucher:
-                  nanoid(12),
-
-                MaCTDonHang:
-                  orderDetail.MaCTDonHang,
-
-                TrangThaiSuDung:
-                  "Chưa sử dụng",
-
-                ThoiDiemPhatHanh:
-                  new Date(),
+                SoLuongDaBan: {
+                  increment:
+                    Number(
+                      item.quantity
+                    ),
+                },
               },
             }
           );
+
+          // =====================
+          // Tạo mã voucher
+          // =====================
+          for (
+            let i = 0;
+            i <
+            Number(
+              item.quantity
+            );
+            i++
+          ) {
+
+            await tx.maVoucher.create(
+              {
+                data: {
+
+                  SoMaVoucher:
+                    nanoid(12),
+
+                  MaCTDonHang:
+                    orderDetail.MaCTDonHang,
+
+                  TrangThaiSuDung:
+                    "Chưa sử dụng",
+
+                  ThoiDiemPhatHanh:
+                    new Date(),
+                },
+              }
+            );
+          }
         }
-      }
 
-      // =====================
-      // Thành công
-      // =====================
-      res.status(201).json({
+        // =====================
+        // Clear Cart
+        // =====================
+        const cart = await tx.gioHang.findUnique({
+          where: { IDTaiKhoan: Number(customerId) },
+        });
+        if (cart) {
+          await tx.chiTietGioHang.deleteMany({
+            where: { MaGioHang: cart.MaGioHang },
+          });
+        }
 
-        message:
-          "Đặt hàng thành công",
+        // =====================
+        // Thành công
+        // =====================
+        res.status(201).json({
 
-        orderId:
-          order.MaDonHang,
-      });
+          message:
+            "Đặt hàng thành công",
 
-    } catch (error) {
+          orderId:
+            order.MaDonHang,
+        });
+      }); // end transaction
+
+    } catch (error: any) {
 
       console.error(error);
+
+      if (error.message && error.message.includes(':')) {
+        const parts = error.message.split(':');
+        if (parts.length >= 2) {
+          const status = parseInt(parts[0], 10);
+          if (!isNaN(status)) {
+            return res.status(status).json({ message: parts.slice(1).join(':') });
+          }
+        }
+      }
 
       res.status(500).json({
         message:
@@ -327,10 +343,8 @@ export const getOrders =
 
     try {
 
-      const customerId =
-        Number(
-          req.params.customerId
-        );
+      const customerId = (req as any).user?.IDTaiKhoan;
+      if (!customerId) return res.status(401).json({ message: "Unauthorized" });
 
       const orders =
         await prisma.donHang.findMany({

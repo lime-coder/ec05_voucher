@@ -298,7 +298,7 @@ export function PartnerProfilePage() {
       </main>
 
       {/* Simple Footer */}
-      <footer className="border-t border-border py-6 mt-12">
+      <footer className="border-t border-border py-6 mt-auto">
         <div className="max-w-[1440px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs uppercase text-muted-foreground">
             {t('partner.footer_copyright')}

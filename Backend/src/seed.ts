@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 dotenv.config(); // Load .env
 import { nanoid } from 'nanoid';
@@ -87,7 +88,7 @@ async function main() {
     tk = await prisma.taiKhoan.create({
       data: {
         TenDangNhap: 'test_user_1',
-        MatKhau: '123456',
+        MatKhau: await bcrypt.hash('123456', 10),
         Email: 'test1@example.com',
         HoTenNguoiDung: 'Nguyễn Văn Test',
         TrangThaiTaiKhoan: 'ACTIVE',

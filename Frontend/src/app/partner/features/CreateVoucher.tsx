@@ -20,8 +20,12 @@ import {
 } from '@voucherhub/ui';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { cn } from '@voucherhub/ui';
+import api from '../../../lib/api';
+import { useAuth } from '../../auth/AuthContext';
 export default function CreateVoucher() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const partnerId = user?.MaDoiTac || 1;
   const [formData, setFormData] = useState<CreateVoucherFormData & { id?: number }>(initialCreateVoucherForm);
 
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -31,19 +35,18 @@ export default function CreateVoucher() {
 
   // Fetch branches and categories from API
   useEffect(() => {
-    const partnerId = localStorage.getItem('partnerId') || '1';
-    fetch(`http://localhost:5000/api/branches/partner/${partnerId}`)
-      .then(res => res.json())
-      .then(data => {
+    api.get(`/branches/partner/${partnerId}`)
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           setPartnerBranches(data.map((b: any) => b.TenChiNhanh));
         }
       })
       .catch(console.error);
 
-    fetch('http://localhost:5000/api/categories')
-      .then(res => res.json())
-      .then(data => {
+    api.get('/categories')
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           setVoucherCategories(data.map((c: any) => ({ id: c.MaDanhMuc, name: c.TenDanhMuc })));
         }
@@ -149,13 +152,12 @@ export default function CreateVoucher() {
       uploadFormData.append('image', file);
 
       try {
-        const res = await fetch(`http://localhost:5000/api/vouchers/upload-image`, {
-          method: 'POST',
-          body: uploadFormData,
+        const res = await api.post(`/vouchers/upload-image`, uploadFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        if (res.status === 200 || res.status === 201) {
+          const data = res.data;
           const newImage = {
             id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
             url: `http://localhost:5000${data.imageUrl}`,
@@ -260,31 +262,29 @@ export default function CreateVoucher() {
       const payload = {
         ...formData,
         categoryId: categoryObj ? categoryObj.id : null,
-        partnerId: parseInt(localStorage.getItem('partnerId') || '1', 10),
+        partnerId,
         status,
         imageUrl: imageUrlsStr,
         images // Optional: send images if the backend handles them
       };
 
-      const url = formData.id ? `http://localhost:5000/api/vouchers/${formData.id}` : 'http://localhost:5000/api/vouchers';
-      const method = formData.id ? 'PUT' : 'POST';
+      const url = formData.id ? `/vouchers/${formData.id}` : '/vouchers';
+      const method = formData.id ? 'put' : 'post';
 
-      const response = await fetch(url, {
+      const response = await api({
         method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+        url,
+        data: payload
       });
 
-      if (!response.ok) {
+      if (response.status !== 200 && response.status !== 201) {
         if (response.status === 404 || response.status === 500) {
           throw new Error('404');
         }
         throw new Error('Lỗi khi lưu Voucher');
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       toast.success(submitModal.isDraft ? (t('toast.voucher.draft_success') || 'Đã lưu bản nháp thành công!') : (t('toast.voucher.submit_success') || 'Đã gửi duyệt Voucher thành công!'));
       setSubmitModal({ isOpen: false, isDraft: false });

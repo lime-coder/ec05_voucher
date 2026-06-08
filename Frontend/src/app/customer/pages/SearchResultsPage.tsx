@@ -12,8 +12,8 @@ export function SearchResultsPage() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   
-  const [vouchers, setVouchers] =
-    useState<Voucher[]>([]);
+  const [allVouchers, setAllVouchers] = useState<Voucher[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -27,13 +27,14 @@ export function SearchResultsPage() {
   const categoryId = searchParams.get("category");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isBrandsModalOpen, setIsBrandsModalOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState([10, 1000]);
+  const [priceRange, setPriceRange] = useState([0, 2000000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState("California (124)");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [sliderResetKey, setSliderResetKey] = useState(0);
+  const [triggerFilter, setTriggerFilter] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
 
@@ -58,187 +59,80 @@ export function SearchResultsPage() {
     setSelectedState("California (124)");
     setSelectedCities([]);
     setSelectedRatings([]);
-    setPriceRange([10, 1000]);
+    setPriceRange([0, 2000000]);
     setSliderResetKey(prev => prev + 1);
     setCurrentPage(1);
   };
 
   useEffect(() => {
-    // Reset category name
-    //setCategoryName("");
-
-    // =========================
-    // Lấy keyword search
-    // =========================
-    const query =
-      searchParams.get("q");
-
-    // API mặc định
-    let url =
-      "/api/vouchers";
-
-    // =========================
-    // Search từ navbar
-    // =========================
+    const query = searchParams.get("q");
+    let url = "/api/vouchers";
     if (query) {
-      url =
-        `/api/vouchers/search?q=${encodeURIComponent(
-          query
-        )}`;
+      url = `/api/vouchers/search?q=${encodeURIComponent(query)}`;
     }
-
-    // =========================
-    // Click category
-    // =========================
     if (categoryId) {
-      url =
-        `/api/vouchers?category=${categoryId}`;
+      url = `/api/vouchers?category=${categoryId}`;
     }
 
-    // =========================
-    // Load categories thật
-    // =========================
     fetch("/api/vouchers/categories")
-      .then((res) =>
-        res.json()
-      )
+      .then((res) => res.json())
       .then((categories) => {
-        // Sidebar categories
-        setCategories(
-          categories
-        );
-
-        // Tìm tên category
+        setCategories(categories);
         if (categoryId) {
-          const found =
-            categories.find(
-              (c: any) =>
-                c.id ===
-                Number(
-                  categoryId
-                )
-            );
-
-          if (found) {
-            setCategoryName(
-              found.name
-            );
-          }
+          const found = categories.find((c: any) => c.id === Number(categoryId));
+          if (found) setCategoryName(found.name);
         }
       })
-      .catch((err) =>
-        console.error(
-          "Fetch categories error:",
-          err
-        )
-      );
+      .catch((err) => console.error("Fetch categories error:", err));
 
-    // Reset page
-    setCurrentPage(1);
-
-    // =========================
-    // Fetch vouchers thật
-    // =========================
     fetch(url)
-      .then((res) =>
-        res.json()
-      )
+      .then((res) => res.json())
       .then((data) => {
-        if (
-          Array.isArray(data)
-        ) {
-          let sortedData = [
-            ...data,
-          ];
-
-          // =====================
-          // Sort giá thấp -> cao
-          // =====================
-          if (
-            sortType ===
-            "low-price"
-          ) {
-            sortedData.sort(
-              (a, b) =>
-                Number(
-                  a.salePrice
-                ) -
-                Number(
-                  b.salePrice
-                )
-            );
-          }
-
-          // =====================
-          // Sort giá cao -> thấp
-          // =====================
-          if (
-            sortType ===
-            "high-price"
-          ) {
-            sortedData.sort(
-              (a, b) =>
-                Number(
-                  b.salePrice
-                ) -
-                Number(
-                  a.salePrice
-                )
-            );
-          }
-
-          // =====================
-          // Voucher mới nhất
-          // =====================
-          if (
-            sortType ===
-            "newest"
-          ) {
-            sortedData.sort(
-              (a, b) =>
-                Number(b.id) -
-                Number(a.id)
-            );
-          }
-
-          // =====================
+        if (Array.isArray(data)) {
+          setAllVouchers(data);
           // Lấy partner thật
-          // =====================
-          const uniquePartners =
-            Array.from(
-              new Map(
-                sortedData.map(
-                  (v: any) => [
-                    v.partner?.id,
-                    v.partner,
-                  ]
-                )
-              ).values()
-            ).filter(Boolean);
-
-          setPartners(
-            uniquePartners
-          );
-
-          // =====================
-          // Set vouchers
-          // =====================
-          setVouchers(
-            sortedData
-          );
+          const uniquePartners = Array.from(
+            new Map(data.map((v: any) => [v.partner?.id, v.partner])).values()
+          ).filter(Boolean);
+          setPartners(uniquePartners);
         }
       })
-      .catch((err) =>
-        console.error(
-          "Fetch vouchers error:",
-          err
-        )
-      );
-  }, [
-    categoryId,
-    searchParams,
-    sortType,
-  ]);
+      .catch((err) => console.error("Fetch vouchers error:", err));
+  }, [categoryId, searchParams]);
+
+  useEffect(() => {
+    let sortedData = [...allVouchers];
+
+    // Local Filtering
+    if (selectedCategories.length > 0) {
+      sortedData = sortedData.filter(v => v.category && selectedCategories.includes(String(v.category.id)));
+    }
+    if (selectedBrands.length > 0) {
+      sortedData = sortedData.filter(v => v.partner && selectedBrands.includes(String(v.partner.id)));
+    }
+    if (priceRange) {
+      sortedData = sortedData.filter(v => v.salePrice >= priceRange[0] && (priceRange[1] === 2000000 ? true : v.salePrice <= priceRange[1]));
+    }
+    if (selectedRatings.length > 0) {
+      // For now rating is missing, so this will filter out everything unless we use mock
+      // Just keep it as is
+      sortedData = sortedData.filter(v => {
+        const rating = Math.floor(v.rating || 0);
+        return selectedRatings.includes(rating);
+      });
+    }
+
+    if (sortType === "low-price") {
+      sortedData.sort((a, b) => Number(a.salePrice) - Number(b.salePrice));
+    } else if (sortType === "high-price") {
+      sortedData.sort((a, b) => Number(b.salePrice) - Number(a.salePrice));
+    } else if (sortType === "newest") {
+      sortedData.sort((a, b) => Number(b.id) - Number(a.id));
+    }
+
+    setCurrentPage(1);
+    setVouchers(sortedData);
+  }, [allVouchers, sortType, triggerFilter, sliderResetKey]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -540,19 +434,19 @@ export function SearchResultsPage() {
                 <div className="px-2">
                   <PriceRangeSlider 
                     key={sliderResetKey}
-                    min={10} 
-                    max={1000} 
+                    min={0} 
+                    max={2000000} 
                     value={priceRange}
                     onChange={(min, max) => setPriceRange([min, max])} 
                   />
                 </div>
-                <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
-                  <span>$10</span>
-                  <span className="font-semibold text-foreground text-sm">
-                    ${priceRange[0]} - ${priceRange[1]}{priceRange[1] === 1000 ? '+' : ''}
-                  </span>
-                  <span>$1000+</span>
-                </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
+                    <span>0đ</span>
+                    <span className="font-semibold text-foreground text-sm">
+                      {priceRange[0].toLocaleString("vi-VN")}đ - {priceRange[1].toLocaleString("vi-VN")}đ{priceRange[1] === 2000000 ? '+' : ''}
+                    </span>
+                    <span>2,000,000đ+</span>
+                  </div>
               </div>
 
               {/* Rating */}
@@ -583,7 +477,7 @@ export function SearchResultsPage() {
               </div>
 
               {/* Filter Button */}
-              <Button className="w-full bg-primary text-primary-foreground font-semibold py-6 hover:opacity-90 transition-colors">
+              <Button onClick={() => setTriggerFilter(prev => prev + 1)} className="w-full bg-primary text-primary-foreground font-semibold py-6 hover:opacity-90 transition-colors">
                 {t('search.apply_filters')}
               </Button>
             </div>
@@ -644,7 +538,7 @@ export function SearchResultsPage() {
               </div>
               <div className="mt-6 pt-4 border-t border-border flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsBrandsModalOpen(false)}>{t('common.cancel')}</Button>
-                <Button onClick={() => setIsBrandsModalOpen(false)} className="bg-primary text-primary-foreground font-semibold">{t('search.apply_filters')}</Button>
+                <Button onClick={() => { setTriggerFilter(prev => prev + 1); setIsBrandsModalOpen(false); }} className="bg-primary text-primary-foreground font-semibold">{t('search.apply_filters')}</Button>
               </div>
             </div>
           </div>

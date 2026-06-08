@@ -1,4 +1,5 @@
 import prisma from '../config/db';
+import bcrypt from 'bcrypt';
 import { getTarget, setTarget } from '../config/revenueTargetStore';
 
 export class PartnerService {
@@ -79,17 +80,15 @@ export class PartnerService {
     const taiKhoan = partner.NhanViens[0].TaiKhoan;
     if (!taiKhoan) throw new Error("Tài khoản chưa được khởi tạo.");
 
-    // Trong hệ thống thực tế nên dùng bcrypt.compare
-    // Nếu db lưu plain text (vì đang mock), ta so sánh trực tiếp
-    if (taiKhoan.MatKhau !== current) {
+    const isMatch = await bcrypt.compare(current, taiKhoan.MatKhau);
+    if (!isMatch) {
       throw new Error("Mật khẩu hiện tại không đúng.");
     }
 
-    // Hash mật khẩu mới (nếu dùng bcrypt) hoặc lưu plain text
-    // Vì chưa import bcrypt trong db, giả sử lưu plain text (tạm thời)
+    const hashedPassword = await bcrypt.hash(newPass, 10);
     await prisma.taiKhoan.update({
       where: { IDTaiKhoan: taiKhoan.IDTaiKhoan },
-      data: { MatKhau: newPass }
+      data: { MatKhau: hashedPassword }
     });
 
     return true;

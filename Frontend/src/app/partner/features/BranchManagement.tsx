@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from '@voucherhub/ui';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
+import api from '../../../lib/api';
 
 export default function BranchManagement() {
   const { t } = useLanguage();
@@ -42,11 +43,8 @@ export default function BranchManagement() {
 
   const fetchBranches = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/branches/partner/${PARTNER_ID}`);
-      if (response.ok) {
-        const data = await response.json();
-        setBranches(data);
-      }
+      const response = await api.get(`/branches/partner/${PARTNER_ID}`);
+      setBranches(response.data);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách chi nhánh', error);
       toast.error(t('toast.branch.fetch_error') || 'Lỗi lấy danh sách chi nhánh');
@@ -70,20 +68,12 @@ export default function BranchManagement() {
 
   const handleCreate = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/branches/partner/${PARTNER_ID}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
-      });
-      if (response.ok) {
-        toast.success(t('toast.branch.add_success') || 'Thêm chi nhánh thành công');
-        setOpenDialog(false);
-        fetchBranches();
-      } else {
-        toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
-      }
-    } catch (error) {
-      toast.error(t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
+      await api.post(`/branches/partner/${PARTNER_ID}`, { tenChiNhanh, sdt, diaChi });
+      toast.success(t('toast.branch.add_success') || 'Thêm chi nhánh thành công');
+      setOpenDialog(false);
+      fetchBranches();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('toast.branch.add_error') || 'Lỗi thêm chi nhánh');
     }
   };
 
@@ -97,20 +87,12 @@ export default function BranchManagement() {
 
   const handleUpdate = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/branches/${selectedBranch.MaChiNhanh}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenChiNhanh, sdt, diaChi })
-      });
-      if (response.ok) {
-        toast.success(t('toast.branch.update_success') || 'Cập nhật chi nhánh thành công');
-        setEditDialogOpen(false);
-        fetchBranches();
-      } else {
-        toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
-      }
-    } catch (error) {
-      toast.error(t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
+      await api.put(`/branches/${selectedBranch.MaChiNhanh}`, { tenChiNhanh, sdt, diaChi });
+      toast.success(t('toast.branch.update_success') || 'Cập nhật chi nhánh thành công');
+      setEditDialogOpen(false);
+      fetchBranches();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('toast.branch.update_error') || 'Lỗi cập nhật chi nhánh');
     }
   };
 
@@ -121,18 +103,12 @@ export default function BranchManagement() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/branches/${selectedBranch.MaChiNhanh}`, {
-        method: 'DELETE'
-      });
-      if (response.ok) {
-        toast.success(t('toast.branch.delete_success') || 'Xóa chi nhánh thành công');
-        setDeleteDialogOpen(false);
-        fetchBranches();
-      } else {
-        toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
-      }
-    } catch (error) {
-      toast.error(t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
+      await api.delete(`/branches/${selectedBranch.MaChiNhanh}`);
+      toast.success(t('toast.branch.delete_success') || 'Xóa chi nhánh thành công');
+      setDeleteDialogOpen(false);
+      fetchBranches();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('toast.branch.delete_error') || 'Lỗi xóa chi nhánh');
     }
   };
 

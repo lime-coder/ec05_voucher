@@ -167,6 +167,19 @@ export const deleteBaiViet = async (req: Request, res: Response) => {
   }
 };
 
+export const incrementBaiVietView = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const baiViet = await prisma.baiViet.update({
+      where: { MaBaiViet: Number(id) },
+      data: { LuotXem: { increment: 1 } }
+    });
+    res.json({ message: 'Đã tăng lượt xem', views: baiViet.LuotXem });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 // === Danh mục ===
 export const getCategories = async (req: Request, res: Response) => {
   try {

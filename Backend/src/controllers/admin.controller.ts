@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 import prisma from '../config/db';
 import fs from 'fs';
 import path from 'path';
@@ -45,8 +46,8 @@ export const getUsers = async (req: Request, res: Response) => {
       // Chuẩn hóa: chỉ nhận ACTIVE | INACTIVE | PENDING
       const dbStatus = (u.TrangThaiTaiKhoan || '').trim().toUpperCase();
       let status: 'ACTIVE' | 'INACTIVE' | 'PENDING' = 'ACTIVE';
-      if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE') status = 'INACTIVE';
-      else if (dbStatus === 'PENDING') status = 'PENDING';
+      if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') status = 'INACTIVE';
+      else if (dbStatus === 'PENDING' || dbStatus === 'CHỜ DUYỆT') status = 'PENDING';
 
       // Loại tài khoản
       let accountType: 'Admin' | 'Partner' | 'Customer' = 'Customer';
@@ -63,7 +64,7 @@ export const getUsers = async (req: Request, res: Response) => {
         } else if (pt.TrangThaiPheDuyet === 'REJECTED' || pt.TrangThaiHoatDong === 'LOCKED') {
           status = 'INACTIVE';
         } else if (pt.TrangThaiPheDuyet === 'APPROVED' && pt.TrangThaiHoatDong === 'ACTIVE') {
-          if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE') {
+          if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
             status = 'INACTIVE';
           } else {
             status = 'ACTIVE';
@@ -100,8 +101,8 @@ export const toggleUserActive = async (req: Request, res: Response) => {
     // Tính trạng thái derived hiện tại để toggle
     const dbStatus = (user.TrangThaiTaiKhoan || '').trim().toUpperCase();
     let derivedStatus: 'ACTIVE' | 'INACTIVE' | 'PENDING' = 'ACTIVE';
-    if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE') derivedStatus = 'INACTIVE';
-    else if (dbStatus === 'PENDING') derivedStatus = 'PENDING';
+    if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') derivedStatus = 'INACTIVE';
+    else if (dbStatus === 'PENDING' || dbStatus === 'CHỜ DUYỆT') derivedStatus = 'PENDING';
 
     if (user.NhanVienDoiTacs?.length > 0 && user.NhanVienDoiTacs[0]?.DoiTac) {
       const pt = user.NhanVienDoiTacs[0].DoiTac;
@@ -110,7 +111,7 @@ export const toggleUserActive = async (req: Request, res: Response) => {
       } else if (pt.TrangThaiPheDuyet === 'REJECTED' || pt.TrangThaiHoatDong === 'LOCKED') {
         derivedStatus = 'INACTIVE';
       } else if (pt.TrangThaiPheDuyet === 'APPROVED' && pt.TrangThaiHoatDong === 'ACTIVE') {
-        if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE') {
+        if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
           derivedStatus = 'INACTIVE';
         } else {
           derivedStatus = 'ACTIVE';
@@ -1019,10 +1020,15 @@ export const updateAdminPassword = async (req: Request, res: Response) => {
     }
 
     if (admin.IDTaiKhoan) {
+      const isMatch = await bcrypt.compare(currentPassword, admin.TaiKhoan.MatKhau);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng' });
+      }
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       await prisma.taiKhoan.update({
         where: { IDTaiKhoan: admin.IDTaiKhoan },
         data: {
-          MatKhau: newPassword
+          MatKhau: hashedPassword
         }
       });
     }

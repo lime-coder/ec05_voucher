@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import {
   getUsers, toggleUserActive,
   getAdminVouchers, approveVoucher, rejectVoucher, suspendVoucher, restoreVoucher,
@@ -12,6 +13,8 @@ import {
 } from '../controllers/admin.controller';
 
 const router = Router();
+
+router.use(requireAuth, requireRole('admin'));
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);

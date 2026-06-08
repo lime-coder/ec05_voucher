@@ -1,8 +1,11 @@
 import { Router } from 'express';
+import { requireAuth } from '../middlewares/auth.middleware';
 
 import { createOrder, getOrderDetail, getOrders, getOrdersByCustomer, getOrderDetailById} from "../controllers/order.controller";
 
 const router = Router();
+
+router.use(requireAuth);
 
 // router.get('/', getAllOrders);
 // router.post('/:id/pay', payOrder);

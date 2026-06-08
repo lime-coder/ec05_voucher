@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middlewares/validate.middleware';
-import { registerCustomer, registerPartner, login, checkAvailability } from '../controllers/auth.controller';
+import { requireAuth } from '../middlewares/auth.middleware';
+import { registerCustomer, registerPartner, login, checkAvailability, me } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -64,5 +65,6 @@ router.post('/login', validateRequest(loginSchema), login);
 router.post('/check-availability', validateRequest(checkAvailabilitySchema), checkAvailability);
 router.post('/register/customer', validateRequest(registerCustomerSchema), registerCustomer);
 router.post('/register/partner', validateRequest(registerPartnerSchema), registerPartner);
+router.get('/me', requireAuth, me);
 
 export default router;

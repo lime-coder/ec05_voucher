@@ -46,15 +46,21 @@ export default function ReportsView() {
     setIsSavingTarget(true);
     try {
       const partnerId = localStorage.getItem('partnerId') || '1';
+      const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/revenue-target`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ timeRange, target: parsed })
       });
       if (res.ok) {
         setIsEditingTarget(false);
         // Reload để cập nhật tỷ lệ hoàn thành mới
-        const reportRes = await fetch(`http://localhost:5000/api/partners/${partnerId}/reports?timeRange=${timeRange}`);
+        const reportRes = await fetch(`http://localhost:5000/api/partners/${partnerId}/reports?timeRange=${timeRange}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (reportRes.ok) setReportData(await reportRes.json());
       }
     } finally {
@@ -70,7 +76,10 @@ export default function ReportsView() {
         const partnerId = localStorage.getItem('partnerId') || '1';
         const url = `http://localhost:5000/api/partners/${partnerId}/reports?timeRange=${timeRange}`;
         console.log('[ReportsView] fetching:', url);
-        const res = await fetch(url);
+        const token = localStorage.getItem('token');
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         console.log('[ReportsView] status:', res.status);
         if (res.ok) {
           const data = await res.json();

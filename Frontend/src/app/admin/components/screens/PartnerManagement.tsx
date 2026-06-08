@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Eye, CheckCircle, XCircle, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import api from '../../../../lib/api';
 import {
   Button,
   Badge,
@@ -66,9 +67,9 @@ export function PartnerManagement() {
   };
 
   const fetchPartners = () => {
-    fetch(`/api/admin/partners?t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
+    api.get(`/admin/partners?t=${Date.now()}`)
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           // Map backend approval status string
           const mapped = data.map((p: any) => ({
@@ -93,11 +94,9 @@ export function PartnerManagement() {
       tText(`Are you sure you want to approve partner "${name}"?`, `Bạn có chắc chắn muốn duyệt đối tác "${name}" không?`),
       async () => {
         try {
-          const res = await fetch(`/api/admin/partners/${id}/approve`, {
-            method: 'PATCH'
-          });
+          const res = await api.patch(`/admin/partners/${id}/approve`);
 
-          if (res.ok) {
+          if (res.status === 200) {
             toast.success(
               tText(
                 `Successfully approved partner "${name}"!`,
@@ -123,11 +122,9 @@ export function PartnerManagement() {
       tText(`Are you sure you want to reject partner "${name}"?`, `Bạn có chắc chắn muốn từ chối đối tác "${name}" không?`),
       async () => {
         try {
-          const res = await fetch(`/api/admin/partners/${id}/reject`, {
-            method: 'PATCH'
-          });
+          const res = await api.patch(`/admin/partners/${id}/reject`);
 
-          if (res.ok) {
+          if (res.status === 200) {
             toast.success(
               tText(
                 `Successfully rejected partner "${name}"!`,
@@ -162,11 +159,9 @@ export function PartnerManagement() {
       confirmMsg,
       async () => {
         try {
-          const res = await fetch(`/api/admin/partners/${id}/toggle`, {
-            method: 'PATCH'
-          });
+          const res = await api.patch(`/admin/partners/${id}/toggle`);
 
-          if (res.ok) {
+          if (res.status === 200) {
             toast.success(
               isLocking
                 ? tText(`Successfully locked partner "${name}"!`, `Đã khóa đối tác "${name}" thành công!`)
@@ -174,8 +169,7 @@ export function PartnerManagement() {
             );
             setPartners(prev => prev.map(p => p.id === id ? { ...p, status: isLocking ? 'LOCKED' : 'ACTIVE' } : p));
           } else {
-            const err = await res.json();
-            toast.error(err.error || tText('Failed to change partner status!', 'Thay đổi trạng thái đối tác thất bại!'));
+            toast.error(tText('Failed to change partner status!', 'Thay đổi trạng thái đối tác thất bại!'));
           }
         } catch (e) {
           console.error(e);

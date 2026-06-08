@@ -491,7 +491,7 @@ export const uploadVoucherImage = async (req: Request, res: Response) => {
     }
     
     // Create the relative URL to access the uploaded file
-    const relativeUrl = `/public/uploads/vouchers/${req.file.filename}`;
+    const relativeUrl = `/uploads/vouchers/${req.file.filename}`;
     
     res.status(200).json({ 
       message: 'Voucher image uploaded successfully', 

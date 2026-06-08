@@ -128,16 +128,16 @@ export function LoginPage() {
             {activeTab === "login" && (
               <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
 
-                {/* Username/Email Field */}
+                {/* Username Field */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">
-                    {t('auth.email')}
+                    {language === 'vi' ? 'Tên đăng nhập' : 'Username'}
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="alex@example.com"
+                      placeholder={language === 'vi' ? 'Nhập tên đăng nhập của bạn' : 'Enter your username'}
                       className="pl-10 py-6 bg-input-background"
                       {...registerLogin("username")}
                     />

@@ -72,7 +72,7 @@ export function CategorySection() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="flex flex-wrap justify-center gap-6">
           {categories.map((category) => {
             const IconComponent = getCategoryIconComponent(category.icon);
             const label = getCategoryLabel(category.name);
@@ -81,12 +81,12 @@ export function CategorySection() {
               <button
                 key={category.id}
                 onClick={() => navigate(`/search?category=${category.id}`)}
-                className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl hover:shadow-lg transition-shadow border border-gray-100/50"
+                className="flex flex-col items-center gap-4 p-8 bg-white rounded-2xl hover:shadow-xl transition-shadow border border-gray-100/50 w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[220px]"
               >
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <IconComponent className="w-8 h-8 text-primary" />
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+                  <IconComponent className="w-10 h-10 text-primary" />
                 </div>
-                <span className="text-sm font-semibold text-center text-gray-800">
+                <span className="text-base font-bold text-center text-gray-800">
                   {label}
                 </span>
                 {category.vouchers > 0 && (

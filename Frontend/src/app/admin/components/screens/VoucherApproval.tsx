@@ -44,6 +44,9 @@ export function VoucherApproval() {
   const [modalType, setModalType] = useState<ModalType>('approve');
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [reason, setReason] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailVoucher, setDetailVoucher] = useState<Voucher | null>(null);
 
   const fetchVouchers = (silent = false) => {
     fetch(`/api/admin/vouchers?t=${Date.now()}`, { cache: 'no-store' })
@@ -60,9 +63,16 @@ export function VoucherApproval() {
     fetchVouchers(true);
   }, []);
 
-  const filtered = vouchers.filter(v =>
-    statusFilter === 'all' ? true : v.status === statusFilter
-  );
+  const filtered = vouchers.filter(v => {
+    const matchStatus = statusFilter === 'all' || v.status === statusFilter;
+    const matchSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchStatus && matchSearch;
+  });
+
+  const openDetail = (v: Voucher) => {
+    setDetailVoucher(v);
+    setShowDetailModal(true);
+  };
 
   const openModal = (v: Voucher, type: ModalType) => {
     setSelectedVoucher(v);
@@ -132,12 +142,23 @@ export function VoucherApproval() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 flex-wrap">
-        {filterButtons.map(({ label, value }) => (
-          <Button key={value} variant={statusFilter === value ? 'default' : 'outline'} onClick={() => setStatusFilter(value)}>
-            {label}
-          </Button>
-        ))}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex gap-2 flex-wrap">
+          {filterButtons.map(({ label, value }) => (
+            <Button key={value} variant={statusFilter === value ? 'default' : 'outline'} onClick={() => setStatusFilter(value)}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <div className="w-full sm:w-64">
+          <input
+            type="text"
+            placeholder="Tìm kiếm voucher..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -176,7 +197,7 @@ export function VoucherApproval() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50">
+                    <Button variant="ghost" size="icon" onClick={() => openDetail(v)} className="h-8 w-8 text-blue-600 hover:bg-blue-50">
                       <Eye className="w-4 h-4" />
                     </Button>
                     {v.status === 'PENDING_APPROVAL' && (
@@ -254,6 +275,58 @@ export function VoucherApproval() {
             >
               {modalType === 'approve' ? 'Phê duyệt' : modalType === 'reject' ? 'Từ chối' : modalType === 'suspend' ? 'Tạm ngưng' : 'Khôi phục'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal chi tiết voucher */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary">Chi tiết Voucher</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {detailVoucher && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Tên voucher</p>
+                  <p className="font-medium text-gray-900">{detailVoucher.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Đối tác</p>
+                  <p className="font-medium text-gray-900">{detailVoucher.partner}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Giá gốc</p>
+                  <p className="font-medium text-gray-900 line-through">{detailVoucher.originalPrice}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Giá bán</p>
+                  <p className="font-medium text-green-600">{detailVoucher.salePrice}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Đã bán</p>
+                  <p className="font-medium text-gray-900">{detailVoucher.quantitySold}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Tổng cho phép</p>
+                  <p className="font-medium text-gray-900">{detailVoucher.quantityTotal}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Ngày gửi</p>
+                  <p className="font-medium text-gray-900">{detailVoucher.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Trạng thái</p>
+                  <Badge variant="outline" className={STATUS_CLASS[detailVoucher.status]}>
+                    {STATUS_LABEL[detailVoucher.status]}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowDetailModal(false)}>Đóng</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

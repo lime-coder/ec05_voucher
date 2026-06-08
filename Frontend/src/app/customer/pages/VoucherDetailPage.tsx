@@ -15,6 +15,8 @@ import {
 import { Link } from "react-router";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import api from "../../../lib/api";
+import { toast } from "sonner";
 
 
 interface VoucherDetail {
@@ -86,6 +88,32 @@ export function VoucherDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
 
+  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startHold = (type: "increment" | "decrement") => {
+    setQuantity((prev) => {
+      if (type === "increment") return Math.min(voucher?.stock || 1, prev + 1);
+      return Math.max(1, prev - 1);
+    });
+
+    holdTimeoutRef.current = setTimeout(() => {
+      holdIntervalRef.current = setInterval(() => {
+        setQuantity((prev) => {
+          if (type === "increment") return Math.min(voucher?.stock || 1, prev + 1);
+          return Math.max(1, prev - 1);
+        });
+      }, 100);
+    }, 400);
+  };
+
+  const stopHold = () => {
+    if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+    holdTimeoutRef.current = null;
+    holdIntervalRef.current = null;
+  };
+
   const [isAdding, setIsAdding] = useState(false);
   const reviewsRef = useRef<HTMLDivElement>(null);
 
@@ -95,8 +123,8 @@ export function VoucherDetailPage() {
 
     if (!user) {
 
-      alert(
-        "Vui lòng đăng nhập trước khi thêm vào giỏ hàng"
+      toast.error(
+        t('auth.login_required') || "Please login before adding to cart"
       );
 
       navigate("/login");
@@ -204,12 +232,12 @@ export function VoucherDetailPage() {
           setLoading(true);
 
           const response =
-            await fetch(
-              `/api/vouchers/${id}`
+            await api.get(
+              `/vouchers/${id}`
             );
 
           const data =
-            await response.json();
+            response.data;
 
           setVoucher(data);
         } catch (error) {
@@ -319,8 +347,8 @@ export function VoucherDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-4xl font-bold text-primary">${voucher.salePrice.toFixed(2)}</span>
-              <span className="text-xl text-muted line-through">${voucher.originalPrice.toFixed(2)}</span>
+              <span className="text-4xl font-bold text-primary">{voucher.salePrice.toLocaleString("vi-VN")}đ</span>
+              <span className="text-xl text-muted line-through">{voucher.originalPrice.toLocaleString("vi-VN")}đ</span>
               <span className="px-3 py-1 bg-[#FF4444] text-white rounded-md font-bold">
                 {t('voucher.off').replace('{percentage}', String(discountPercent))}
               </span>
@@ -336,7 +364,7 @@ export function VoucherDetailPage() {
                 <span className="text-[#FF4444] font-semibold">{t('voucher.only_left').replace('{count}', String(voucher.stock))}</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-[#FF4444] rounded-full" style={{ width: `${ voucher.quantity > 0 ? ( (voucher.stock / voucher.quantity) * 100 ) : 0 }%`, }} />
+                <div className="h-full bg-[#FF4444] rounded-full" style={{ width: `${ voucher.quantity > 0 ? ( (voucher.sold / voucher.quantity) * 100 ) : 0 }%`, }} />
               </div>
             </div>
 
@@ -347,8 +375,12 @@ export function VoucherDetailPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border-2 border-border rounded-lg hover:border-primary transition-colors font-bold"
+                  onMouseDown={() => startHold("decrement")}
+                  onMouseUp={stopHold}
+                  onMouseLeave={stopHold}
+                  onTouchStart={() => startHold("decrement")}
+                  onTouchEnd={stopHold}
+                  className="w-10 h-10 border-2 border-border rounded-lg hover:border-primary transition-colors font-bold select-none"
                 >
                   -
                 </Button>
@@ -356,8 +388,12 @@ export function VoucherDetailPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantity( Math.min( voucher.stock, quantity + 1 ) ) }
-                  className="w-10 h-10 border-2 border-border rounded-lg hover:border-primary transition-colors font-bold"
+                  onMouseDown={() => startHold("increment")}
+                  onMouseUp={stopHold}
+                  onMouseLeave={stopHold}
+                  onTouchStart={() => startHold("increment")}
+                  onTouchEnd={stopHold}
+                  className="w-10 h-10 border-2 border-border rounded-lg hover:border-primary transition-colors font-bold select-none"
                 >
                   +
                 </Button>
@@ -395,8 +431,8 @@ export function VoucherDetailPage() {
                   // =====================
                   if (!user) {
 
-                    alert(
-                      "Vui lòng đăng nhập trước khi mua hàng"
+                    toast.error(
+                      t('auth.login_required') || "Please login before purchasing"
                     );
 
                     navigate("/login");

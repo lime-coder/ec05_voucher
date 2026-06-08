@@ -5,7 +5,10 @@ import { LogService } from './log.service';
 import { AnomalyService } from './anomaly.service';
 import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_for_voucherhub_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET!;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
 const JWT_EXPIRES_IN = '30m';
 
 export class AuthService {
@@ -29,7 +32,7 @@ export class AuthService {
         MatKhau: hashedPassword,
         Email: data.Email,
         HoTenNguoiDung: data.HoTenNguoiDung,
-        TrangThaiTaiKhoan: 'ACTIVE',
+        TrangThaiTaiKhoan: 'Hoạt động',
       },
     });
 
@@ -93,7 +96,7 @@ export class AuthService {
           MatKhau: hashedPassword,
           Email: data.Email,
           HoTenNguoiDung: data.HoTenNguoiDung,
-          TrangThaiTaiKhoan: 'ACTIVE',
+          TrangThaiTaiKhoan: 'Hoạt động',
         },
       });
 
@@ -149,7 +152,7 @@ export class AuthService {
           MatKhau: hashedPassword,
           Email: data.Email,
           HoTenNguoiDung: data.TenDoanhNghiep,
-          TrangThaiTaiKhoan: 'PENDING',
+          TrangThaiTaiKhoan: 'Chờ duyệt',
         },
       });
 
@@ -257,14 +260,14 @@ export class AuthService {
     }
 
     // ── Handle: not ACTIVE account ──
-    if (user.TrangThaiTaiKhoan !== 'ACTIVE') {
+    if (user.TrangThaiTaiKhoan !== 'Hoạt động') {
       const role = this._determineRole(user);
 
       await LogService.createLog({
         IDTaiKhoan: user.IDTaiKhoan,
         HanhDong: AUDIT_ACTIONS.DANG_NHAP_THAT_BAI,
         DoiTuong: username,
-        ChiTiet: `Tài khoản tồn tại: Có, Vai trò: ${role}. Đăng nhập thất bại do tài khoản không ở trạng thái ACTIVE (Trạng thái hiện tại: ${user.TrangThaiTaiKhoan}).`,
+        ChiTiet: `Tài khoản tồn tại: Có, Vai trò: ${role}. Đăng nhập thất bại do tài khoản không ở trạng thái Hoạt động (Trạng thái hiện tại: ${user.TrangThaiTaiKhoan}).`,
         DiaChiIP: ip,
         TrangThai: LOG_STATUS.FAILURE,
       });
@@ -275,18 +278,20 @@ export class AuthService {
     // ── Handle: successful login ──
     const role = this._determineRole(user);
     const { MatKhau, Admin, KhachHang, NhanVienDoiTacs, ...safeUser } = user;
+    const MaDoiTac = role === 'partner' && NhanVienDoiTacs && NhanVienDoiTacs.length > 0 ? NhanVienDoiTacs[0].MaDoiTac : undefined;
 
-    const token = jwt.sign(
-      {
-        IDTaiKhoan: user.IDTaiKhoan,
-        TenDangNhap: user.TenDangNhap,
-        Email: user.Email,
-        HoTenNguoiDung: user.HoTenNguoiDung,
-        role,
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    const tokenPayload: any = {
+      IDTaiKhoan: user.IDTaiKhoan,
+      TenDangNhap: user.TenDangNhap,
+      Email: user.Email,
+      HoTenNguoiDung: user.HoTenNguoiDung,
+      role,
+    };
+    if (MaDoiTac) {
+      tokenPayload.MaDoiTac = MaDoiTac;
+    }
+
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN });
 
     // Audit log: successful login
     await LogService.createLog({
@@ -298,7 +303,22 @@ export class AuthService {
       TrangThai: LOG_STATUS.SUCCESS,
     });
 
-    return { token, user: { ...safeUser, role } };
+    return { token, user: { ...safeUser, role, MaDoiTac } };
+  }
+
+  // ── Verify Me ───────────────────────────────────────────────────
+
+  static async me(userId: number, role: string) {
+    const user = await prisma.taiKhoan.findUnique({
+      where: { IDTaiKhoan: userId },
+      include: { NhanVienDoiTacs: true }
+    });
+    if (!user) throw new Error('User not found');
+
+    const { MatKhau, NhanVienDoiTacs, ...safeUser } = user;
+    const MaDoiTac = role === 'partner' && NhanVienDoiTacs && NhanVienDoiTacs.length > 0 ? NhanVienDoiTacs[0].MaDoiTac : undefined;
+
+    return { user: { ...safeUser, role, MaDoiTac } };
   }
 
   // ── Logout ──────────────────────────────────────────────────────

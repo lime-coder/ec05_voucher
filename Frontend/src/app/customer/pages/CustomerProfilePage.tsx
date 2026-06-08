@@ -4,6 +4,9 @@ import { User, Mail, Phone, MapPin, Calendar, Save, ShieldCheck, Camera, Setting
 import { Button, Input } from "@voucherhub/ui";
 import { ImageUploadModal } from "../../shared/components/ImageUploadModal";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import api from "../../../lib/api";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function CustomerProfilePage() {
   const [searchParams] = useSearchParams();
@@ -21,11 +24,40 @@ export function CustomerProfilePage() {
     dateOfBirth: "1995-06-15",
     address: "123 Industrial Way, Suite 400, New York, NY",
   });
+  const [originalData, setOriginalData] = useState(formData);
+  const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        const data = res.data.user;
+        const mappedData = {
+          username: data.TenDangNhap || "",
+          fullName: data.HoTenNguoiDung || "",
+          email: data.Email || "",
+          phone: data.KhachHang?.SDT_KH || "",
+          gender: data.KhachHang?.GioiTinh || "MALE",
+          dateOfBirth: data.KhachHang?.NgaySinh ? new Date(data.KhachHang.NgaySinh).toISOString().split('T')[0] : "",
+          address: data.KhachHang?.DiaChi_KH || "",
+        };
+        setFormData(mappedData);
+        setOriginalData(mappedData);
+      } catch (error) {
+        toast.error("Failed to fetch profile");
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswords({ ...passwords, [e.target.name]: e.target.value });
   };
 
   const [modalState, setModalState] = useState<{isOpen: boolean, title: string, message: string, onConfirm?: () => void}>({
@@ -34,21 +66,47 @@ export function CustomerProfilePage() {
     message: ""
   });
 
-  const handleSave = () => {
-    setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_profile') });
+  const handleSave = async () => {
+    try {
+      await api.put('/customers/profile', {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        gender: formData.gender,
+        dob: formData.dateOfBirth,
+        address: formData.address,
+      });
+      setOriginalData(formData);
+      setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_profile') });
+    } catch (error) {
+      toast.error("Failed to save profile");
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      toast.error(t('profile.pwd_mismatch') || "Passwords do not match");
+      return;
+    }
+    if (!passwords.currentPassword || !passwords.newPassword) {
+      toast.error(t('profile.pwd_missing') || "Please fill all password fields");
+      return;
+    }
+    try {
+      await api.put('/customers/password', {
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_password') });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    }
   };
 
   const handleDiscard = (e: React.MouseEvent) => {
     e.preventDefault();
-    setFormData({
-      username: "alex_walker_99",
-      fullName: "Alex Walker",
-      email: "alex.walker@provider.com",
-      phone: "+1 (555) 000-1234",
-      gender: "MALE",
-      dateOfBirth: "1995-06-15",
-      address: "123 Industrial Way, Suite 400, New York, NY",
-    });
+    setFormData(originalData);
   };
 
   return (
@@ -290,6 +348,9 @@ export function CustomerProfilePage() {
                     </label>
                     <Input
                       type="password"
+                      name="currentPassword"
+                      value={passwords.currentPassword}
+                      onChange={handlePasswordChange}
                       placeholder={t('profile.current_password_ph')}
                       className="bg-input-background"
                     />
@@ -302,6 +363,9 @@ export function CustomerProfilePage() {
                     </label>
                     <Input
                       type="password"
+                      name="newPassword"
+                      value={passwords.newPassword}
+                      onChange={handlePasswordChange}
                       placeholder={t('profile.new_password_ph')}
                       className="bg-input-background"
                     />
@@ -314,6 +378,9 @@ export function CustomerProfilePage() {
                     </label>
                     <Input
                       type="password"
+                      name="confirmPassword"
+                      value={passwords.confirmPassword}
+                      onChange={handlePasswordChange}
                       placeholder={t('profile.confirm_new_password_ph')}
                       className="bg-input-background"
                     />
@@ -332,7 +399,7 @@ export function CustomerProfilePage() {
                   <div className="pt-4">
                     <Button
                       type="button"
-                      onClick={() => setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_password') })}
+                      onClick={handleUpdatePassword}
                       className="px-8 font-bold flex items-center gap-2 bg-foreground text-white hover:opacity-90"
                     >
                       <Save className="w-5 h-5" />
@@ -407,7 +474,7 @@ export function CustomerProfilePage() {
       </main>
 
       {/* Simple Footer */}
-      <footer className="border-t border-border py-6 mt-12">
+      <footer className="border-t border-border py-6 mt-auto">
         <div className="max-w-[1440px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
             {t('profile.footer.copyright')}

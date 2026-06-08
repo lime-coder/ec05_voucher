@@ -10,6 +10,7 @@ import {
 import type { VoucherCode, RecentVerification } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { toast } from 'sonner';
+import api from '../../../lib/api';
 
 import {
   Button,
@@ -43,13 +44,10 @@ export default function VerifyVoucher() {
 
   const fetchBranches = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/branches/partner/${partnerId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBranches(data);
-        if (data.length > 0) {
-          setSelectedBranchId(data[0].MaChiNhanh.toString());
-        }
+      const res = await api.get(`/branches/partner/${partnerId}`);
+      setBranches(res.data);
+      if (res.data.length > 0) {
+        setSelectedBranchId(res.data[0].MaChiNhanh.toString());
       }
     } catch (error) {
       console.error('Failed to fetch branches', error);
@@ -58,11 +56,8 @@ export default function VerifyVoucher() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/vouchers/verify/history/partner/${partnerId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRecentHistory(data);
-      }
+      const res = await api.get(`/vouchers/verify/history/partner/${partnerId}`);
+      setRecentHistory(res.data);
     } catch (error) {
       console.error('Failed to fetch history', error);
     }
@@ -75,26 +70,20 @@ export default function VerifyVoucher() {
 
     try {
       const cleanCode = voucherCode.trim();
-      const res = await fetch(`http://localhost:5000/api/vouchers/verify/${cleanCode}?partnerId=${partnerId}`);
-      
-      if (res.ok) {
-        const data = await res.json();
-        setVerificationResult(data);
-      } else {
-        setVerificationResult({
-          code: cleanCode,
-          voucherName: '',
-          customerName: '',
-          customerPhone: '',
-          originalPrice: 0,
-          salePrice: 0,
-          purchaseDate: '',
-          validUntil: '',
-          status: 'invalid',
-        });
-      }
-    } catch (error) {
-      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
+      const res = await api.get(`/vouchers/verify/${cleanCode}?partnerId=${partnerId}`);
+      setVerificationResult(res.data);
+    } catch (error: any) {
+      setVerificationResult({
+        code: voucherCode.trim(),
+        voucherName: '',
+        customerName: '',
+        customerPhone: '',
+        originalPrice: 0,
+        salePrice: 0,
+        purchaseDate: '',
+        validUntil: '',
+        status: 'invalid',
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -112,24 +101,18 @@ export default function VerifyVoucher() {
     }
     
     try {
-      const res = await fetch(`http://localhost:5000/api/vouchers/verify/${verificationResult.code}/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerId, branchId: selectedBranchId })
+      await api.post(`/vouchers/verify/${verificationResult.code}/confirm`, {
+        partnerId: Number(partnerId),
+        branchId: Number(selectedBranchId)
       });
       
-      if (res.ok) {
-        toast.success(t('toast.voucher.confirm_use_success') || 'Xác nhận sử dụng voucher thành công!');
-        setConfirmModalOpen(false);
-        setVerificationResult(null);
-        setVoucherCode('');
-        fetchHistory();
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.message || t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
-      }
-    } catch (error) {
-      toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối máy chủ');
+      toast.success(t('toast.voucher.confirm_use_success') || 'Xác nhận sử dụng voucher thành công!');
+      setConfirmModalOpen(false);
+      setVerificationResult(null);
+      setVoucherCode('');
+      fetchHistory();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('toast.voucher.confirm_use_failed') || 'Lỗi khi xác nhận voucher');
     }
   };
 

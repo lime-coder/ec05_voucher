@@ -1,34 +1,39 @@
 import { Router } from 'express';
+import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import * as C from '../controllers/content.controller';
-import { upload, uploadImage } from '../controllers/upload.controller';
+import { uploadImage } from '../controllers/upload.controller';
+import { uploadGeneralMiddleware } from '../middlewares/upload.middleware';
 
 const router = Router();
 
+const adminAuth = [requireAuth, requireRole('admin')];
+
 // === FAQ ===
 router.get('/faqs', C.getFAQs);
-router.post('/faqs', C.createFAQ);
-router.put('/faqs/:id', C.updateFAQ);
-router.delete('/faqs/:id', C.deleteFAQ);
+router.post('/faqs', adminAuth, C.createFAQ);
+router.put('/faqs/:id', adminAuth, C.updateFAQ);
+router.delete('/faqs/:id', adminAuth, C.deleteFAQ);
 
 // === Banners ===
 router.get('/banners', C.getBanners);
-router.post('/banners', C.createBanner);
-router.put('/banners/:id', C.updateBanner);
-router.delete('/banners/:id', C.deleteBanner);
+router.post('/banners', adminAuth, C.createBanner);
+router.put('/banners/:id', adminAuth, C.updateBanner);
+router.delete('/banners/:id', adminAuth, C.deleteBanner);
 
 // === Bài Viết ===
 router.get('/baiviet', C.getBaiViets);
-router.post('/baiviet', C.createBaiViet);
-router.put('/baiviet/:id', C.updateBaiViet);
-router.delete('/baiviet/:id', C.deleteBaiViet);
+router.post('/baiviet', adminAuth, C.createBaiViet);
+router.put('/baiviet/:id', adminAuth, C.updateBaiViet);
+router.delete('/baiviet/:id', adminAuth, C.deleteBaiViet);
+router.post('/baiviet/:id/view', C.incrementBaiVietView);
 
 // === Danh mục ===
 router.get('/categories', C.getCategories);
-router.post('/categories', C.createCategory);
-router.put('/categories/:id', C.updateCategory);
-router.delete('/categories/:id', C.deleteCategory);
+router.post('/categories', adminAuth, C.createCategory);
+router.put('/categories/:id', adminAuth, C.updateCategory);
+router.delete('/categories/:id', adminAuth, C.deleteCategory);
 
 // === Upload ===
-router.post('/upload', uploadImage);
+router.post('/upload', requireAuth, requireRole('admin'), uploadGeneralMiddleware, uploadImage);
 
 export default router;

@@ -15,10 +15,8 @@ import {
   TableCell,
 } from '@voucherhub/ui';
 
-export function SystemLogs() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 const mapLogActionToEnglish = (action: string) => {
+  if (!action) return '';
   if (action.includes('Khóa tài khoản')) return 'Lock Account';
   if (action.includes('Mở khóa tài khoản')) return 'Unlock Account';
   if (action.includes('Thêm đối tác')) return 'Add Partner';
@@ -41,6 +39,7 @@ const mapLogActionToEnglish = (action: string) => {
 };
 
 const parseViDate = (timeStr: string): Date | null => {
+  if (!timeStr) return null;
   const regex = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
   const match = timeStr.match(regex);
   if (match) {
@@ -58,6 +57,7 @@ export function SystemLogs() {
   const tText = (en: string, vi: string) => (language === 'vi' ? vi : en);
 
   const [logs, setLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
@@ -92,35 +92,35 @@ export function SystemLogs() {
       setIsLoading(false);
     }
   };
-    fetch('/api/admin/logs')
-      .then(res => res.json())
-      .then(data => setLogs(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Fetch logs error:', err));
-  }, []);
 
   const processedLogs = logs.map(log => ({
     ...log,
-    englishAction: mapLogActionToEnglish(log.action),
-    englishStatus: log.status === 'Thành công' ? 'Success' : log.status
+    englishAction: mapLogActionToEnglish(log.action || log.HanhDong || ''),
+    englishStatus: (log.status || log.TrangThai) === 'Thành công' ? 'Success' : (log.status || log.TrangThai)
   }));
 
   const filteredLogs = processedLogs.filter((log) => {
+    const actionStr = log.action || log.HanhDong || '';
+    const targetStr = log.target || log.DoiTuong || log.ChiTiet || '';
+    const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+    const timeStr = log.time || log.ThoiGian || '';
+
     const matchesSearch =
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      actionStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.englishAction.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.target.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.user.toLowerCase().includes(searchTerm.toLowerCase());
+      targetStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userStr.toLowerCase().includes(searchTerm.toLowerCase());
     
     let matchesAction = actionFilter === 'all';
-    if (actionFilter === 'approve' && (log.englishAction.toLowerCase().includes('approve') || log.action.toLowerCase().includes('phê duyệt'))) matchesAction = true;
-    if (actionFilter === 'reject' && (log.englishAction.toLowerCase().includes('reject') || log.action.toLowerCase().includes('từ chối'))) matchesAction = true;
-    if (actionFilter === 'lock' && (log.englishAction.toLowerCase().includes('lock') || log.action.toLowerCase().includes('khóa'))) matchesAction = true;
-    if (actionFilter === 'update' && (log.englishAction.toLowerCase().includes('update') || log.action.toLowerCase().includes('cập nhật'))) matchesAction = true;
-    if (actionFilter === 'delete' && (log.englishAction.toLowerCase().includes('delete') || log.action.toLowerCase().includes('xóa'))) matchesAction = true;
+    if (actionFilter === 'approve' && (log.englishAction.toLowerCase().includes('approve') || actionStr.toLowerCase().includes('phê duyệt'))) matchesAction = true;
+    if (actionFilter === 'reject' && (log.englishAction.toLowerCase().includes('reject') || actionStr.toLowerCase().includes('từ chối'))) matchesAction = true;
+    if (actionFilter === 'lock' && (log.englishAction.toLowerCase().includes('lock') || actionStr.toLowerCase().includes('khóa'))) matchesAction = true;
+    if (actionFilter === 'update' && (log.englishAction.toLowerCase().includes('update') || actionStr.toLowerCase().includes('cập nhật'))) matchesAction = true;
+    if (actionFilter === 'delete' && (log.englishAction.toLowerCase().includes('delete') || actionStr.toLowerCase().includes('xóa'))) matchesAction = true;
 
     let matchesDate = true;
     if (dateFilter) {
-      const logDate = parseViDate(log.time);
+      const logDate = parseViDate(timeStr);
       if (logDate) {
         const [year, month, day] = dateFilter.split('-').map(num => parseInt(num, 10));
         matchesDate = logDate.getFullYear() === year &&
@@ -134,8 +134,8 @@ export function SystemLogs() {
     return matchesSearch && matchesAction && matchesDate;
   });
 
-  const totalPages = Math.ceil(logs.length / itemsPerPage);
-  const currentLogs = logs.slice(
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const currentLogs = filteredLogs.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -144,6 +144,8 @@ export function SystemLogs() {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleString('vi-VN');
+  };
+
   const handleExportReport = () => {
     if (filteredLogs.length === 0) {
       toast.error(tText("No data to export!", "Không có dữ liệu để xuất!"));
@@ -159,14 +161,22 @@ export function SystemLogs() {
       tText("Status", "Trạng thái")
     ];
 
-    const rows = filteredLogs.map((log, index) => [
-      index + 1,
-      log.user,
-      tText(log.englishAction, log.action),
-      log.target,
-      log.time,
-      tText(log.englishStatus, log.status)
-    ]);
+    const rows = filteredLogs.map((log, index) => {
+      const actionStr = log.action || log.HanhDong || '';
+      const targetStr = log.target || log.DoiTuong || log.ChiTiet || '-';
+      const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+      const timeStr = log.time || log.ThoiGian || '';
+      const statusStr = log.status || log.TrangThai || 'Thành công';
+
+      return [
+        index + 1,
+        userStr,
+        tText(log.englishAction, actionStr),
+        targetStr,
+        formatDate(timeStr) || timeStr,
+        tText(log.englishStatus, statusStr)
+      ];
+    });
 
     const csvContent = [
       headers.join(','),
@@ -240,7 +250,7 @@ export function SystemLogs() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   <div className="flex justify-center items-center h-full">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
@@ -248,47 +258,37 @@ export function SystemLogs() {
               </TableRow>
             ) : currentLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
-                  Không tìm thấy nhật ký hệ thống nào.
-                </TableCell>
-              </TableRow>
-            ) : (
-              currentLogs.map((log, index) => (
-                <TableRow key={log.MaLog} className="hover:bg-gray-50/50">
-                  <TableCell className="text-gray-500">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </TableCell>
-                  <TableCell className="text-gray-700">{log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống'}</TableCell>
-                  <TableCell className="font-medium text-gray-900">{log.HanhDong}</TableCell>
-                  <TableCell className="text-gray-700">{log.DoiTuong || log.ChiTiet || '-'}</TableCell>
-                  <TableCell className="text-gray-500 font-mono text-xs">{log.DiaChiIP || '-'}</TableCell>
-                  <TableCell className="text-gray-500">{formatDate(log.ThoiGian)}</TableCell>
-                  <TableCell>
-                    <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
-                      {log.TrangThai || 'Thành công'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-                <TableCell className="text-gray-700">{log.user}</TableCell>
-                <TableCell className="font-medium text-gray-900">
-                  {tText(log.englishAction, log.action)}
-                </TableCell>
-                <TableCell className="text-gray-700">{log.target}</TableCell>
-                <TableCell className="text-gray-500">{log.time}</TableCell>
-                <TableCell>
-                  <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
-                    {tText(log.englishStatus, log.status)}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-            {currentLogs.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={6} className="h-24 text-center text-gray-500">
                   {tText("No activity logs found.", "Chưa có nhật ký hoạt động nào.")}
                 </TableCell>
               </TableRow>
+            ) : (
+              currentLogs.map((log, index) => {
+                const actionStr = log.action || log.HanhDong || '';
+                const targetStr = log.target || log.DoiTuong || log.ChiTiet || '-';
+                const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+                const timeStr = log.time || log.ThoiGian || '';
+                const statusStr = log.status || log.TrangThai || 'Thành công';
+
+                return (
+                  <TableRow key={log.MaLog || log.id || index} className="hover:bg-gray-50/50">
+                    <TableCell className="text-gray-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </TableCell>
+                    <TableCell className="text-gray-700">{userStr}</TableCell>
+                    <TableCell className="font-medium text-gray-900">
+                      {tText(log.englishAction, actionStr)}
+                    </TableCell>
+                    <TableCell className="text-gray-700">{targetStr}</TableCell>
+                    <TableCell className="text-gray-500">{formatDate(timeStr) || timeStr}</TableCell>
+                    <TableCell>
+                      <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent">
+                        {tText(log.englishStatus, statusStr)}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -296,11 +296,9 @@ export function SystemLogs() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
             <div className="text-sm text-gray-500">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{' '}
-              {Math.min(currentPage * itemsPerPage, logs.length)} / {logs.length}
               {tText(
                 `Showing ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} of ${filteredLogs.length}`,
-                `Hiển thị ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} trên ${filteredLogs.length}`
+                `Hiển thị ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, filteredLogs.length)} / ${filteredLogs.length}`
               )}
             </div>
             <div className="flex gap-2">
@@ -327,3 +325,4 @@ export function SystemLogs() {
     </div>
   );
 }
+

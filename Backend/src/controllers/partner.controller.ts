@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PartnerService } from '../services/partner.service';
+import { LogService } from '../services/log.service';
 
 export const getPartnerStatistics = async (req: Request, res: Response) => {
   try {
@@ -52,6 +53,16 @@ export const updatePartnerProfile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updated = await PartnerService.updateProfile(parseInt(id, 10), req.body);
+    
+    await LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Cập nhật Profile Partner',
+      DoiTuong: `Partner ID: ${id}`,
+      ChiTiet: 'Partner updated their profile information.',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    });
+
     res.status(200).json({ message: "Profile updated successfully", data: updated });
   } catch (error) {
     console.error(error);
@@ -66,11 +77,20 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     }
 
     // Create the relative URL to access the uploaded file
-    const relativeUrl = `/public/uploads/avatars/${req.file.filename}`;
+    const relativeUrl = `/uploads/avatars/${req.file.filename}`;
 
     // Save to database
     const { id } = req.params;
     await PartnerService.updateAvatar(parseInt(id, 10), relativeUrl);
+
+    await LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Cập nhật Avatar Partner',
+      DoiTuong: `Partner ID: ${id}`,
+      ChiTiet: `Uploaded new avatar: ${relativeUrl}`,
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    });
 
     // Return absolute URL for immediate rendering, but in practice, 
     // the frontend can prepend the host if needed, or we just return relativeUrl
@@ -94,6 +114,16 @@ export const changePartnerPassword = async (req: Request, res: Response) => {
     }
 
     await PartnerService.changePassword(parseInt(id, 10), currentPassword, newPassword);
+    
+    await LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Đổi mật khẩu Partner',
+      DoiTuong: `Partner ID: ${id}`,
+      ChiTiet: 'Partner changed their password.',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    });
+
     res.status(200).json({ message: "Cập nhật mật khẩu thành công." });
   } catch (error: any) {
     console.error('Error changing password:', error);
@@ -111,6 +141,16 @@ export const updateRevenueTarget = (req: Request, res: Response) => {
     if (!timeRange || target === undefined) return res.status(400).json({ message: 'Thiếu timeRange hoặc target' });
 
     const result = PartnerService.updateRevenueTarget(partnerId, timeRange, Number(target));
+    
+    LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Cập nhật mục tiêu doanh thu',
+      DoiTuong: `Partner ID: ${id}`,
+      ChiTiet: `Target: ${target}, TimeRange: ${timeRange}`,
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    }).catch(console.error);
+
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message || 'Lỗi khi cập nhật mục tiêu' });

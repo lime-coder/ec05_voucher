@@ -130,7 +130,7 @@ export function ShoppingCartPage() {
 
                     {/* Price */}
                     <div className="font-bold text-lg">
-                      ${item.price.toFixed(2)}
+                      {item.price.toLocaleString("vi-VN")}đ
                     </div>
 
                     {/* Quantity Control */}
@@ -201,7 +201,7 @@ export function ShoppingCartPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('cart.subtotal')}</span>
                     <span className="font-semibold">
-                      ${subtotal.toFixed(2)}
+                      {subtotal.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -221,12 +221,12 @@ export function ShoppingCartPage() {
                         />
                       </svg>
                     </span>
-                    <span className="font-semibold">${tax.toFixed(2)}</span>
+                    <span className="font-semibold">{tax.toLocaleString("vi-VN")}đ</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('cart.platform_fee')}</span>
                     <span className="font-semibold">
-                      ${platformFee.toFixed(2)}
+                      {platformFee.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export function ShoppingCartPage() {
                       {t('cart.estimated_total')}
                     </span>
                     <span className="font-bold text-2xl">
-                      ${total.toFixed(2)}
+                      {total.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
                 </div>

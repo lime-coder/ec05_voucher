@@ -32,7 +32,10 @@ export function PartnerLayout() {
     const fetchPartnerName = async () => {
       try {
         const partnerId = localStorage.getItem('partnerId') || '1';
-        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`);
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (response.ok) {
           const data = await response.json();
           setPartnerName(data.businessName || '');

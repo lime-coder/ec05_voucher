@@ -1,29 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { AlertTriangle, CreditCard, Lock, ChevronRight } from "lucide-react";
-import { Button, Input } from "@voucherhub/ui";
+import { Button, Input, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { useAuth } from "../../auth/AuthContext";
+import api from "../../../lib/api";
 
 import { useCartStore } from "../../../store/useCartStore";
 
 export function ReviewOrderPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const [fullName,
-  setFullName] =
-    useState("");
+  const [fullName, setFullName] = useState(() => {
+    try { const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}"); return saved.fullName || ""; } catch { return ""; }
+  });
 
-  const [phone,
-  setPhone] =
-    useState("");
+  const [phone, setPhone] = useState(() => {
+    try { const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}"); return saved.phone || ""; } catch { return ""; }
+  });
 
-  const [email,
-  setEmail] =
-    useState("");
+  const [email, setEmail] = useState(() => {
+    try { const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}"); return saved.email || ""; } catch { return ""; }
+  });
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      try {
+        const res = await api.get('/auth/me');
+        const data = res.data.user;
+        const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}");
+        
+        if (!saved.fullName && !fullName) setFullName(data.HoTenNguoiDung || "");
+        if (!saved.email && !email) setEmail(data.Email || "");
+        if (!saved.phone && !phone) setPhone(data.KhachHang?.SDT_KH || "");
+      } catch (error) {
+        console.error("Failed to fetch profile for checkout prefill");
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
-
+  const [errors, setErrors] = useState({ fullName: false, phone: false, email: false });
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState("");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { items: vouchers, getCartTotal } = useCartStore();
 
   const subtotal = getCartTotal();
@@ -73,9 +96,10 @@ export function ReviewOrderPage() {
                 <Input
                   type="text"
                   name="fullName"
-                  onChange={(e) => setFullName( e.target.value ) }
+                  value={fullName}
+                  onChange={(e) => { setFullName( e.target.value ); setErrors(prev => ({...prev, fullName: false})); }}
                   placeholder="e.g. Alexander Hamilton"
-                  className="bg-input-background"
+                  className={`bg-input-background ${errors.fullName ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
               </div>
 
@@ -86,9 +110,10 @@ export function ReviewOrderPage() {
                 <Input
                   type="tel"
                   name="phone"
-                  onChange={(e) => setPhone( e.target.value ) }
+                  value={phone}
+                  onChange={(e) => { setPhone( e.target.value ); setErrors(prev => ({...prev, phone: false})); }}
                   placeholder="+1 (555) 000-0000"
-                  className="bg-input-background"
+                  className={`bg-input-background ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
               </div>
 
@@ -99,9 +124,10 @@ export function ReviewOrderPage() {
                 <Input
                   type="email"
                   name="email"
-                  onChange={(e) => setEmail( e.target.value ) }
+                  value={email}
+                  onChange={(e) => { setEmail( e.target.value ); setErrors(prev => ({...prev, email: false})); }}
                   placeholder="alexander@treasury.gov"
-                  className="bg-input-background"
+                  className={`bg-input-background ${errors.email ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
               </div>
             </div>
@@ -191,47 +217,75 @@ export function ReviewOrderPage() {
               </div>
 
               <Button
-                onClick={() => {
+                disabled={isCheckingOut}
+                onClick={async () => {
+
+                  const newErrors = {
+                    fullName: !fullName.trim(),
+                    phone: !phone.trim(),
+                    email: !email.trim(),
+                  };
+                  setErrors(newErrors);
 
                   // =====================
                   // Validate
                   // =====================
                   if (
-                    !fullName.trim() ||
-                    !phone.trim() ||
-                    !email.trim()
+                    newErrors.fullName ||
+                    newErrors.phone ||
+                    newErrors.email
                   ) {
 
-                    alert(
-                      "Vui lòng nhập đầy đủ thông tin"
-                    );
+                    setErrorModalMessage("Vui lòng nhập đầy đủ thông tin");
+                    setShowErrorModal(true);
 
                     return;
                   }
 
-                  // =====================
-                  // Lưu buyer info
-                  // =====================
-                  localStorage.setItem(
-                    "checkout-info",
+                  setIsCheckingOut(true);
 
-                    JSON.stringify({
-                      fullName,
-                      phone,
-                      email,
-                    })
-                  );
+                  try {
+                    // Check stock
+                    for (const item of vouchers) {
+                      const res = await fetch(`/api/vouchers/${item.id}`);
+                      if (res.ok) {
+                        const data = await res.json();
+                        if (data.stock < item.quantity) {
+                          setErrorModalMessage(`${item.name} không đủ số lượng (còn ${data.stock})`);
+                          setShowErrorModal(true);
+                          setIsCheckingOut(false);
+                          return;
+                        }
+                      }
+                    }
 
-                  // =====================
-                  // Chuyển payment
-                  // =====================
-                  navigate(
-                    "/checkout/payment"
-                  );
+                    // =====================
+                    // Lưu buyer info
+                    // =====================
+                    localStorage.setItem(
+                      "checkout-info",
+
+                      JSON.stringify({
+                        fullName,
+                        phone,
+                        email,
+                      })
+                    );
+
+                    // =====================
+                    // Chuyển payment
+                    // =====================
+                    navigate(
+                      "/checkout/payment"
+                    );
+                  } catch (e) {
+                    console.error("Checkout error:", e);
+                    setIsCheckingOut(false);
+                  }
                 }}
                 className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3 flex items-center justify-center gap-2"
               >
-                {t('review.pay_now')} <CreditCard className="w-5 h-5" />
+                {isCheckingOut ? t('review.processing', 'Processing...') : <>{t('review.pay_now')} <CreditCard className="w-5 h-5" /></>}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground mb-4 flex items-center justify-center gap-1">
@@ -269,6 +323,24 @@ export function ReviewOrderPage() {
         </div>
       </main>
 
+      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6" />
+              {t('review.error_title', 'Lỗi')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-gray-700">
+            {errorModalMessage}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowErrorModal(false)}>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

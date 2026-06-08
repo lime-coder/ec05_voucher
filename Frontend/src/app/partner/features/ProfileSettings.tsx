@@ -17,6 +17,7 @@ import { initialBusinessProfile } from '../data/mockData';
 import { ImageUploadModal } from '../../shared/components/ImageUploadModal';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import type { BusinessProfile } from '@voucherhub/types';
+import api from '../../../lib/api';
 
 import {
   Button,
@@ -49,13 +50,10 @@ export default function ProfileSettings() {
     const fetchProfile = async () => {
       try {
         const partnerId = localStorage.getItem('partnerId') || '1';
-        const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`);
-        if (res.ok) {
-          const data = await res.json();
-          setFormData(prev => ({ ...prev, ...data }));
-          if (data.avatarUrl) {
-            setAvatarUrl(data.avatarUrl);
-          }
+        const res = await api.get(`/partners/${partnerId}/profile`);
+        setFormData(prev => ({ ...prev, ...res.data }));
+        if (res.data.avatarUrl) {
+          setAvatarUrl(res.data.avatarUrl);
         }
       } catch (err) {
         console.error('Failed to fetch profile', err);
@@ -83,20 +81,12 @@ export default function ProfileSettings() {
   const handleSave = async () => {
     try {
       const partnerId = localStorage.getItem('partnerId') || '1';
-      const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (res.ok) {
-        setIsEditing(false);
-        toast.success(t('partner.settings.business.save_success'));
-      } else {
-        alert(t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
-      }
-    } catch (err) {
+      await api.put(`/partners/${partnerId}/profile`, formData);
+      setIsEditing(false);
+      toast.success(t('partner.settings.business.save_success') || 'Lưu thành công');
+    } catch (err: any) {
       console.error(err);
-      alert(t('toast.voucher.connection_error') || 'Lỗi kết nối.');
+      toast.error(err.response?.data?.message || t('toast.partner.profile.save_error') || 'Có lỗi xảy ra khi lưu thay đổi.');
     }
   };
 
@@ -309,30 +299,25 @@ export default function ProfileSettings() {
                   </div>
                   <Button className="w-full mt-4" onClick={async () => {
                     if (newPassword !== confirmPassword) {
-                      return alert(t('toast.partner.profile.pwd_mismatch') || 'Mật khẩu mới không khớp.');
+                      toast.error(t('toast.partner.profile.pwd_mismatch') || 'Mật khẩu mới không khớp.');
+                      return;
                     }
                     if (!currentPassword || !newPassword) {
-                      return alert(t('toast.partner.profile.pwd_missing') || 'Vui lòng điền đủ thông tin mật khẩu.');
+                      toast.error(t('toast.partner.profile.pwd_missing') || 'Vui lòng điền đủ thông tin mật khẩu.');
+                      return;
                     }
                     try {
                       const partnerId = localStorage.getItem('partnerId') || '1';
-                      const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/password`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ currentPassword, newPassword })
+                      const res = await api.put(`/partners/${partnerId}/password`, {
+                        currentPassword, newPassword
                       });
-                      const data = await res.json();
-                      if (res.ok) {
-                        toast.success(data.message);
-                        setCurrentPassword("");
-                        setNewPassword("");
-                        setConfirmPassword("");
-                      } else {
-                        alert(data.message || t('toast.partner.profile.pwd_error') || 'Lỗi cập nhật mật khẩu.');
-                      }
-                    } catch (e) {
+                      toast.success(res.data?.message || 'Cập nhật mật khẩu thành công');
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    } catch (e: any) {
                       console.error(e);
-                      alert(t('toast.voucher.connection_error') || 'Lỗi kết nối.');
+                      toast.error(e.response?.data?.message || t('toast.partner.profile.pwd_error') || 'Lỗi cập nhật mật khẩu.');
                     }
                   }}>
                     {t('partner.settings.security.pwd_update_btn')}
@@ -346,7 +331,7 @@ export default function ProfileSettings() {
                   <p className="text-sm text-gray-500 mb-6">
                     {t('partner.settings.security.2fa_desc')}
                   </p>
-                  <Button variant="outline" className="w-full" onClick={() => alert(t('partner.settings.security.2fa_dev') || 'Tính năng 2FA đang trong quá trình phát triển.')}>
+                  <Button variant="outline" className="w-full" onClick={() => toast.info(t('partner.settings.security.2fa_dev') || 'Tính năng 2FA đang trong quá trình phát triển.')}>
                     {t('partner.settings.security.2fa_enable_btn')}
                   </Button>
                 </div>
@@ -368,7 +353,7 @@ export default function ProfileSettings() {
                         <p className="font-semibold">{t('partner.settings.security.session_safari')}</p>
                         <p className="text-sm text-gray-500">{t('partner.settings.security.session_safari_ip')}</p>
                       </div>
-                      <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => alert(t('partner.settings.security.session_dev') || 'Tính năng Quản lý phiên đang trong quá trình phát triển.')}>
+                      <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => toast.info(t('partner.settings.security.session_dev') || 'Tính năng Quản lý phiên đang trong quá trình phát triển.')}>
                         {t('partner.settings.security.session_logout')}
                       </Button>
                     </div>
@@ -443,22 +428,13 @@ export default function ProfileSettings() {
             const formData = new FormData();
             formData.append('avatar', file);
 
-            const res = await fetch(`http://localhost:5000/api/partners/${partnerId}/upload-avatar`, {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-              setAvatarUrl(data.avatarUrl);
-              setIsUploadModalOpen(false);
-              setAvatarSuccess(true);
-            } else {
-              alert(t('toast.voucher.image_upload_error') || 'Lỗi tải ảnh lên máy chủ.');
-            }
-          } catch (error) {
+            const res = await api.post(`/partners/${partnerId}/upload-avatar`, formData);
+            setAvatarUrl(res.data.avatarUrl);
+            setIsUploadModalOpen(false);
+            setAvatarSuccess(true);
+          } catch (error: any) {
             console.error('Error uploading avatar:', error);
-            alert(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
+            toast.error(error.response?.data?.message || t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
           }
         }}
       />

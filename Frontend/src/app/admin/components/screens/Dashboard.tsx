@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Handshake, T
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@voucherhub/ui';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import api from '../../../../lib/api';
 
 const defaultRevenueData = [
   { date: '14/05', revenue: 45000000 },
@@ -75,13 +76,12 @@ export function Dashboard() {
   const [stats, setStats] = useState<any>(null);
 
   const fetchStats = () => {
-    let url = `/api/admin/dashboard/stats?range=${timeRange}`;
+    let url = `/admin/dashboard/stats?range=${timeRange}`;
     if (timeRange === 'custom') {
       url += `&startDate=${customStartDate}&endDate=${customEndDate}`;
     }
-    fetch(url)
-      .then(res => res.json())
-      .then(data => setStats(data))
+    api.get(url)
+      .then(res => setStats(res.data))
       .catch(err => console.error('Fetch stats error:', err));
   };
 

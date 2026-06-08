@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Eye, XCircle, DollarSign, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import api from '../../../../lib/api';
 import {
   Button,
   Badge,
@@ -64,13 +65,13 @@ export function OrderManagement() {
   };
 
   const fetchOrders = () => {
-    let url = `/api/admin/orders?t=${Date.now()}`;
+    let url = `/admin/orders?t=${Date.now()}`;
     if (startDate && endDate) {
       url += `&startDate=${startDate}&endDate=${endDate}`;
     }
-    fetch(url, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
+    api.get(url)
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           const mapped = data.map((o: any) => ({
             ...o,
@@ -109,13 +110,9 @@ export function OrderManagement() {
       confirmMsg,
       async () => {
         try {
-          const res = await fetch(`/api/admin/orders/${orderId}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: nextStatus })
-          });
+          const res = await api.patch(`/admin/orders/${orderId}/status`, { status: nextStatus });
 
-          if (res.ok) {
+          if (res.status === 200) {
             toast.success(tText('Order status updated successfully!', 'Cập nhật trạng thái đơn hàng thành công!'));
             setOrders(prev => prev.map(o => o.rawId === orderId ? {
               ...o,
@@ -126,8 +123,7 @@ export function OrderManagement() {
             } : o));
             fetchOrders();
           } else {
-            const err = await res.json();
-            toast.error(err.error || tText('Update failed!', 'Cập nhật thất bại!'));
+            toast.error(tText('Update failed!', 'Cập nhật thất bại!'));
           }
         } catch (e) {
           console.error(e);

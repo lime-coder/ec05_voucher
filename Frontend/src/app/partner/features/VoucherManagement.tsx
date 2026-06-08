@@ -18,6 +18,7 @@ import type { PartnerVoucher as Voucher } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 import { useNavigate } from 'react-router';
 import { ConfirmModal } from '../../shared/components/ConfirmModal';
+import api from '../../../lib/api';
 
 import {
   Button,
@@ -68,9 +69,9 @@ export default function VoucherManagement() {
   const [voucherCategories, setVoucherCategories] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/categories')
-      .then(res => res.json())
-      .then(data => {
+    api.get('/categories')
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           setVoucherCategories(data.map((c: any) => ({ id: c.MaDanhMuc, name: c.TenDanhMuc })));
         }
@@ -123,25 +124,17 @@ export default function VoucherManagement() {
       uploadFormData.append('image', file);
 
       try {
-        const res = await fetch(`http://localhost:5000/api/vouchers/upload-image`, {
-          method: 'POST',
-          body: uploadFormData,
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const newImage = {
-            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-            url: `http://localhost:5000${data.imageUrl}`,
-            description: '',
-          };
-          setEditImages(prev => [...prev, newImage]);
-        } else {
-          toast.error(t('toast.voucher.image_upload_error') || 'Lỗi tải ảnh lên máy chủ.');
-        }
-      } catch (error) {
+        const res = await api.post(`/vouchers/upload-image`, uploadFormData);
+        const data = res.data;
+        const newImage = {
+          id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+          url: `http://localhost:5000${data.imageUrl}`,
+          description: '',
+        };
+        setEditImages(prev => [...prev, newImage]);
+      } catch (error: any) {
         console.error('Error uploading image:', error);
-        toast.error(t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
+        toast.error(error.response?.data?.message || t('toast.voucher.connection_error') || 'Lỗi kết nối khi tải ảnh.');
       }
     }
     setUploadingImage(false);
@@ -153,9 +146,9 @@ export default function VoucherManagement() {
 
   const fetchVouchers = () => {
     const partnerId = localStorage.getItem('partnerId') || '1';
-    fetch(`http://localhost:5000/api/vouchers/partner/${partnerId}?t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
+    api.get(`/vouchers/partner/${partnerId}?t=${Date.now()}`)
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           const mappedVouchers: Voucher[] = data.map((v: any) => {
             let status: any = 'draft';
@@ -240,12 +233,8 @@ export default function VoucherManagement() {
       description: t('voucher.restore.desc') || 'Bạn có chắc muốn khôi phục voucher này?',
       onConfirm: async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/vouchers/${voucher.id}/restore`, {
-            method: 'PUT'
-          });
-          if (res.ok) {
-            fetchVouchers();
-          }
+          await api.put(`/vouchers/${voucher.id}/restore`);
+          fetchVouchers();
         } catch (err) {
           console.error(err);
         }
@@ -919,21 +908,13 @@ export default function VoucherManagement() {
                           usageInstructions: editingVoucher.usageInstructions,
                           imageUrl: editImages.length > 0 ? editImages.map(img => img.url.replace('http://localhost:5000', '')).join(',') : null
                         };
-                        const res = await fetch(`http://localhost:5000/api/vouchers/${editingVoucher.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(payload)
-                        });
-                        if (res.ok) {
-                          setEditDialogOpen(false);
-                          fetchVouchers();
-                          toast.success(t('toast.voucher.submit_success') || 'Đã gửi duyệt Voucher thành công!');
-                        } else {
-                          toast.error(t('toast.voucher.submit_failed') || 'Gửi duyệt thất bại. Vui lòng thử lại!');
-                        }
-                      } catch (err) {
+                        await api.put(`/vouchers/${editingVoucher.id}`, payload);
+                        setEditDialogOpen(false);
+                        fetchVouchers();
+                        toast.success(t('toast.voucher.submit_success') || 'Đã gửi duyệt Voucher thành công!');
+                      } catch (err: any) {
                         console.error(err);
-                        toast.error(t('toast.voucher.system_error') || 'Lỗi hệ thống!');
+                        toast.error(err.response?.data?.message || t('toast.voucher.submit_failed') || 'Gửi duyệt thất bại. Vui lòng thử lại!');
                       }
                     }
                   });
@@ -986,40 +967,32 @@ export default function VoucherManagement() {
                   imageUrl: editImages.length > 0 ? editImages.map(img => img.url.replace('http://localhost:5000', '')).join(',') : null
                 };
 
-                const res = await fetch(`http://localhost:5000/api/vouchers/${editingVoucher.id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload)
-                });
+                await api.put(`/vouchers/${editingVoucher.id}`, payload);
 
-                if (res.ok) {
-                  setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
-                    ...v,
-                    name: editingVoucher.name!,
-                    originalPrice: editingVoucher.originalPrice!,
-                    salePrice: editingVoucher.salePrice!,
-                    quantity: editingVoucher.quantity!,
-                    status: editingVoucher.status!,
-                    categoryId: editingVoucher.categoryId,
-                    validStartDateRaw: editingVoucher.validStartDateRaw,
-                    validEndDateRaw: editingVoucher.validEndDateRaw,
-                    validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
-                    validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
-                    description: editingVoucher.description,
-                    terms: editingVoucher.terms,
-                    refundPolicy: editingVoucher.refundPolicy,
-                    usageInstructions: editingVoucher.usageInstructions,
-                    imageUrl: editingVoucher.imageUrl
-                  } : v));
-                  setEditDialogOpen(false);
-                  fetchVouchers(); // Refresh
-                  toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
-                } else {
-                  toast.error(t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
-                }
-              } catch (err) {
+                setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
+                  ...v,
+                  name: editingVoucher.name!,
+                  originalPrice: editingVoucher.originalPrice!,
+                  salePrice: editingVoucher.salePrice!,
+                  quantity: editingVoucher.quantity!,
+                  status: editingVoucher.status!,
+                  categoryId: editingVoucher.categoryId,
+                  validStartDateRaw: editingVoucher.validStartDateRaw,
+                  validEndDateRaw: editingVoucher.validEndDateRaw,
+                  validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
+                  validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
+                  description: editingVoucher.description,
+                  terms: editingVoucher.terms,
+                  refundPolicy: editingVoucher.refundPolicy,
+                  usageInstructions: editingVoucher.usageInstructions,
+                  imageUrl: editingVoucher.imageUrl
+                } : v));
+                setEditDialogOpen(false);
+                fetchVouchers(); // Refresh
+                toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
+              } catch (err: any) {
                 console.error(err);
-                toast.error(t('toast.voucher.system_error') || 'Đã xảy ra lỗi hệ thống, vui lòng thử lại!');
+                toast.error(err.response?.data?.message || t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
               }
             }}>{t('profile.save')}</Button>
           </DialogFooter>
@@ -1048,14 +1021,10 @@ export default function VoucherManagement() {
               onClick={async () => {
                 if (!selectedVoucher) return;
                 try {
-                  const res = await fetch(`http://localhost:5000/api/vouchers/${selectedVoucher.id}`, {
-                    method: 'DELETE'
-                  });
-                  if (res.ok) {
-                    setVouchers(prev => prev.map(v => v.id === selectedVoucher.id ? { ...v, status: 'deleted' } : v));
-                    setDeleteDialogOpen(false);
-                    fetchVouchers();
-                  }
+                  await api.delete(`/vouchers/${selectedVoucher.id}`);
+                  setVouchers(prev => prev.map(v => v.id === selectedVoucher.id ? { ...v, status: 'deleted' } : v));
+                  setDeleteDialogOpen(false);
+                  fetchVouchers();
                 } catch (err) {
                   console.error(err);
                 }
