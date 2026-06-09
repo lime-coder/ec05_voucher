@@ -119,7 +119,7 @@ export function SearchResultsPage() {
 
     // Local Filtering
     if (selectedCategories.length > 0) {
-      sortedData = sortedData.filter(v => v.category && selectedCategories.includes(String(v.category.id)));
+      sortedData = sortedData.filter(v => v.category && typeof v.category === 'object' && selectedCategories.includes(String(v.category.id)));
     }
     if (selectedBrands.length > 0) {
       sortedData = sortedData.filter(v => v.partner && selectedBrands.includes(String(v.partner.id)));

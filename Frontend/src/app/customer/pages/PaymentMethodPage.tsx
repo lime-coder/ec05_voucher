@@ -83,7 +83,7 @@ export function PaymentMethodPage() {
 
               body: JSON.stringify({
                 customerId:
-                  user?.id || 1,
+                  user?.IDTaiKhoan || 1,
 
                 paymentMethod:
                   selectedMethod,

@@ -6,7 +6,7 @@ import { useLanguage } from '../../shared/contexts/LanguageContext';
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useLanguage();
 
   const handleLogout = () => {
@@ -65,11 +65,11 @@ export function Sidebar() {
       <div className="p-5 border-t border-primary-foreground/10">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-semibold">
-            PA
+            {user?.HoTenNguoiDung ? user.HoTenNguoiDung.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'PA'}
           </div>
-          <div className="flex-1 text-sm">
-            <div className="font-medium">Partner User</div>
-            <div className="text-xs opacity-70">partner@voucher.vn</div>
+          <div className="flex-1 text-sm overflow-hidden">
+            <div className="font-medium truncate">{user?.HoTenNguoiDung || 'Partner User'}</div>
+            <div className="text-xs opacity-70 truncate">{user?.Email || 'partner@voucher.vn'}</div>
           </div>
         </div>
         <button onClick={handleLogout} className="w-full px-4 py-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-lg flex items-center justify-center gap-2 text-sm transition-all">

@@ -104,6 +104,10 @@ model DoiTac {
   SDTLienHe         String           @default("0000000000", map: "DF__DoiTac__SDTLienH__7FEAFD3E") @db.VarChar(15)
   GioMoCua          DateTime         @default(dbgenerated("08:00"), map: "DF_DoiTac_GioMoCua") @db.Time
   GioDongCua        DateTime         @default(dbgenerated("22:00"), map: "DF_DoiTac_GioDongCua") @db.Time
+  Website           String?          @db.NVarChar(255)
+  DiaChiTruSo       String?          @db.NVarChar(500)
+  SDTDaiDien        String?          @db.VarChar(15)
+  EmailDaiDien      String?          @db.VarChar(255)
   ChiNhanh          ChiNhanh[]
   NhanViens         NhanVienDoiTac[]
   Vouchers          Voucher[]
@@ -174,6 +178,8 @@ model TaiKhoan {
   Email             String           @unique(map: "UQ__TaiKhoan__A9D1053492A35299") @db.VarChar(255)
   HoTenNguoiDung    String?          @db.NVarChar(255)
   TrangThaiTaiKhoan String?          @db.NVarChar(50)
+  /// Ràng buộc SQL: CHECK (LoaiTK IS NULL OR LoaiTK IN ('KhachHang', 'DoiTac', 'Admin'))
+  LoaiTK            String?          @db.NVarChar(50)
   KhachHang         KhachHang?
   Admin             Admin?
   DanhGias          DanhGia[]

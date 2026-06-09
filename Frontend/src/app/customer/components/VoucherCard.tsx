@@ -195,7 +195,7 @@ export function VoucherCard({
           </div>
         ) : (
           <div className="text-xs text-muted-foreground italic mb-3">
-            {t('voucher.no_rating', 'No rating yet')}
+            {t('voucher.no_rating') || 'No rating yet'}
           </div>
         )}
 

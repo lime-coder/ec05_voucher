@@ -24,12 +24,12 @@ export class PartnerService {
       businessType: partner.LinhVucKinhDoanh || '',
       taxCode: partner.MaSoThue || '',
       representativeName: partner.CaNhanDaiDien || '',
-      ...(email && { email }),
-      website: '',
-      address: '',
-      phone: '',
-      representativePhone: '',
-      representativeEmail: '',
+      email: (partner as any).EmailLienHe || email || '',
+      website: (partner as any).Website || '',
+      address: (partner as any).DiaChiTruSo || '',
+      phone: (partner as any).SDTLienHe || '',
+      representativePhone: (partner as any).SDTDaiDien || '',
+      representativeEmail: (partner as any).EmailDaiDien || '',
       avatarUrl: (partner as any).AvatarUrl ? `http://localhost:5000${(partner as any).AvatarUrl}` : ''
     };
   }
@@ -45,8 +45,14 @@ export class PartnerService {
         TenDoanhNghiep: data.businessName,
         LinhVucKinhDoanh: data.businessType,
         MaSoThue: data.taxCode,
-        CaNhanDaiDien: data.representativeName
-      }
+        CaNhanDaiDien: data.representativeName,
+        Website: data.website,
+        DiaChiTruSo: data.address,
+        SDTLienHe: data.phone,
+        EmailLienHe: data.email,
+        SDTDaiDien: data.representativePhone,
+        EmailDaiDien: data.representativeEmail
+      } as any
     });
   }
 

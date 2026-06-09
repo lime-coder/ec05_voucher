@@ -584,6 +584,8 @@ export const en = {
   'partner.vouchers.code_label': 'Voucher Code',
   'partner.vouchers.status_label': 'Status',
   'partner.vouchers.name_label': 'Voucher Name',
+  'partner.vouchers.pause_title': 'Pause',
+  'partner.vouchers.active_title': 'Active',
   'partner.vouchers.original_price_label': 'Original Price',
   'partner.vouchers.sale_price_label': 'Sale Price',
   'partner.vouchers.sale_time_label': 'Sale Period',

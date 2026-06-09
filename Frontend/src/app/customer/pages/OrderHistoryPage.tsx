@@ -52,7 +52,7 @@ interface Order {
 
             const response =
               await fetch(
-                `/api/orders/customer/${user?.id || 1}`
+                `/api/orders/customer/${user?.IDTaiKhoan || 1}`
               );
 
             const data =

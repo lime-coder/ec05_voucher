@@ -79,8 +79,8 @@ export default function StoreStats() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">{tText('Store Statistics', 'Thống kê cửa hàng')}</h1>
-        <p className="text-gray-500">{tText('View detailed voucher usage and revenue for each of your stores', 'Xem chi tiết lượt dùng voucher và doanh thu của từng cửa hàng')}</p>
+        <h1 className="text-2xl font-bold tracking-tight">{tText('Store Statistics', 'Thống kê chi nhánh')}</h1>
+        <p className="text-gray-500">{tText('View detailed voucher usage and revenue for each of your stores', 'Xem chi tiết lượt dùng voucher và doanh thu của từng chi nhánh')}</p>
       </div>
 
       {/* Aggregate metrics */}

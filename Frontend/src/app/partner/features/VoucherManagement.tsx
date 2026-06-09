@@ -155,7 +155,7 @@ export default function VoucherManagement() {
   const handleCancelEdit = async () => {
     const originalUrls = selectedVoucher?.imageUrl ? selectedVoucher.imageUrl.split(',').map(u => u.startsWith('http') ? u : `http://localhost:5000${u}`) : [];
     const newImages = editImages.filter(img => !originalUrls.includes(img.url));
-    
+
     for (const img of newImages) {
       if (img.url.includes('/uploads/temp/')) {
         try {
@@ -544,34 +544,34 @@ export default function VoucherManagement() {
                     <div className="flex items-center justify-end gap-1">
                       {voucher.status === 'active' && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title="View details">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title={t('partner.vouchers.details_title') || 'Xem chi tiết'}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleTogglePause(voucher)} className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50" title="Pause">
+                          <Button variant="ghost" size="icon" onClick={() => handleTogglePause(voucher)} className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50" title={t('partner.vouchers.pause_title') || 'Tạm ngưng'}>
                             <PauseCircle className="w-4 h-4" />
                           </Button>
                         </>
                       )}
                       {voucher.status === 'paused' && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Edit">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={t('partner.vouchers.edit_title') || 'Chỉnh sửa'}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleToggleActive(voucher)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="Active">
+                          <Button variant="ghost" size="icon" onClick={() => handleToggleActive(voucher)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title={t('partner.vouchers.active_title') || 'Kích hoạt'}>
                             <PlayCircle className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete">
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(voucher)} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title={t('partner.vouchers.delete_title') || 'Xóa'}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </>
                       )}
                       {voucher.status === 'draft' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Edit">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={t('partner.vouchers.edit_title') || 'Chỉnh sửa'}>
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
                       {voucher.status === 'pending' && (
-                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title="View details">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(voucher)} className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50" title={t('partner.vouchers.details_title') || 'Xem chi tiết'}>
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
@@ -624,7 +624,7 @@ export default function VoucherManagement() {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Key Info */}
                   <div className="flex-1 space-y-4">
                     <div>
@@ -684,7 +684,7 @@ export default function VoucherManagement() {
                       <div className="h-full bg-blue-500 rounded-full transition-all duration-500 group-hover:bg-blue-600" style={{ width: `${(selectedVoucher.sold / selectedVoucher.quantity) * 100}%` }} />
                     </div>
                   </div>
-                  
+
                   <div className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow sm:col-span-3 flex flex-col justify-center">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.vouchers.sale_time_label')}</p>
                     <div className="flex items-center gap-3">
@@ -722,7 +722,7 @@ export default function VoucherManagement() {
                       </div>
                     </section>
                   </div>
-                  
+
                   {/* Row 2: Usage Guide & Refund Policy */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <section className="h-full flex flex-col">
@@ -751,7 +751,7 @@ export default function VoucherManagement() {
                   <section>
                     <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <span className="w-1.5 h-4 bg-teal-500 rounded-full"></span>
-                      {t('partner.vouchers.branches_label')}
+                      {t('partner.vouchers.branches_label') || 'Chi nhánh'}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedVoucher.branches.map((branch) => (
@@ -815,7 +815,7 @@ export default function VoucherManagement() {
                   <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>
                   {t('partner.create.basic_info') || 'Thông tin cơ bản'}
                 </h4>
-                
+
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Image Upload */}
                   <div className="md:w-1/3 flex flex-col gap-2">
@@ -862,7 +862,7 @@ export default function VoucherManagement() {
                     )}
                     <input type="file" id="edit-voucher-image" accept="image/jpeg, image/png" onChange={handleEditImageUpload} className="hidden" multiple />
                   </div>
-                  
+
                   {/* Name and Categories */}
                   <div className="md:w-2/3 space-y-5">
                     <div className="space-y-2">
@@ -873,7 +873,7 @@ export default function VoucherManagement() {
                         onChange={e => setEditingVoucher(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.category_label') || 'Danh mục'}</label>
@@ -968,7 +968,7 @@ export default function VoucherManagement() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.start_date') || 'Bắt đầu'}</label>
@@ -997,7 +997,7 @@ export default function VoucherManagement() {
               <section className="space-y-6">
                 <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
                   <span className="w-1.5 h-4 bg-orange-500 rounded-full"></span>
-                  Details & Terms
+                  {t('partner.vouchers.details_terms') || 'Chi tiết & Điều khoản'}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
@@ -1037,7 +1037,7 @@ export default function VoucherManagement() {
             </div>
           )}
           <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex flex-row justify-end gap-3 items-center">
-            <Button variant="outline" className="rounded-full px-6 font-medium border-gray-300 hover:bg-gray-100" onClick={() => handleCancelEdit()}>{t('common.cancel')}</Button>
+            <Button variant="outline" className="rounded-full px-6 font-medium border-gray-300 hover:bg-gray-100" onClick={() => handleCancelEdit()}>{t('common.cancel') || 'Hủy'}</Button>
             {editingVoucher?.status === 'draft' && (
               <Button
                 variant="default"
@@ -1181,11 +1181,11 @@ export default function VoucherManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>{t('partner.vouchers.delete_confirm')} <span className="font-bold">{selectedVoucher?.name}</span>?</p>
+            <p>{t('partner.vouchers.delete_confirm') || 'Bạn có chắc chắn muốn xóa voucher'} <span className="font-bold">{selectedVoucher?.name}</span>?</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              {t('common.cancel')}
+              {t('common.cancel') || 'Hủy'}
             </Button>
             <Button
               variant="destructive"

@@ -583,6 +583,8 @@ export const vi = {
   'partner.vouchers.code_label': 'Mã voucher',
   'partner.vouchers.status_label': 'Trạng thái',
   'partner.vouchers.name_label': 'Tên voucher',
+  'partner.vouchers.pause_title': 'Tạm ngưng',
+  'partner.vouchers.active_title': 'Kích hoạt',
   'partner.vouchers.original_price_label': 'Giá gốc',
   'partner.vouchers.sale_price_label': 'Giá bán',
   'partner.vouchers.sale_time_label': 'Thời gian bán',

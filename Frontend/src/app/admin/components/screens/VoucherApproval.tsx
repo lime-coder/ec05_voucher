@@ -10,6 +10,7 @@ import api from '../../../../lib/api';
 import { useLanguage } from '../../../shared/contexts/LanguageContext';
 
 type VoucherStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
+type ModalType = 'approve' | 'reject' | 'suspend' | 'restore';
 
 interface Voucher {
   id: number;

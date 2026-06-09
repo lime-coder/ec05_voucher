@@ -285,7 +285,7 @@ export function ReviewOrderPage() {
                 }}
                 className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3 flex items-center justify-center gap-2"
               >
-                {isCheckingOut ? t('review.processing', 'Processing...') : <>{t('review.pay_now')} <CreditCard className="w-5 h-5" /></>}
+                {isCheckingOut ? t('review.processing') || 'Processing...' : <>{t('review.pay_now')} <CreditCard className="w-5 h-5" /></>}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground mb-4 flex items-center justify-center gap-1">
@@ -328,7 +328,7 @@ export function ReviewOrderPage() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6" />
-              {t('review.error_title', 'Lỗi')}
+              {t('review.error_title') || 'Lỗi'}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 text-gray-700">

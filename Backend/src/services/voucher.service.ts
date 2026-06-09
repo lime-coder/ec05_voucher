@@ -34,7 +34,7 @@ export class VoucherService {
   static async createVoucher(data: any) {
     let statusDb = data.status || 'Bản nháp';
     if (data.status) {
-      switch(data.status.toLowerCase()) {
+      switch (data.status.toLowerCase()) {
         case 'active': statusDb = 'Đang hoạt động'; break;
         case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
         case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
@@ -71,7 +71,7 @@ export class VoucherService {
     });
 
     if (imageUrl && imageUrl.includes('/uploads/temp/')) {
-      const finalImageUrl = commitVoucherImage(imageUrl, voucher.VoucherID, partnerId, partnerName, voucher.TenVoucher);
+      const finalImageUrl = commitVoucherImage(imageUrl, voucher.VoucherID, partnerId, partnerName || 'Unknown', voucher.TenVoucher);
       if (finalImageUrl && finalImageUrl !== imageUrl) {
         await prisma.voucher.update({
           where: { VoucherID: voucher.VoucherID },
@@ -90,7 +90,7 @@ export class VoucherService {
   static async updateVoucher(id: number, data: any) {
     let statusDb = data.status;
     if (data.status) {
-      switch(data.status.toLowerCase()) {
+      switch (data.status.toLowerCase()) {
         case 'active': statusDb = 'Đang hoạt động'; break;
         case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
         case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
@@ -115,13 +115,13 @@ export class VoucherService {
       const partnerName = oldVoucher?.DoiTac?.TenDoanhNghiep || 'Unknown';
       const partnerId = oldVoucher?.MaDoiTac || 1;
       const voucherName = data.name || oldVoucher?.TenVoucher || 'Unknown';
-      
+
       finalImageUrl = commitVoucherImage(
-        finalImageUrl || '', 
-        id, 
-        partnerId, 
-        partnerName, 
-        voucherName, 
+        finalImageUrl || '',
+        id,
+        partnerId,
+        partnerName,
+        voucherName,
         oldVoucher?.ImageUrl || undefined
       );
     }

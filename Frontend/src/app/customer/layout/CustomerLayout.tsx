@@ -12,7 +12,7 @@ export function CustomerLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-secondary">
       <ScrollRestoration />
-      <Navbar isLoggedIn={user?.role === 'customer'} cartCount={3} />
+      <Navbar isLoggedIn={user?.role === 'customer'} />
       <main className="flex-1">
         <Outlet />
       </main>
