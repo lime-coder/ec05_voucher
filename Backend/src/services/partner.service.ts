@@ -82,7 +82,20 @@ export class PartnerService {
 
     const isMatch = await bcrypt.compare(current, taiKhoan.MatKhau);
     if (!isMatch) {
-      throw new Error("Mật khẩu hiện tại không đúng.");
+      throw new Error("error.old_password_incorrect");
+    }
+
+    if (newPass.length < 8) {
+      throw new Error("error.pwd_length");
+    }
+    if (!/[A-Z]/.test(newPass)) {
+      throw new Error("error.pwd_upper");
+    }
+    if (!/[a-z]/.test(newPass)) {
+      throw new Error("error.pwd_lower");
+    }
+    if (!/[0-9]/.test(newPass)) {
+      throw new Error("error.pwd_digit");
     }
 
     const hashedPassword = await bcrypt.hash(newPass, 10);

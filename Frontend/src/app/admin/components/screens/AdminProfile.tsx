@@ -65,22 +65,7 @@ export function AdminProfile() {
       toast.error(tText('Confirm password does not match!', 'Mật khẩu xác nhận không khớp!'));
       return;
     }
-    if (pwdForm.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (!/[A-Z]/.test(pwdForm.newPassword)) {
-      toast.error("Must contain at least one uppercase letter");
-      return;
-    }
-    if (!/[a-z]/.test(pwdForm.newPassword)) {
-      toast.error("Must contain at least one lowercase letter");
-      return;
-    }
-    if (!/[0-9]/.test(pwdForm.newPassword)) {
-      toast.error("Must contain at least one digit");
-      return;
-    }
+
 
     try {
       await api.put('/admin/profile/password', {
@@ -91,8 +76,21 @@ export function AdminProfile() {
       setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
       console.error(err);
-      const errorMsg = err.response?.data?.error;
-      toast.error(errorMsg ? tText(errorMsg, errorMsg) : tText('Failed to update password!', 'Đổi mật khẩu thất bại!'));
+      let errorMsg = err.response?.data?.error;
+      
+      if (errorMsg === 'Incorrect current password') {
+        errorMsg = tText('Incorrect current password', 'Mật khẩu hiện tại không đúng');
+      } else if (errorMsg === 'Password must be at least 8 characters') {
+        errorMsg = tText('Password must be at least 8 characters', 'Mật khẩu phải có ít nhất 8 ký tự');
+      } else if (errorMsg === 'Must contain at least one uppercase letter') {
+        errorMsg = tText('Must contain at least one uppercase letter', 'Mật khẩu phải chứa ít nhất một chữ hoa');
+      } else if (errorMsg === 'Must contain at least one lowercase letter') {
+        errorMsg = tText('Must contain at least one lowercase letter', 'Mật khẩu phải chứa ít nhất một chữ thường');
+      } else if (errorMsg === 'Must contain at least one digit') {
+        errorMsg = tText('Must contain at least one digit', 'Mật khẩu phải chứa ít nhất một chữ số');
+      }
+
+      toast.error(errorMsg ? errorMsg : tText('Failed to update password!', 'Đổi mật khẩu thất bại!'));
     }
   };
 

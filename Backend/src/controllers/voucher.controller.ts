@@ -3,6 +3,7 @@ import { VoucherService } from '../services/voucher.service';
 import prisma from '../config/db';
 import { logActivity } from './admin.controller';
 import fs from 'fs';
+import { LogService } from '../services/log.service';
 import path from 'path';
 
 /**
@@ -369,6 +370,14 @@ export const createVoucher = async (req: Request, res: Response) => {
   try {
     const data = req.body;
     const newVoucher = await VoucherService.createVoucher(data);
+    LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Tạo voucher',
+      DoiTuong: newVoucher.TenVoucher || `Voucher ID: ${newVoucher.VoucherID}`,
+      ChiTiet: 'Partner đã tạo voucher mới',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    }).catch(console.error);
     res.status(201).json(newVoucher);
   } catch (error: any) {
     console.error('Server error:', error);
@@ -382,6 +391,14 @@ export const updateVoucher = async (req: Request, res: Response) => {
     const { id } = req.params;
     const data = req.body;
     const updatedVoucher = await VoucherService.updateVoucher(parseInt(id, 10), data);
+    LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Cập nhật voucher',
+      DoiTuong: updatedVoucher.TenVoucher || `Voucher ID: ${updatedVoucher.VoucherID}`,
+      ChiTiet: 'Partner đã cập nhật voucher',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    }).catch(console.error);
     res.status(200).json(updatedVoucher);
   } catch (error: any) {
     console.error('Server error:', error);
@@ -407,6 +424,14 @@ export const deleteVoucher = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await VoucherService.softDeleteVoucher(parseInt(id, 10));
+    LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Xóa voucher',
+      DoiTuong: `Voucher ID: ${id}`,
+      ChiTiet: 'Partner đã xóa (soft delete) voucher',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    }).catch(console.error);
     res.status(200).json({ message: "Voucher deleted successfully" });
   } catch (error: any) {
     console.error('Server error:', error);
@@ -419,6 +444,14 @@ export const restoreVoucher = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await VoucherService.restoreVoucher(parseInt(id, 10));
+    LogService.createLog({
+      IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
+      HanhDong: 'Khôi phục voucher',
+      DoiTuong: `Voucher ID: ${id}`,
+      ChiTiet: 'Partner đã khôi phục voucher',
+      DiaChiIP: req.ip || '127.0.0.1',
+      TrangThai: 'Thành công'
+    }).catch(console.error);
     res.status(200).json({ message: "Voucher restored successfully" });
   } catch (error: any) {
     console.error('Server error:', error);
@@ -571,7 +604,7 @@ export const approveVoucher = async (req: Request, res: Response) => {
       where: { VoucherID: Number(id) },
       data: { TrangThaiVoucher: 'Đang hoạt động' }
     });
-    logActivity('admin@voucher.vn', 'Phê duyệt voucher', voucher.TenVoucher, req.ip || '127.0.0.1');
+    logActivity(req, 'Phê duyệt voucher', voucher.TenVoucher);
     res.json(voucher);
   } catch (error) {
     console.error('Server error:', error);
@@ -589,7 +622,7 @@ export const rejectVoucher = async (req: Request, res: Response) => {
       data: { TrangThaiVoucher: 'Từ chối' }
     });
 
-    logActivity('admin@voucher.vn', 'Từ chối voucher', `${voucher.TenVoucher} (Lý do: ${lyDo})`, req.ip || '127.0.0.1');
+    logActivity(req, 'Từ chối voucher', `${voucher.TenVoucher} (Lý do: ${lyDo})`);
     console.log(`Từ chối voucher ${id} với lý do: ${lyDo}`);
     res.json(voucher);
   } catch (error) {

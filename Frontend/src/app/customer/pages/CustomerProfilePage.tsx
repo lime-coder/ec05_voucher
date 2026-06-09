@@ -92,22 +92,7 @@ export function CustomerProfilePage() {
       toast.error(t('profile.pwd_missing') || "Please fill all password fields");
       return;
     }
-    if (passwords.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (!/[A-Z]/.test(passwords.newPassword)) {
-      toast.error("Must contain at least one uppercase letter");
-      return;
-    }
-    if (!/[a-z]/.test(passwords.newPassword)) {
-      toast.error("Must contain at least one lowercase letter");
-      return;
-    }
-    if (!/[0-9]/.test(passwords.newPassword)) {
-      toast.error("Must contain at least one digit");
-      return;
-    }
+
     try {
       await api.put('/customers/password', {
         currentPassword: passwords.currentPassword,

@@ -700,44 +700,46 @@ export default function VoucherManagement() {
                 </div>
 
                 {/* Text Content Sections */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-6">
-                    <section>
+                <div className="space-y-6">
+                  {/* Row 1: Description & Terms */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section className="h-full flex flex-col">
                       <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>
                         {t('partner.vouchers.description_label') || 'Mô tả'}
                       </h4>
-                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner">
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner flex-1">
                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.description || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
                       </div>
                     </section>
-                    <section>
-                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <span className="w-1.5 h-4 bg-purple-500 rounded-full"></span>
-                        {t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}
-                      </h4>
-                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner">
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.usageInstructions || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
-                      </div>
-                    </section>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <section>
+                    <section className="h-full flex flex-col">
                       <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <span className="w-1.5 h-4 bg-orange-500 rounded-full"></span>
                         {t('partner.vouchers.terms_label') || 'Điều kiện áp dụng'}
                       </h4>
-                      <div className="p-4 bg-orange-50/30 rounded-xl border border-orange-100/50">
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner flex-1">
                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.terms || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
                       </div>
                     </section>
-                    <section>
+                  </div>
+                  
+                  {/* Row 2: Usage Guide & Refund Policy */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section className="h-full flex flex-col">
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-purple-500 rounded-full"></span>
+                        {t('partner.create.guide_label') || 'Hướng dẫn sử dụng'}
+                      </h4>
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner flex-1">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.usageInstructions || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
+                      </div>
+                    </section>
+                    <section className="h-full flex flex-col">
                       <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <span className="w-1.5 h-4 bg-green-500 rounded-full"></span>
                         {t('partner.create.refund_policy_label') || 'Chính sách hoàn tiền'}
                       </h4>
-                      <div className="p-4 bg-green-50/30 rounded-xl border border-green-100/50">
+                      <div className="p-4 bg-gray-50/50 rounded-xl border border-gray-100 shadow-inner flex-1">
                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedVoucher.refundPolicy || t('partner.vouchers.not_updated') || 'Chưa cập nhật'}</p>
                       </div>
                     </section>

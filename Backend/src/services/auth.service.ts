@@ -64,10 +64,10 @@ export class AuthService {
     });
 
     if (existingUser) {
-      if (existingUser.TenDangNhap === username) {
+      if (existingUser.TenDangNhap.toLowerCase() === username.toLowerCase()) {
         throw new Error('Username is already taken');
       }
-      if (existingUser.Email === email) {
+      if (existingUser.Email.toLowerCase() === email.toLowerCase()) {
         throw new Error('Email is already registered');
       }
     }
@@ -162,8 +162,7 @@ export class AuthService {
           MaSoThue: data.MaSoThue,
           CaNhanDaiDien: data.CaNhanDaiDien,
           LinhVucKinhDoanh: data.LinhVucKinhDoanh,
-          TrangThaiPheDuyet: 'Chờ duyệt',
-          TrangThaiHoatDong: 'Hoạt động',
+          TrangThai: 'Chờ duyệt',
           EmailLienHe: data.EmailLienHe || 'contact@domain.com',
           SDTLienHe: data.SDTLienHe || '0000000000',
         },
@@ -205,12 +204,12 @@ export class AuthService {
       include: {
         Admin: true,
         KhachHang: true,
-        NhanVienDoiTacs: true,
+        NhanVienDoiTacs: { include: { DoiTac: true } },
       },
     });
 
-    // ── Handle: user doesn't exist ──
-    if (!user) {
+    // ── Handle: user doesn't exist or case mismatch ──
+    if (!user || user.TenDangNhap !== username) {
       // Log the failed attempt — account does not exist
       await LogService.createLog({
         IDTaiKhoan: null,
@@ -259,6 +258,23 @@ export class AuthService {
       // For now we just log it. Email integration can be added later.
 
       throw new Error('Invalid credentials');
+    }
+
+    const currentRole = this._determineRole(user);
+
+    // ── Handle: Partner is locked ──
+    if (currentRole === 'partner' && user.NhanVienDoiTacs?.[0]?.DoiTac) {
+      if (user.NhanVienDoiTacs[0].DoiTac.TrangThai === 'Bị khóa') {
+        await LogService.createLog({
+          IDTaiKhoan: user.IDTaiKhoan,
+          HanhDong: AUDIT_ACTIONS.DANG_NHAP_THAT_BAI,
+          DoiTuong: username,
+          ChiTiet: `Tài khoản tồn tại: Có, Vai trò: ${currentRole}. Đăng nhập thất bại do Đối tác chủ quản đang bị khóa.`,
+          DiaChiIP: ip,
+          TrangThai: LOG_STATUS.FAILURE,
+        });
+        throw new Error('Your partner enterprise account is currently locked. Please contact support.');
+      }
     }
 
     // ── Handle: not ACTIVE account ──

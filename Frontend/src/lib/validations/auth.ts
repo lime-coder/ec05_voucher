@@ -54,7 +54,7 @@ export const registerPartnerSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   companyEmail: z.string().email("Invalid company email address"),
   companyPhone: z.string().min(10, "Phone number must be at least 10 characters"),
-  taxId: z.string().regex(/^\\d{10}(\\d{3})?$/, "Tax ID must be 10 or 13 digits"),
+  taxId: z.string().regex(/^\d{10}(\d{3})?$/, "Tax ID must be 10 or 13 digits"),
   legalRep: z.string().min(1, "Legal representative is required"),
   businessField: z.string().min(1, "Business field is required"),
   jobPosition: z.string().min(1, "Job position is required"),

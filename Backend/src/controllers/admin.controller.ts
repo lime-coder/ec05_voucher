@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import { LogService } from '../services/log.service';
 import prisma from '../config/db';
 import fs from 'fs';
 import path from 'path';
@@ -16,8 +17,11 @@ export const deleteImageFile = (imagePath: string | null | undefined) => {
   }
 };
 
-export const logActivity = (user: string, action: string, target: string, ip: string, status: string = 'Thành công') => {
+export const logActivity = (req: Request | any, action: string, target: string, status: string = 'Thành công') => {
   try {
+    const user = req?.user?.TenDangNhap || 'admin@voucher.vn';
+    const ip = req?.ip || '127.0.0.1';
+
     let logs = [];
     if (fs.existsSync(LOG_FILE_PATH)) {
       const data = fs.readFileSync(LOG_FILE_PATH, 'utf-8');
@@ -34,6 +38,16 @@ export const logActivity = (user: string, action: string, target: string, ip: st
     };
     logs.unshift(newLog);
     fs.writeFileSync(LOG_FILE_PATH, JSON.stringify(logs, null, 2), 'utf-8');
+
+    // SystemLog
+    LogService.createLog({
+      IDTaiKhoan: req?.user?.IDTaiKhoan || null,
+      HanhDong: action,
+      DoiTuong: target,
+      ChiTiet: `Thực hiện bởi: ${user}. Đối tượng: ${target}`,
+      DiaChiIP: ip,
+      TrangThai: status
+    }).catch(console.error);
   } catch (err) {
     console.error('Server error:', err);
     console.error('Failed to write system log:', err);
@@ -65,16 +79,16 @@ export const getUsers = async (req: Request, res: Response) => {
       if (u.Admin) accountType = 'Admin';
       else if (u.NhanVienDoiTacs?.length > 0) accountType = 'Partner';
 
-      const partnerStatus = u.NhanVienDoiTacs?.[0]?.DoiTac?.TrangThaiPheDuyet || null;
+      const partnerStatus = u.NhanVienDoiTacs?.[0]?.DoiTac?.TrangThai || null;
 
       // Nếu là Partner, trạng thái tài khoản phải phản ánh trạng thái của Đối tác
       if (accountType === 'Partner' && u.NhanVienDoiTacs?.[0]?.DoiTac) {
         const pt = u.NhanVienDoiTacs[0].DoiTac;
-        if (pt.TrangThaiPheDuyet === 'Chờ duyệt') {
+        if (pt.TrangThai === 'Chờ duyệt') {
           status = 'PENDING';
-        } else if (pt.TrangThaiPheDuyet === 'Từ chối' || pt.TrangThaiHoatDong === 'Bị khóa') {
+        } else if (pt.TrangThai === 'Từ chối' || pt.TrangThai === 'Bị khóa') {
           status = 'INACTIVE';
-        } else if (pt.TrangThaiPheDuyet === 'Đã duyệt' && pt.TrangThaiHoatDong === 'Hoạt động') {
+        } else if (pt.TrangThai === 'Hoạt động') {
           if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
             status = 'INACTIVE';
           } else {
@@ -103,7 +117,7 @@ export const toggleUserActive = async (req: Request, res: Response) => {
 
     // Chặn khóa partner đang PENDING
     if (user.NhanVienDoiTacs?.length > 0) {
-      const pStatus = user.NhanVienDoiTacs[0]?.DoiTac?.TrangThaiPheDuyet;
+      const pStatus = user.NhanVienDoiTacs[0]?.DoiTac?.TrangThai;
       if (pStatus === 'PENDING') {
         return res.status(400).json({ error: 'Không thể khóa tài khoản Đối tác đang ở trạng thái Chờ duyệt (PENDING).' });
       }
@@ -117,11 +131,11 @@ export const toggleUserActive = async (req: Request, res: Response) => {
 
     if (user.NhanVienDoiTacs?.length > 0 && user.NhanVienDoiTacs[0]?.DoiTac) {
       const pt = user.NhanVienDoiTacs[0].DoiTac;
-      if (pt.TrangThaiPheDuyet === 'Chờ duyệt') {
+      if (pt.TrangThai === 'Chờ duyệt') {
         derivedStatus = 'PENDING';
-      } else if (pt.TrangThaiPheDuyet === 'Từ chối' || pt.TrangThaiHoatDong === 'Bị khóa') {
+      } else if (pt.TrangThai === 'Từ chối' || pt.TrangThai === 'Bị khóa') {
         derivedStatus = 'INACTIVE';
-      } else if (pt.TrangThaiPheDuyet === 'Đã duyệt' && pt.TrangThaiHoatDong === 'Hoạt động') {
+      } else if (pt.TrangThai === 'Hoạt động') {
         if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
           derivedStatus = 'INACTIVE';
         } else {
@@ -136,7 +150,7 @@ export const toggleUserActive = async (req: Request, res: Response) => {
 
     const nextDbStatus = derivedStatus === 'ACTIVE' ? 'Bị khóa' : 'Hoạt động';
     const updated = await prisma.taiKhoan.update({ where: { IDTaiKhoan: Number(id) }, data: { TrangThaiTaiKhoan: nextDbStatus } });
-    logActivity('admin@voucher.vn', nextDbStatus === 'Bị khóa' ? 'Lock account' : 'Unlock account', updated.HoTenNguoiDung || updated.TenDangNhap, req.ip || '127.0.0.1');
+    logActivity(req, nextDbStatus === 'Bị khóa' ? 'Lock account' : 'Unlock account', updated.HoTenNguoiDung || updated.TenDangNhap);
     res.json({ id: updated.IDTaiKhoan, status: derivedStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' });
   } catch (error) {
     console.error('Server error:', error);
@@ -625,6 +639,7 @@ export const deleteContent = async (req: Request, res: Response) => {
         deleteImageFile(rec.HinhAnh);
       }
       await prisma.banner.delete({ where: { MaBanner: Number(id) } });
+      logActivity(req, 'Xóa banner', rec?.TieuDe || `Banner ID: ${id}`);
       return res.json({ message: 'Banner deleted successfully' });
     } else if (type === 'article') {
       const rec = await prisma.baiViet.findUnique({ where: { MaBaiViet: Number(id) } });
@@ -632,9 +647,11 @@ export const deleteContent = async (req: Request, res: Response) => {
         deleteImageFile((rec as any).HinhAnh);
       }
       await prisma.baiViet.delete({ where: { MaBaiViet: Number(id) } });
+      logActivity(req, 'Xóa bài viết', (rec as any)?.TieuDe || `Bài viết ID: ${id}`);
       return res.json({ message: 'Article deleted successfully' });
     } else if (type === 'faq') {
       await prisma.fAQ.delete({ where: { MaFAQ: Number(id) } });
+      logActivity(req, 'Xóa FAQ', `FAQ ID: ${id}`);
       return res.json({ message: 'FAQ deleted successfully' });
     }
     return res.status(400).json({ error: 'Loại nội dung không hợp lệ' });
@@ -667,7 +684,7 @@ export const getPartners = async (req: Request, res: Response) => {
         category: p.LinhVucKinhDoanh || 'Khác',
         vouchers: p.Vouchers.length,
         revenue: totalRevenue.toLocaleString('vi-VN') + 'đ',
-        status: p.TrangThaiHoatDong === 'Hoạt động' ? 'ACTIVE' : (p.TrangThaiHoatDong === 'Bị khóa' ? 'LOCKED' : 'PENDING'),
+        status: p.TrangThai === 'Hoạt động' ? 'ACTIVE' : (p.TrangThai === 'Bị khóa' ? 'LOCKED' : 'PENDING'),
         date: p.NgayThamGia ? new Date(p.NgayThamGia).toLocaleDateString('vi-VN') : '01/03/2026',
         taxCode: p.MaSoThue || '',
         representative: p.CaNhanDaiDien || '',
@@ -676,7 +693,7 @@ export const getPartners = async (req: Request, res: Response) => {
         description: p.MoTa || '',
         openTime: p.GioMoCua || '',
         closeTime: p.GioDongCua || '',
-        approvalStatus: p.TrangThaiPheDuyet === 'Đã duyệt' ? 'APPROVED' : (p.TrangThaiPheDuyet === 'Từ chối' ? 'REJECTED' : 'PENDING')
+        approvalStatus: p.TrangThai === 'Hoạt động' ? 'APPROVED' : (p.TrangThai === 'Từ chối' ? 'REJECTED' : 'PENDING')
       };
     });
 
@@ -696,12 +713,11 @@ export const createPartner = async (req: Request, res: Response) => {
         LinhVucKinhDoanh: category,
         MaSoThue: taxCode || '',
         CaNhanDaiDien: representative || '',
-        TrangThaiHoatDong: status || 'ACTIVE',
-        TrangThaiPheDuyet: 'Đã duyệt'
+        TrangThai: status === 'LOCKED' ? 'Bị khóa' : 'Hoạt động'
       }
     });
 
-    logActivity('admin@voucher.vn', 'Thêm đối tác', name, req.ip || '127.0.0.1');
+    logActivity(req, 'Thêm đối tác', name);
 
     res.status(201).json(partner);
   } catch (error) {
@@ -721,11 +737,11 @@ export const updatePartner = async (req: Request, res: Response) => {
         LinhVucKinhDoanh: category,
         MaSoThue: taxCode,
         CaNhanDaiDien: representative,
-        TrangThaiHoatDong: status
+        TrangThai: status === 'ACTIVE' ? 'Hoạt động' : (status === 'LOCKED' ? 'Bị khóa' : status === 'REJECTED' ? 'Từ chối' : 'Chờ duyệt')
       }
     });
 
-    logActivity('admin@voucher.vn', 'Cập nhật đối tác', name, req.ip || '127.0.0.1');
+    logActivity(req, 'Cập nhật đối tác', name);
 
     res.json(partner);
   } catch (error) {
@@ -757,7 +773,7 @@ export const deletePartner = async (req: Request, res: Response) => {
       where: { MaDoiTac: Number(id) }
     });
 
-    logActivity('admin@voucher.vn', 'Xóa đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
+    logActivity(req, 'Xóa đối tác', partner.TenDoanhNghiep || `ID: ${id}`);
 
     res.json({ message: 'Partner deleted successfully' });
   } catch (error) {
@@ -775,10 +791,10 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
     if (!partner) {
       return res.status(404).json({ error: 'Không tìm thấy đối tác' });
     }
-    const nextStatus = partner.TrangThaiHoatDong === 'Bị khóa' ? 'Hoạt động' : 'Bị khóa';
+    const nextStatus = partner.TrangThai === 'Bị khóa' ? 'Hoạt động' : 'Bị khóa';
     const updated = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
-      data: { TrangThaiHoatDong: nextStatus }
+      data: { TrangThai: nextStatus }
     });
 
     // Đồng bộ trạng thái tài khoản của nhân viên đối tác
@@ -794,12 +810,7 @@ export const togglePartnerActive = async (req: Request, res: Response) => {
       });
     }
 
-    logActivity(
-      'admin@voucher.vn',
-      nextStatus === 'Bị khóa' ? 'Khóa đối tác' : 'Mở khóa đối tác',
-      updated.TenDoanhNghiep || `ID: ${id}`,
-      req.ip || '127.0.0.1'
-    );
+    logActivity(req, nextStatus === 'Bị khóa' ? 'Khóa đối tác' : 'Mở khóa đối tác', updated.TenDoanhNghiep || `ID: ${id}`);
     res.json(updated);
   } catch (error) {
     console.error('Server error:', error);
@@ -813,8 +824,7 @@ export const approvePartner = async (req: Request, res: Response) => {
     const partner = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
       data: {
-        TrangThaiPheDuyet: 'Đã duyệt',
-        TrangThaiHoatDong: 'Hoạt động'
+        TrangThai: 'Hoạt động'
       }
     });
 
@@ -831,7 +841,7 @@ export const approvePartner = async (req: Request, res: Response) => {
       });
     }
 
-    logActivity('admin@voucher.vn', 'Phê duyệt đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
+    logActivity(req, 'Phê duyệt đối tác', partner.TenDoanhNghiep || `ID: ${id}`);
     res.json(partner);
   } catch (error) {
     console.error('Server error:', error);
@@ -844,7 +854,7 @@ export const rejectPartner = async (req: Request, res: Response) => {
     const { id } = req.params;
     const partner = await prisma.doiTac.update({
       where: { MaDoiTac: Number(id) },
-      data: { TrangThaiPheDuyet: 'Từ chối' }
+      data: { TrangThai: 'Từ chối' }
     });
 
     // Đồng bộ trạng thái tài khoản của nhân viên đối tác
@@ -860,7 +870,7 @@ export const rejectPartner = async (req: Request, res: Response) => {
       });
     }
 
-    logActivity('admin@voucher.vn', 'Từ chối đối tác', partner.TenDoanhNghiep || `ID: ${id}`, req.ip || '127.0.0.1');
+    logActivity(req, 'Từ chối đối tác', partner.TenDoanhNghiep || `ID: ${id}`);
     res.json(partner);
   } catch (error) {
     console.error('Server error:', error);
@@ -959,7 +969,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         data: { TrangThaiSuDung: 'Hủy voucher' }
       });
       await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data: { TrangThaiThanhToan: 'REFUNDED', TrangThaiDonHang: 'Đã hủy' } });
-      logActivity('admin@voucher.vn', `Refund ORD-${id}`, `${allCodes.length} voucher codes → Hủy voucher`, req.ip || '127.0.0.1');
+      logActivity(req, `Refund ORD-${id}`, `${allCodes.length} voucher codes → Hủy voucher`);
       return res.json({ message: 'Hoàn tiền thành công, các mã voucher đã được hủy.' });
     }
 
@@ -969,7 +979,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     else return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
 
     const updated = await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data });
-    logActivity('admin@voucher.vn', `Update ORD-${id}`, `Status: ${status}`, req.ip || '127.0.0.1');
+    logActivity(req, `Update ORD-${id}`, `Status: ${status}`);
     res.json({ message: 'Updated successfully', order: updated });
   } catch (error) {
     console.error('Server error:', error);
@@ -1042,7 +1052,7 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
       await prisma.$executeRaw`UPDATE Admin SET SDT_Admin = ${phone} WHERE SDT_Admin = ${admin.SDT_Admin}`;
     }
 
-    logActivity('admin@voucher.vn', 'Cập nhật hồ sơ admin', fullName, req.ip || '127.0.0.1');
+    logActivity(req, 'Cập nhật hồ sơ admin', fullName);
 
     res.json({ message: 'Profile updated successfully' });
   } catch (error) {
@@ -1075,7 +1085,7 @@ export const updateAdminPassword = async (req: Request, res: Response) => {
       });
     }
 
-    logActivity('admin@voucher.vn', 'Đổi mật khẩu admin', admin.TaiKhoan.TenDangNhap, req.ip || '127.0.0.1');
+    logActivity(req, 'Đổi mật khẩu admin', admin.TaiKhoan.TenDangNhap);
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
@@ -1090,7 +1100,7 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
     const [pendingPartners, pendingVouchers, paidOrders] = await Promise.all([
       // 1. Pending partners
       prisma.doiTac.findMany({
-        where: { TrangThaiPheDuyet: 'Chờ duyệt' },
+        where: { TrangThai: 'Chờ duyệt' },
         orderBy: { MaDoiTac: 'desc' },
         take: 5
       }),
@@ -1168,7 +1178,7 @@ export const suspendVoucher = async (req: Request, res: Response) => {
     if (voucher.TrangThaiVoucher !== 'Đang hoạt động') return res.status(400).json({ error: 'Chỉ tạm ngưng được voucher đang ACTIVE' });
 
     const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'Tạm ngưng' } });
-    logActivity('admin@voucher.vn', `Suspend voucher (${lyDo})`, updated.TenVoucher, req.ip || '127.0.0.1');
+    logActivity(req, `Suspend voucher (${lyDo})`, updated.TenVoucher);
     res.json({ ...updated, status: 'SUSPENDED' });
   } catch (error) {
     console.error('Server error:', error);
@@ -1184,7 +1194,7 @@ export const restoreVoucher = async (req: Request, res: Response) => {
     if (voucher.TrangThaiVoucher !== 'SUSPENDED') return res.status(400).json({ error: 'Chỉ khôi phục được voucher đang bị tạm ngưng' });
 
     const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'Đang hoạt động' } });
-    logActivity('admin@voucher.vn', 'Khôi phục voucher', updated.TenVoucher, req.ip || '127.0.0.1');
+    logActivity(req, 'Khôi phục voucher', updated.TenVoucher);
     res.json({ ...updated, status: 'ACTIVE' });
   } catch (error) {
     console.error('Server error:', error);

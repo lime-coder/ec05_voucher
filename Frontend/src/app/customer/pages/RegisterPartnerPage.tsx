@@ -45,7 +45,18 @@ export function RegisterPartnerPage() {
         TenDoanhNghiep: data.companyName,
         MaSoThue: data.taxId,
         CaNhanDaiDien: data.legalRep,
-        LinhVucKinhDoanh: data.businessField,
+        LinhVucKinhDoanh: (() => {
+          const cat = data.businessField;
+          if (cat === 'retail') return 'Retail';
+          if (cat === 'food') return 'Food & Beverage';
+          if (cat === 'travel') return 'Travel & Tourism';
+          if (cat === 'health') return 'Health & Beauty';
+          if (cat === 'entertainment') return 'Entertainment';
+          if (cat === 'auto') return 'Automotive';
+          if (cat === 'edu') return 'Education';
+          if (cat === 'other') return 'Other';
+          return cat;
+        })(),
         ChucVu: data.jobPosition,
         EmailLienHe: data.companyEmail,
         SDTLienHe: data.companyPhone,

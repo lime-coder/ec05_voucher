@@ -306,22 +306,7 @@ export default function ProfileSettings() {
                       toast.error(t('toast.partner.profile.pwd_missing') || 'Vui lòng điền đủ thông tin mật khẩu.');
                       return;
                     }
-                    if (newPassword.length < 8) {
-                      toast.error("Password must be at least 8 characters");
-                      return;
-                    }
-                    if (!/[A-Z]/.test(newPassword)) {
-                      toast.error("Must contain at least one uppercase letter");
-                      return;
-                    }
-                    if (!/[a-z]/.test(newPassword)) {
-                      toast.error("Must contain at least one lowercase letter");
-                      return;
-                    }
-                    if (!/[0-9]/.test(newPassword)) {
-                      toast.error("Must contain at least one digit");
-                      return;
-                    }
+
                     try {
                       const partnerId = localStorage.getItem('partnerId') || '1';
                       const res = await api.put(`/partners/${partnerId}/password`, {

@@ -913,4 +913,8 @@ export const vi = {
   'error.user_exists': 'Tên đăng nhập hoặc Email đã tồn tại',
   'error.unknown': 'Có lỗi xảy ra',
   'auth.login_required': 'Vui lòng đăng nhập để tiếp tục',
+  'error.pwd_length': 'Mật khẩu phải có ít nhất 8 ký tự',
+  'error.pwd_upper': 'Mật khẩu phải chứa ít nhất một chữ hoa',
+  'error.pwd_lower': 'Mật khẩu phải chứa ít nhất một chữ thường',
+  'error.pwd_digit': 'Mật khẩu phải chứa ít nhất một chữ số',
 };

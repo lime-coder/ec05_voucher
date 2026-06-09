@@ -15,8 +15,10 @@ async function main() {
     partner = await prisma.doiTac.create({
       data: {
         TenDoanhNghiep: 'Tech Solutions Ltd',
-        TrangThaiHoatDong: 'Hoạt động',
-        TrangThaiPheDuyet: 'Đã duyệt'
+        TrangThai: 'Hoạt động',
+        MaSoThue: '1234567890',
+        CaNhanDaiDien: 'Nguyen Van A',
+        LinhVucKinhDoanh: 'IT'
       }
     });
   }
@@ -125,6 +127,7 @@ async function main() {
           MaDonHang: order.MaDonHang,
           VoucherID: v.VoucherID,
           SoLuongMua: 1,
+          DonGia: v.GiaBan,
           ThanhTien: v.GiaBan
         }
       });

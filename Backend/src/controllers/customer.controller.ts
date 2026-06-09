@@ -102,6 +102,19 @@ export const changePassword = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'error.old_password_incorrect' });
     }
 
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'error.pwd_length' });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ message: 'error.pwd_upper' });
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      return res.status(400).json({ message: 'error.pwd_lower' });
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ message: 'error.pwd_digit' });
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await prisma.taiKhoan.update({
       where: { IDTaiKhoan: customerId },

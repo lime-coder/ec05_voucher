@@ -103,7 +103,12 @@ export function SystemLogs() {
   const filteredLogs = processedLogs.filter((log) => {
     const actionStr = log.action || log.HanhDong || '';
     const targetStr = log.target || log.DoiTuong || log.ChiTiet || '';
-    const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+    let userStr = log.user || 'Hệ thống';
+    if (log.TenDangNhap && log.IDTaiKhoan) {
+      userStr = `${log.TenDangNhap} [${log.IDTaiKhoan}]`;
+    } else if (log.IDTaiKhoan) {
+      userStr = `Tài khoản #${log.IDTaiKhoan}`;
+    }
     const timeStr = log.time || log.ThoiGian || '';
 
     const matchesSearch =
@@ -157,6 +162,7 @@ export function SystemLogs() {
     const headers = [
       tText("No.", "STT"),
       tText("User", "Người dùng"),
+      tText("Privilege", "Vai trò"),
       tText("Action", "Hành động"),
       tText("Target", "Đối tượng"),
       tText("Time", "Thời gian"),
@@ -166,13 +172,29 @@ export function SystemLogs() {
     const rows = filteredLogs.map((log, index) => {
       const actionStr = log.action || log.HanhDong || '';
       const targetStr = log.target || log.DoiTuong || log.ChiTiet || '-';
-      const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+      let userStr = log.user || 'Hệ thống';
+      if (log.TenDangNhap && log.IDTaiKhoan) {
+        userStr = `${log.TenDangNhap} [${log.IDTaiKhoan}]`;
+      } else if (log.IDTaiKhoan) {
+        userStr = `Tài khoản #${log.IDTaiKhoan}`;
+      }
+
+      const privilegeMap: Record<string, {en: string, vi: string}> = {
+        'admin': {en: 'Admin', vi: 'Quản trị viên'},
+        'partner': {en: 'Partner', vi: 'Đối tác'},
+        'customer': {en: 'Customer', vi: 'Khách hàng'},
+        'unknown': {en: 'Unknown', vi: 'Không rõ'}
+      };
+      const priv = privilegeMap[log.VaiTro] || privilegeMap['unknown'];
+      const privilegeStr = tText(priv.en, priv.vi);
+
       const timeStr = log.time || log.ThoiGian || '';
       const statusStr = log.status || log.TrangThai || 'Thành công';
 
       return [
         index + 1,
         userStr,
+        privilegeStr,
         tText(log.englishAction, actionStr),
         targetStr,
         formatDate(timeStr) || timeStr,
@@ -243,6 +265,7 @@ export function SystemLogs() {
             <TableRow className="bg-gray-50/50">
               <TableHead>{tText("No.", "STT")}</TableHead>
               <TableHead>{tText("User", "Người dùng")}</TableHead>
+              <TableHead>{tText("Privilege", "Vai trò")}</TableHead>
               <TableHead>{tText("Action", "Hành động")}</TableHead>
               <TableHead>{tText("Target", "Đối tượng")}</TableHead>
               <TableHead>{tText("Time", "Thời gian")}</TableHead>
@@ -252,7 +275,7 @@ export function SystemLogs() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex justify-center items-center h-full">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
@@ -260,7 +283,7 @@ export function SystemLogs() {
               </TableRow>
             ) : currentLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-gray-500">
+                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
                   {tText("No activity logs found.", "Chưa có nhật ký hoạt động nào.")}
                 </TableCell>
               </TableRow>
@@ -268,7 +291,22 @@ export function SystemLogs() {
               currentLogs.map((log, index) => {
                 const actionStr = log.action || log.HanhDong || '';
                 const targetStr = log.target || log.DoiTuong || log.ChiTiet || '-';
-                const userStr = log.user || (log.IDTaiKhoan ? `Tài khoản #${log.IDTaiKhoan}` : 'Hệ thống');
+                let userStr = log.user || 'Hệ thống';
+                if (log.TenDangNhap && log.IDTaiKhoan) {
+                  userStr = `${log.TenDangNhap} [${log.IDTaiKhoan}]`;
+                } else if (log.IDTaiKhoan) {
+                  userStr = `Tài khoản #${log.IDTaiKhoan}`;
+                }
+
+                const privilegeMap: Record<string, {en: string, vi: string}> = {
+                  'admin': {en: 'Admin', vi: 'Quản trị viên'},
+                  'partner': {en: 'Partner', vi: 'Đối tác'},
+                  'customer': {en: 'Customer', vi: 'Khách hàng'},
+                  'unknown': {en: 'Unknown', vi: 'Không rõ'}
+                };
+                const priv = privilegeMap[log.VaiTro] || privilegeMap['unknown'];
+                const privilegeStr = tText(priv.en, priv.vi);
+
                 const timeStr = log.time || log.ThoiGian || '';
                 const statusStr = log.status || log.TrangThai || 'Thành công';
 
@@ -278,6 +316,17 @@ export function SystemLogs() {
                       {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                     </TableCell>
                     <TableCell className="text-gray-700">{userStr}</TableCell>
+                    <TableCell className="text-gray-700">
+                      <Badge 
+                        className={`whitespace-nowrap shadow-none border-transparent ${
+                          log.VaiTro === 'admin' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
+                          log.VaiTro === 'partner' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' :
+                          'bg-gray-100 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {privilegeStr}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-medium text-gray-900">
                       {tText(log.englishAction, actionStr)}
                     </TableCell>
