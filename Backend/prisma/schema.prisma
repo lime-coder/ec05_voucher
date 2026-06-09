@@ -200,6 +200,8 @@ model Voucher {
   GiaBan            Decimal            @db.Decimal(18, 2)
   ThoiGianBatDau    DateTime           @db.DateTime
   ThoiGianKetThuc   DateTime           @db.DateTime
+  ThoiGianBatDauBan DateTime?          @db.DateTime
+  ThoiGianKetThucBan DateTime?         @db.DateTime
   SoLuongChoPhep    Int
   SoLuongDaBan      Int?               @default(0, map: "DF__Voucher__SoLuong__41EDCAC5")
   TrangThaiVoucher  String?            @db.NVarChar(50)

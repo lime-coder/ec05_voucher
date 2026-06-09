@@ -37,14 +37,14 @@ export function CustomerProfilePage() {
           fullName: data.HoTenNguoiDung || "",
           email: data.Email || "",
           phone: data.KhachHang?.SDT_KH || "",
-          gender: data.KhachHang?.GioiTinh || "MALE",
+          gender: data.KhachHang?.GioiTinh === 'Nữ' ? 'FEMALE' : data.KhachHang?.GioiTinh === 'Khác' ? 'OTHER' : 'MALE',
           dateOfBirth: data.KhachHang?.NgaySinh ? new Date(data.KhachHang.NgaySinh).toISOString().split('T')[0] : "",
           address: data.KhachHang?.DiaChi_KH || "",
         };
         setFormData(mappedData);
         setOriginalData(mappedData);
       } catch (error) {
-        toast.error("Failed to fetch profile");
+        toast.error(t('profile.error_fetch_profile') || "Lỗi khi tải thông tin hồ sơ");
       }
     };
     fetchProfile();
@@ -68,28 +68,29 @@ export function CustomerProfilePage() {
 
   const handleSave = async () => {
     try {
+      const genderMap: Record<string, string> = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' };
       await api.put('/customers/profile', {
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        gender: formData.gender,
+        gender: genderMap[formData.gender] || 'Nam',
         dob: formData.dateOfBirth,
         address: formData.address,
       });
       setOriginalData(formData);
       setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_profile') });
     } catch (error) {
-      toast.error("Failed to save profile");
+      toast.error(t('profile.error_save_profile') || "Lỗi khi lưu thông tin hồ sơ");
     }
   };
 
   const handleUpdatePassword = async () => {
     if (passwords.newPassword !== passwords.confirmPassword) {
-      toast.error(t('profile.pwd_mismatch') || "Passwords do not match");
+      toast.error(t('profile.pwd_mismatch') || "Mật khẩu không khớp");
       return;
     }
     if (!passwords.currentPassword || !passwords.newPassword) {
-      toast.error(t('profile.pwd_missing') || "Please fill all password fields");
+      toast.error(t('profile.pwd_missing') || "Vui lòng điền đầy đủ các trường mật khẩu");
       return;
     }
 
@@ -101,7 +102,7 @@ export function CustomerProfilePage() {
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_password') });
     } catch (error: any) {
-      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : "Failed to update password");
+      toast.error(error.response?.data?.message ? t(error.response.data.message as string) : t('profile.error_update_password') || "Lỗi khi cập nhật mật khẩu");
     }
   };
 

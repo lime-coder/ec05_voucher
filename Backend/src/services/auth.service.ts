@@ -329,7 +329,10 @@ export class AuthService {
   static async me(userId: number, role: string) {
     const user = await prisma.taiKhoan.findUnique({
       where: { IDTaiKhoan: userId },
-      include: { NhanVienDoiTacs: true }
+      include: { 
+        NhanVienDoiTacs: true,
+        KhachHang: true
+      }
     });
     if (!user) throw new Error('User not found');
 

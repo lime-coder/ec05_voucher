@@ -126,7 +126,7 @@ export function VoucherDetailPage() {
     if (!user) {
 
       toast.error(
-        t('auth.login_required') || "Please login before adding to cart"
+        t('auth.login_required') || "Vui lòng đăng nhập trước khi thêm vào giỏ hàng"
       );
 
       navigate("/login");
@@ -468,7 +468,7 @@ export function VoucherDetailPage() {
                   if (!user) {
 
                     toast.error(
-                      t('auth.login_required') || "Please login before purchasing"
+                      t('auth.login_required') || "Vui lòng đăng nhập trước khi mua hàng"
                     );
 
                     navigate("/login");

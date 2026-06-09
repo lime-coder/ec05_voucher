@@ -10,7 +10,7 @@ const LOG_FILE_PATH = path.join(process.cwd(), 'logs.json');
 export const deleteImageFile = (imagePath: string | null | undefined) => {
   if (!imagePath || imagePath.startsWith('http')) return;
   try {
-    const filePath = path.join(process.cwd(), 'public', imagePath);
+    const filePath = path.join(process.cwd(), 'uploads', imagePath.replace('/uploads/', ''));
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   } catch (e) {
     console.error('Delete image error:', e);
@@ -1170,15 +1170,14 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 export const suspendVoucher = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { lyDo } = req.body;
-    if (!lyDo?.trim()) return res.status(400).json({ error: 'Vui lòng nhập lý do tạm ngưng' });
+
 
     const voucher = await prisma.voucher.findUnique({ where: { VoucherID: Number(id) } });
     if (!voucher) return res.status(404).json({ error: 'Không tìm thấy voucher' });
     if (voucher.TrangThaiVoucher !== 'Đang hoạt động') return res.status(400).json({ error: 'Chỉ tạm ngưng được voucher đang ACTIVE' });
 
     const updated = await prisma.voucher.update({ where: { VoucherID: Number(id) }, data: { TrangThaiVoucher: 'Tạm ngưng' } });
-    logActivity(req, `Suspend voucher (${lyDo})`, updated.TenVoucher);
+    logActivity(req, `Suspend voucher`, updated.TenVoucher);
     res.json({ ...updated, status: 'SUSPENDED' });
   } catch (error) {
     console.error('Server error:', error);

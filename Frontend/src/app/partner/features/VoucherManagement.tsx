@@ -16,6 +16,7 @@ import {
 import { voucherStatusConfig } from '../data/mockData';
 import type { PartnerVoucher as Voucher } from '@voucherhub/types';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
+import { useAuth } from '../../auth/AuthContext';
 import { useNavigate } from 'react-router';
 import { ConfirmModal } from '../../shared/components/ConfirmModal';
 import api from '../../../lib/api';
@@ -52,6 +53,7 @@ const statusTranslations: Record<string, string> = {
 
 export default function VoucherManagement() {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -170,7 +172,7 @@ export default function VoucherManagement() {
   };
 
   const fetchVouchers = () => {
-    const partnerId = localStorage.getItem('partnerId') || '1';
+    const partnerId = user?.MaDoiTac || 1;
     api.get(`/vouchers/partner/${partnerId}?t=${Date.now()}`)
       .then(res => {
         const data = res.data;
@@ -207,6 +209,8 @@ export default function VoucherManagement() {
               validTo: new Date(v.ThoiGianKetThuc).toLocaleDateString('vi-VN'),
               validStartDateRaw: v.ThoiGianBatDau,
               validEndDateRaw: v.ThoiGianKetThuc,
+              saleStartDateRaw: v.ThoiGianBatDauBan,
+              saleEndDateRaw: v.ThoiGianKetThucBan,
               description: v.MoTaVoucher || '',
               terms: v.MoTaDieuKien || '',
               refundPolicy: v.ChinhSachHoanTien || '',
@@ -221,8 +225,10 @@ export default function VoucherManagement() {
   };
 
   useEffect(() => {
-    fetchVouchers();
-  }, []);
+    if (user?.MaDoiTac) {
+      fetchVouchers();
+    }
+  }, [user?.MaDoiTac]);
 
   const allCategories = Array.from(new Set(vouchers.flatMap(v => v.categories)));
 
@@ -269,14 +275,23 @@ export default function VoucherManagement() {
   };
 
   const handleTogglePause = async (voucher: Voucher) => {
-    try {
-      await api.put(`/vouchers/${voucher.id}`, { status: 'PAUSED' });
-      toast.success(t('toast.voucher.update_success') || 'Tạm dừng voucher thành công');
-      fetchVouchers();
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra');
-    }
+    setConfirmModalState({
+      isOpen: true,
+      title: t('partner.vouchers.pause_title') || 'Tạm dừng voucher',
+      description: language === 'en' 
+        ? `Are you sure you want to pause voucher "${voucher.name}"?` 
+        : `Bạn có chắc chắn muốn tạm dừng voucher "${voucher.name}" không?`,
+      onConfirm: async () => {
+        try {
+          await api.put(`/vouchers/${voucher.id}`, { status: 'PAUSED' });
+          toast.success(t('toast.voucher.update_success') || 'Tạm dừng voucher thành công');
+          fetchVouchers();
+        } catch (err) {
+          console.error(err);
+          toast.error(t('toast.voucher.update_failed') || 'Tạm dừng voucher thất bại');
+        }
+      }
+    });
   };
 
   const handleToggleActive = async (voucher: Voucher) => {
@@ -469,7 +484,7 @@ export default function VoucherManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px]">#</TableHead>
-                <TableHead>{t('partner.vouchers.col_name')}</TableHead>
+                <TableHead>{t('partner.vouchers.col_name') || 'Tên Voucher'}</TableHead>
                 <TableHead>{t('partner.vouchers.col_category')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_original_price')}</TableHead>
                 <TableHead>{t('partner.vouchers.col_sale_price')}</TableHead>
@@ -511,7 +526,7 @@ export default function VoucherManagement() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-green-600">
                       {voucher.salePrice.toLocaleString('vi-VN')}₫
                     </div>
                   </TableCell>
@@ -565,7 +580,7 @@ export default function VoucherManagement() {
                           </Button>
                         </>
                       )}
-                      {voucher.status === 'draft' && (
+                      {['draft', 'rejected'].includes(voucher.status as string) && (
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(voucher)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={t('partner.vouchers.edit_title') || 'Chỉnh sửa'}>
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -685,15 +700,29 @@ export default function VoucherManagement() {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow sm:col-span-3 flex flex-col justify-center">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.vouchers.sale_time_label')}</p>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
-                        <span className="text-sm font-medium text-gray-800">{selectedVoucher.validFrom}</span>
+                  <div className="p-4 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow sm:col-span-3 flex flex-col justify-center gap-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.create.sale_start_label') || 'Thời gian bán'}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                          <span className="text-sm font-medium text-gray-800">{selectedVoucher.saleStartDateRaw ? new Date(selectedVoucher.saleStartDateRaw).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                        </div>
+                        <span className="text-gray-400 font-medium">→</span>
+                        <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                          <span className="text-sm font-medium text-gray-800">{selectedVoucher.saleEndDateRaw ? new Date(selectedVoucher.saleEndDateRaw).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                        </div>
                       </div>
-                      <span className="text-gray-400 font-medium">→</span>
-                      <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
-                        <span className="text-sm font-medium text-gray-800">{selectedVoucher.validTo}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('partner.create.valid_start_label') || 'Thời gian sử dụng'}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                          <span className="text-sm font-medium text-gray-800">{selectedVoucher.validFrom}</span>
+                        </div>
+                        <span className="text-gray-400 font-medium">→</span>
+                        <div className="flex-1 bg-gray-50 rounded-lg py-2 px-3 border border-gray-100 text-center">
+                          <span className="text-sm font-medium text-gray-800">{selectedVoucher.validTo}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -895,29 +924,9 @@ export default function VoucherManagement() {
                       {editingVoucher?.status !== 'draft' && (
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.status_label')}</label>
-                          {editingVoucher?.status === 'pending' ? (
-                            <div className="flex h-[42px] w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 font-medium">
-                              {t('partner.vouchers.tab_pending')}
-                            </div>
-                          ) : (
-                            <select
-                              className="flex h-[42px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-                              value={editingVoucher?.status || 'active'}
-                              onChange={e => setEditingVoucher(prev => ({ ...prev, status: e.target.value as any }))}
-                            >
-                              {(selectedVoucher?.status === 'active' || selectedVoucher?.status === 'paused') && (
-                                <>
-                                  <option value="active">{t('partner.vouchers.tab_active')}</option>
-                                  <option value="paused">{t('partner.vouchers.tab_inactive')}</option>
-                                </>
-                              )}
-                              {(selectedVoucher?.status as any !== 'draft' && selectedVoucher?.status as any !== 'pending' && selectedVoucher?.status !== 'active' && selectedVoucher?.status !== 'paused') && (
-                                <option value={selectedVoucher?.status || 'active'}>
-                                  {statusTranslations[selectedVoucher?.status || 'active'] || selectedVoucher?.status}
-                                </option>
-                              )}
-                            </select>
-                          )}
+                          <div className="flex h-[42px] w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 font-medium cursor-not-allowed">
+                            {language === 'en' ? (editingVoucher?.status ? editingVoucher.status.charAt(0).toUpperCase() + editingVoucher.status.slice(1) : '') : (statusTranslations[editingVoucher?.status || ''] || editingVoucher?.status)}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -940,7 +949,7 @@ export default function VoucherManagement() {
                         className="rounded-lg border-gray-300 pr-8 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                         value={editingVoucher?.originalPrice || 0}
                         onChange={e => setEditingVoucher(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) }))}
-                        disabled={!!selectedVoucher}
+                        disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₫</span>
                     </div>
@@ -953,7 +962,7 @@ export default function VoucherManagement() {
                         className="rounded-lg border-red-300 text-red-600 font-semibold pr-8 shadow-sm focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:opacity-70"
                         value={editingVoucher?.salePrice || 0}
                         onChange={e => setEditingVoucher(prev => ({ ...prev, salePrice: parseFloat(e.target.value) }))}
-                        disabled={!!selectedVoucher}
+                        disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 font-medium">₫</span>
                     </div>
@@ -971,23 +980,43 @@ export default function VoucherManagement() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.start_date') || 'Bắt đầu'}</label>
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.sale_start_label') || 'Thời gian bán (Bắt đầu)'}</label>
+                    <Input
+                      type="date"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
+                      value={editingVoucher?.saleStartDateRaw ? new Date(editingVoucher.saleStartDateRaw as string).toISOString().split('T')[0] : ''}
+                      onChange={e => setEditingVoucher(prev => ({ ...prev, saleStartDateRaw: e.target.value }))}
+                      disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.sale_end_label') || 'Thời gian bán (Kết thúc)'}</label>
+                    <Input
+                      type="date"
+                      className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
+                      value={editingVoucher?.saleEndDateRaw ? new Date(editingVoucher.saleEndDateRaw as string).toISOString().split('T')[0] : ''}
+                      onChange={e => setEditingVoucher(prev => ({ ...prev, saleEndDateRaw: e.target.value }))}
+                      disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.valid_start_label') || 'Thời gian sử dụng (Bắt đầu)'}</label>
                     <Input
                       type="date"
                       className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                       value={editingVoucher?.validStartDateRaw ? new Date(editingVoucher.validStartDateRaw as string).toISOString().split('T')[0] : ''}
                       onChange={e => setEditingVoucher(prev => ({ ...prev, validStartDateRaw: e.target.value }))}
-                      disabled={!!selectedVoucher}
+                      disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">{t('partner.vouchers.end_date') || 'Kết thúc'}</label>
+                    <label className="text-sm font-semibold text-gray-700">{t('partner.create.valid_end_label') || 'Thời gian sử dụng (Kết thúc)'}</label>
                     <Input
                       type="date"
                       className="rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:opacity-70"
                       value={editingVoucher?.validEndDateRaw ? new Date(editingVoucher.validEndDateRaw as string).toISOString().split('T')[0] : ''}
                       onChange={e => setEditingVoucher(prev => ({ ...prev, validEndDateRaw: e.target.value }))}
-                      disabled={!!selectedVoucher}
+                      disabled={!(editingVoucher && ['draft', 'rejected', 'paused'].includes(editingVoucher.status as string))}
                     />
                   </div>
                 </div>
@@ -1038,7 +1067,7 @@ export default function VoucherManagement() {
           )}
           <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex flex-row justify-end gap-3 items-center">
             <Button variant="outline" className="rounded-full px-6 font-medium border-gray-300 hover:bg-gray-100" onClick={() => handleCancelEdit()}>{t('common.cancel') || 'Hủy'}</Button>
-            {editingVoucher?.status === 'draft' && (
+            {['draft', 'rejected', 'paused'].includes(editingVoucher?.status as string) && (
               <Button
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-medium shadow-md hover:shadow-lg transition-all"
@@ -1050,7 +1079,7 @@ export default function VoucherManagement() {
                     description: t('voucher.submit_approval.desc') || 'Bạn có chắc chắn muốn gửi duyệt voucher này không?',
                     onConfirm: async () => {
                       try {
-                        if (!editingVoucher.name || !editingVoucher.originalPrice || !editingVoucher.salePrice || !editingVoucher.validStartDateRaw || !editingVoucher.validEndDateRaw || !editingVoucher.quantity) {
+                        if (!editingVoucher.name || !editingVoucher.originalPrice || !editingVoucher.salePrice || !editingVoucher.validStartDateRaw || !editingVoucher.validEndDateRaw || !editingVoucher.saleStartDateRaw || !editingVoucher.saleEndDateRaw || !editingVoucher.quantity) {
                           toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc!');
                           return;
                         }
@@ -1060,6 +1089,10 @@ export default function VoucherManagement() {
                         }
                         if (new Date(editingVoucher.validEndDateRaw) < new Date(editingVoucher.validStartDateRaw)) {
                           toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!');
+                          return;
+                        }
+                        if (new Date(editingVoucher.saleEndDateRaw) < new Date(editingVoucher.saleStartDateRaw)) {
+                          toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
                           return;
                         }
 
@@ -1074,6 +1107,8 @@ export default function VoucherManagement() {
                           originalPrice: editingVoucher.originalPrice,
                           salePrice: editingVoucher.salePrice,
                           quantity: editingVoucher.quantity,
+                          saleStartDate: editingVoucher.saleStartDateRaw,
+                          saleEndDate: editingVoucher.saleEndDateRaw,
                           validStartDate: editingVoucher.validStartDateRaw,
                           validEndDate: editingVoucher.validEndDateRaw,
                           status: 'PENDING_APPROVAL',
@@ -1096,10 +1131,11 @@ export default function VoucherManagement() {
                 {t('voucher.submit_approval.title') || 'Gửi duyệt'}
               </Button>
             )}
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 font-medium shadow-md hover:shadow-lg transition-all" onClick={async () => {
-              if (!editingVoucher) return;
-              try {
-                if (!editingVoucher.name || !editingVoucher.originalPrice || !editingVoucher.salePrice || !editingVoucher.validStartDateRaw || !editingVoucher.validEndDateRaw || !editingVoucher.quantity) {
+            {['draft', 'rejected', 'paused'].includes(editingVoucher?.status as string) && (
+              <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 font-medium shadow-md hover:shadow-lg transition-all" onClick={async () => {
+                if (!editingVoucher) return;
+                
+                if (!editingVoucher.name || !editingVoucher.originalPrice || !editingVoucher.salePrice || !editingVoucher.validStartDateRaw || !editingVoucher.validEndDateRaw || !editingVoucher.saleStartDateRaw || !editingVoucher.saleEndDateRaw || !editingVoucher.quantity) {
                   toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc!');
                   return;
                 }
@@ -1110,64 +1146,87 @@ export default function VoucherManagement() {
                 }
 
                 if (new Date(editingVoucher.validEndDateRaw) < new Date(editingVoucher.validStartDateRaw)) {
-                  toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!');
+                  toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc sử dụng phải lớn hơn hoặc bằng ngày bắt đầu!');
+                  return;
+                }
+                
+                if (new Date(editingVoucher.saleEndDateRaw) < new Date(editingVoucher.saleStartDateRaw)) {
+                  toast.error(t('toast.voucher.date_error') || 'Ngày kết thúc bán phải lớn hơn hoặc bằng ngày bắt đầu bán!');
                   return;
                 }
 
-                const partnerId = localStorage.getItem('partnerId') || '1';
+                const executeSave = async () => {
+                  try {
+                    const partnerId = localStorage.getItem('partnerId') || '1';
 
-                let backendStatus = 'DRAFT';
-                if (editingVoucher.status === 'active') backendStatus = 'ACTIVE';
-                if (editingVoucher.status === 'paused') backendStatus = 'PAUSED';
-                if (editingVoucher.status === 'pending') backendStatus = 'PENDING_APPROVAL';
+                    let backendStatus = 'DRAFT';
+                    if (editingVoucher.status === 'active') backendStatus = 'ACTIVE';
+                    if (editingVoucher.status === 'paused') backendStatus = 'DRAFT';
+                    if (editingVoucher.status === 'pending') backendStatus = 'PENDING_APPROVAL';
+                    if (editingVoucher.status === 'rejected') backendStatus = 'REJECTED';
 
-                const categoryObj = voucherCategories.find(c => editingVoucher.categories && editingVoucher.categories.includes(c.name));
+                    const categoryObj = voucherCategories.find(c => editingVoucher.categories && editingVoucher.categories.includes(c.name));
 
-                const payload = {
-                  name: editingVoucher.name,
-                  categoryId: categoryObj ? categoryObj.id : editingVoucher.categoryId,
-                  partnerId: parseInt(partnerId, 10),
-                  description: editingVoucher.description,
-                  terms: editingVoucher.terms,
-                  originalPrice: editingVoucher.originalPrice,
-                  salePrice: editingVoucher.salePrice,
-                  quantity: editingVoucher.quantity,
-                  validStartDate: editingVoucher.validStartDateRaw,
-                  validEndDate: editingVoucher.validEndDateRaw,
-                  status: backendStatus,
-                  refundPolicy: editingVoucher.refundPolicy,
-                  usageInstructions: editingVoucher.usageInstructions,
-                  imageUrl: editImages.length > 0 ? editImages.map(img => img.url.replace('http://localhost:5000', '')).join(',') : null
+                    const payload = {
+                      name: editingVoucher.name,
+                      categoryId: categoryObj ? categoryObj.id : editingVoucher.categoryId,
+                      partnerId: parseInt(partnerId, 10),
+                      description: editingVoucher.description,
+                      terms: editingVoucher.terms,
+                      originalPrice: editingVoucher.originalPrice,
+                      salePrice: editingVoucher.salePrice,
+                      quantity: editingVoucher.quantity,
+                      saleStartDate: editingVoucher.saleStartDateRaw,
+                      saleEndDate: editingVoucher.saleEndDateRaw,
+                      validStartDate: editingVoucher.validStartDateRaw,
+                      validEndDate: editingVoucher.validEndDateRaw,
+                      status: backendStatus,
+                      refundPolicy: editingVoucher.refundPolicy,
+                      usageInstructions: editingVoucher.usageInstructions,
+                      imageUrl: editImages.length > 0 ? editImages.map(img => img.url.replace('http://localhost:5000', '')).join(',') : null
+                    };
+
+                    await api.put(`/vouchers/${editingVoucher.id}`, payload);
+
+                    setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
+                      ...v,
+                      name: editingVoucher.name!,
+                      originalPrice: editingVoucher.originalPrice!,
+                      salePrice: editingVoucher.salePrice!,
+                      quantity: editingVoucher.quantity!,
+                      status: editingVoucher.status === 'paused' ? 'draft' : editingVoucher.status!,
+                      categoryId: editingVoucher.categoryId,
+                      validStartDateRaw: editingVoucher.validStartDateRaw,
+                      validEndDateRaw: editingVoucher.validEndDateRaw,
+                      validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
+                      validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
+                      description: editingVoucher.description,
+                      terms: editingVoucher.terms,
+                      refundPolicy: editingVoucher.refundPolicy,
+                      usageInstructions: editingVoucher.usageInstructions,
+                      imageUrl: editingVoucher.imageUrl
+                    } : v));
+                    setEditDialogOpen(false);
+                    fetchVouchers(); // Refresh
+                    toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
+                  } catch (err: any) {
+                    console.error(err);
+                    toast.error(err.response?.data?.message ? t(err.response.data.message as string) : t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
+                  }
                 };
 
-                await api.put(`/vouchers/${editingVoucher.id}`, payload);
-
-                setVouchers(prev => prev.map(v => v.id === editingVoucher.id ? {
-                  ...v,
-                  name: editingVoucher.name!,
-                  originalPrice: editingVoucher.originalPrice!,
-                  salePrice: editingVoucher.salePrice!,
-                  quantity: editingVoucher.quantity!,
-                  status: editingVoucher.status!,
-                  categoryId: editingVoucher.categoryId,
-                  validStartDateRaw: editingVoucher.validStartDateRaw,
-                  validEndDateRaw: editingVoucher.validEndDateRaw,
-                  validFrom: new Date(editingVoucher.validStartDateRaw!).toLocaleDateString('vi-VN'),
-                  validTo: new Date(editingVoucher.validEndDateRaw!).toLocaleDateString('vi-VN'),
-                  description: editingVoucher.description,
-                  terms: editingVoucher.terms,
-                  refundPolicy: editingVoucher.refundPolicy,
-                  usageInstructions: editingVoucher.usageInstructions,
-                  imageUrl: editingVoucher.imageUrl
-                } : v));
-                setEditDialogOpen(false);
-                fetchVouchers(); // Refresh
-                toast.success(t('toast.voucher.update_success') || 'Cập nhật Voucher thành công!');
-              } catch (err: any) {
-                console.error(err);
-                toast.error(err.response?.data?.message ? t(err.response.data.message as string) : t('toast.voucher.update_failed') || 'Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!');
-              }
-            }}>{t('profile.save')}</Button>
+                if (editingVoucher.status === 'paused') {
+                  setConfirmModalState({
+                    isOpen: true,
+                    title: t('partner.vouchers.save_changes') || 'Lưu thay đổi',
+                    description: t('partner.vouchers.save_paused_warn') || 'Lưu thay đổi sẽ khiến voucher này bị chuyển về trạng thái Bản nháp và bạn sẽ phải Gửi duyệt lại. Bạn có chắc chắn muốn tiếp tục không?',
+                    onConfirm: executeSave
+                  });
+                } else {
+                  await executeSave();
+                }
+              }}>{t('profile.save')}</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors()); // Allow requests from the React Frontend
 app.use(express.json()); // Parse incoming JSON payloads
-app.use('/public', express.static(path.join(__dirname, '../public')));
+
 
 // Disable caching for all API endpoints
 app.use('/api', (req, res, next) => {

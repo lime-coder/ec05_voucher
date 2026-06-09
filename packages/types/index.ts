@@ -22,6 +22,8 @@ export interface PartnerVoucher {
   categoryId?: number;
   validStartDateRaw?: string;
   validEndDateRaw?: string;
+  saleStartDateRaw?: string;
+  saleEndDateRaw?: string;
   imageUrl?: string;
   refundPolicy?: string;
   usageInstructions?: string;

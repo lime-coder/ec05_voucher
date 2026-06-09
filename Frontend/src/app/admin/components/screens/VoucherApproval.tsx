@@ -135,10 +135,6 @@ export function VoucherApproval() {
   };
 
   const confirmAction = async () => {
-    if ((modalType === 'reject' || modalType === 'suspend') && !reason.trim()) {
-      toast.error(modalType === 'reject' ? 'Vui lòng nhập lý do từ chối' : 'Vui lòng nhập lý do tạm ngưng');
-      return;
-    }
     if (!selectedVoucher) return;
 
     const endpointMap: Record<ModalType, string> = {
@@ -366,20 +362,7 @@ export function VoucherApproval() {
               {modalType === 'suspend' && tText(`Are you sure you want to suspend voucher "${selectedVoucher?.name}"?`, `Bạn có chắc chắn muốn tạm ngưng voucher "${selectedVoucher?.name}"?`)}
               {modalType === 'restore' && tText(`Are you sure you want to restore voucher "${selectedVoucher?.name}"?`, `Bạn có chắc chắn muốn khôi phục hoạt động cho voucher "${selectedVoucher?.name}"?`)}
             </p>
-            {(modalType === 'reject' || modalType === 'suspend') && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  {modalType === 'reject' ? tText('Reason for rejection', 'Lý do từ chối') : tText('Reason for suspension', 'Lý do tạm ngưng')} <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  placeholder={modalType === 'reject' ? tText('Enter reason for rejection...', 'Nhập lý do từ chối...') : tText('Enter reason for suspension...', 'Nhập lý do tạm ngưng...')}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-                  rows={4}
-                />
-              </div>
-            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowModal(false)}>{tText('Cancel', 'Hủy')}</Button>

@@ -63,6 +63,8 @@ export class VoucherService {
         SoLuongChoPhep: parseInt(data.quantity) || 0,
         ThoiGianBatDau: data.validStartDate ? new Date(data.validStartDate) : new Date(),
         ThoiGianKetThuc: data.validEndDate ? new Date(data.validEndDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ThoiGianBatDauBan: data.saleStartDate ? new Date(data.saleStartDate) : null,
+        ThoiGianKetThucBan: data.saleEndDate ? new Date(data.saleEndDate) : null,
         TrangThaiVoucher: statusDb,
         ChinhSachHoanTien: data.refundPolicy || null,
         HuongDanSuDung: data.usageInstructions || null,
@@ -136,6 +138,8 @@ export class VoucherService {
     if (data.quantity !== undefined) dataToUpdate.SoLuongChoPhep = parseInt(data.quantity);
     if (data.validStartDate !== undefined) dataToUpdate.ThoiGianBatDau = new Date(data.validStartDate);
     if (data.validEndDate !== undefined) dataToUpdate.ThoiGianKetThuc = new Date(data.validEndDate);
+    if (data.saleStartDate !== undefined) dataToUpdate.ThoiGianBatDauBan = new Date(data.saleStartDate);
+    if (data.saleEndDate !== undefined) dataToUpdate.ThoiGianKetThucBan = new Date(data.saleEndDate);
     if (statusDb !== undefined) dataToUpdate.TrangThaiVoucher = statusDb;
     if (data.refundPolicy !== undefined) dataToUpdate.ChinhSachHoanTien = data.refundPolicy;
     if (data.usageInstructions !== undefined) dataToUpdate.HuongDanSuDung = data.usageInstructions;

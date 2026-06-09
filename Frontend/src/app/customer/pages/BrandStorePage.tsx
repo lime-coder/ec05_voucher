@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router";
-import { Star, MapPin, Globe, Phone, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
+import { Star, MapPin, Globe, Phone, Mail, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { VoucherCard, Voucher } from "../components/VoucherCard";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
 export function BrandStorePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [readMoreAbout, setReadMoreAbout] = useState(false);
   const [sortOption, setSortOption] = useState("default");
@@ -71,6 +72,15 @@ export function BrandStorePage() {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)}
+          className="absolute top-6 left-6 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 transition-colors text-white"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
       </div>
 
       <div className="max-w-[1200px] mx-auto px-6 mt-8">
