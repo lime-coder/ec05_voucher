@@ -22,7 +22,11 @@ export function BannerEdit() {
     position: 'Homepage Top',
     status: 'Đang hiển thị',
     link: '',
-    imageUrl: ''
+    imageUrl: '',
+    tag: '',
+    description: '',
+    buttonText: '',
+    endDate: ''
   });
   const [originalImageUrl, setOriginalImageUrl] = useState('');
 
@@ -40,7 +44,11 @@ export function BannerEdit() {
                 position: found.ViTri || 'Homepage Top',
                 status: found.TrangThai || 'Đang hiển thị',
                 link: found.LinkURL || '',
-                imageUrl: found.HinhAnh || ''
+                imageUrl: found.HinhAnh || '',
+                tag: found.Tag || '',
+                description: found.MoTa || '',
+                buttonText: found.VanBanNut || '',
+                endDate: found.ThoiGianKetThuc ? new Date(found.ThoiGianKetThuc).toISOString().slice(0, 16) : ''
               });
               setOriginalImageUrl(found.HinhAnh || '');
             }
@@ -120,7 +128,11 @@ export function BannerEdit() {
       ViTri: formData.position,
       TrangThai: formData.status,
       LinkURL: formData.link,
-      HinhAnh: formData.imageUrl
+      HinhAnh: formData.imageUrl,
+      Tag: formData.tag,
+      MoTa: formData.description,
+      ThoiGianKetThuc: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+      VanBanNut: formData.buttonText
     };
 
     try {
@@ -181,6 +193,49 @@ export function BannerEdit() {
                   disabled={isViewOnly}
                 />
                 <p className="text-xs text-gray-500">{tText('Customers will be redirected to this URL when clicking on the banner', 'Khách hàng sẽ được chuyển đến link này khi click vào banner')}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{tText('Tag / Subtitle', 'Tag / Phụ đề')}</label>
+                  <Input 
+                    value={formData.tag} 
+                    onChange={handleChange('tag')} 
+                    placeholder={tText("e.g. SUMMER SALE", "VD: SUMMER SALE")} 
+                    disabled={isViewOnly}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{tText('Button Text', 'Văn bản nút')}</label>
+                  <Input 
+                    value={formData.buttonText} 
+                    onChange={handleChange('buttonText')} 
+                    placeholder={tText("e.g. Shop Now", "VD: Mua Ngay")} 
+                    disabled={isViewOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{tText('Description', 'Mô tả')}</label>
+                <textarea 
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                  value={formData.description} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} 
+                  placeholder={tText("Banner description...", "Mô tả banner...")} 
+                  disabled={isViewOnly}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{tText('Flash Sale End Time', 'Thời gian kết thúc Flash Sale')}</label>
+                <Input 
+                  type="datetime-local"
+                  value={formData.endDate} 
+                  onChange={handleChange('endDate')} 
+                  disabled={isViewOnly}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

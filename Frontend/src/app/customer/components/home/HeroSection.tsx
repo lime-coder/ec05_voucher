@@ -13,6 +13,12 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeBanners, setActiveBanners] = useState<any[]>([]);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     fetch('/api/content/banners')
@@ -39,15 +45,15 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                   {/* Left Column - Text */}
                   <div>
                     <div className="inline-block px-4 py-1 border-2 border-primary text-primary rounded-full text-sm font-semibold mb-6">
-                      {t('home.summer_sale')}
+                      {activeBanner.Tag || t('home.summer_sale')}
                     </div>
                     
                     <h1 className="text-5xl font-bold mb-4 leading-tight">
                       {activeBanner.TieuDe}
                     </h1>
                     
-                    <p className="text-lg text-muted mb-8">
-                      {t('home.hero_desc')}
+                    <p className="text-lg text-muted mb-8 whitespace-pre-line">
+                      {activeBanner.MoTa || t('home.hero_desc')}
                     </p>
                     
                     <div className="flex gap-4">
@@ -62,7 +68,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                         }}
                         className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-8 py-6 rounded-lg"
                       >
-                        {t('home.explore_deals')}
+                        {activeBanner.VanBanNut || t('home.explore_deals')}
                       </Button>
                       <Button
                         variant="outline"
@@ -78,21 +84,41 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                     <img
                       src={activeBanner.HinhAnh || "https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080"}
                       alt={activeBanner.TieuDe || "Premium dining experience"}
-                      className="rounded-2xl shadow-2xl w-full max-h-[480px] object-cover"
+                      className="rounded-2xl shadow-2xl w-full h-[280px] lg:h-[400px] object-cover"
                     />
                     
                     {/* Floating countdown card */}
-                    <div className="absolute bottom-6 right-6 bg-white rounded-xl shadow-xl p-4 flex items-center gap-3">
-                      <Clock className="w-6 h-6 text-[#FF4444]" />
-                      <div>
-                        <p className="text-xs text-muted">{t('home.flash_sale_ends')}</p>
-                        <p className="text-lg font-bold text-foreground">
-                          {String(timeLeft.hours).padStart(2, '0')}:
-                          {String(timeLeft.minutes).padStart(2, '0')}:
-                          {String(timeLeft.seconds).padStart(2, '0')}
-                        </p>
+                    {activeBanner.ThoiGianKetThuc && new Date(activeBanner.ThoiGianKetThuc) > now ? (() => {
+                      const diff = new Date(activeBanner.ThoiGianKetThuc).getTime() - now.getTime();
+                      const h = Math.floor(diff / (1000 * 60 * 60));
+                      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                      const s = Math.floor((diff % (1000 * 60)) / 1000);
+                      return (
+                        <div className="absolute bottom-6 right-6 bg-white rounded-xl shadow-xl p-4 flex items-center gap-3">
+                          <Clock className="w-6 h-6 text-[#FF4444]" />
+                          <div>
+                            <p className="text-xs text-muted">{t('home.flash_sale_ends')}</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {String(h).padStart(2, '0')}:
+                              {String(m).padStart(2, '0')}:
+                              {String(s).padStart(2, '0')}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })() : activeBanner.ThoiGianKetThuc ? null : (
+                      <div className="absolute bottom-6 right-6 bg-white rounded-xl shadow-xl p-4 flex items-center gap-3">
+                        <Clock className="w-6 h-6 text-[#FF4444]" />
+                        <div>
+                          <p className="text-xs text-muted">{t('home.flash_sale_ends')}</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {String(timeLeft.hours).padStart(2, '0')}:
+                            {String(timeLeft.minutes).padStart(2, '0')}:
+                            {String(timeLeft.seconds).padStart(2, '0')}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </CarouselItem>
@@ -137,7 +163,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                     <img
                       src="https://images.unsplash.com/photo-1771508558500-f410039d7fc0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjByZXN0YXVyYW50JTIwZGluaW5nJTIwZm9vZCUyMGV4cGVyaWVuY2V8ZW58MXx8fHwxNzc5MzU5NTg3fDA&ixlib=rb-4.1.0&q=80&w=1080"
                       alt="Premium dining experience"
-                      className="rounded-2xl shadow-2xl w-full max-h-[480px] object-cover"
+                      className="rounded-2xl shadow-2xl w-full h-[280px] lg:h-[400px] object-cover"
                     />
                     
                     {/* Floating countdown card */}

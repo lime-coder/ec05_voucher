@@ -24,14 +24,18 @@ model BaiViet {
 }
 
 model Banner {
-  MaBanner  Int       @id(map: "PK_Banner") @default(autoincrement())
-  TieuDe    String    @db.NVarChar(255)
-  HinhAnh   String?   @db.NVarChar(500)
-  LinkURL   String?   @db.NVarChar(500)
-  ViTri     String?   @db.NVarChar(100)
-  TrangThai String?   @default("N'Đang hiển thị'", map: "DF_Banner_TrangThai_Fixed") @db.NVarChar(50)
-  ThuTu     Int?      @default(0, map: "DF__Banner__ThuTu__76619304")
-  NgayTao   DateTime? @default(now(), map: "DF__Banner__NgayTao__1BC821DD") @db.DateTime
+  MaBanner        Int       @id(map: "PK_Banner") @default(autoincrement())
+  TieuDe          String    @db.NVarChar(255)
+  HinhAnh         String?   @db.NVarChar(500)
+  LinkURL         String?   @db.NVarChar(500)
+  ViTri           String?   @db.NVarChar(100)
+  TrangThai       String?   @default("N'Đang hiển thị'", map: "DF_Banner_TrangThai_Fixed") @db.NVarChar(50)
+  ThuTu           Int?      @default(0, map: "DF__Banner__ThuTu__76619304")
+  NgayTao         DateTime? @default(now(), map: "DF__Banner__NgayTao__1BC821DD") @db.DateTime
+  Tag             String?   @db.NVarChar(100)
+  MoTa            String?   @db.NVarChar(Max)
+  ThoiGianKetThuc DateTime? @db.DateTime
+  VanBanNut       String?   @db.NVarChar(50)
 }
 
 model ChiNhanh {

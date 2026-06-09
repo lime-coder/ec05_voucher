@@ -73,7 +73,7 @@ export const getBanners = async (req: Request, res: Response) => {
 
 export const createBanner = async (req: Request, res: Response) => {
   try {
-    const { TieuDe, HinhAnh, LinkURL, ViTri, TrangThai, ThuTu } = req.body;
+    const { TieuDe, HinhAnh, LinkURL, ViTri, TrangThai, ThuTu, Tag, MoTa, ThoiGianKetThuc, VanBanNut } = req.body;
     const banner = await prisma.banner.create({
       data: {
         TieuDe,
@@ -81,7 +81,11 @@ export const createBanner = async (req: Request, res: Response) => {
         LinkURL,
         ViTri,
         TrangThai: TrangThai || 'Đang hiển thị',
-        ThuTu: ThuTu !== undefined ? Number(ThuTu) : 0
+        ThuTu: ThuTu !== undefined ? Number(ThuTu) : 0,
+        Tag,
+        MoTa,
+        ThoiGianKetThuc: ThoiGianKetThuc ? new Date(ThoiGianKetThuc) : null,
+        VanBanNut
       }
     });
     res.status(201).json(banner);
@@ -97,6 +101,9 @@ export const updateBanner = async (req: Request, res: Response) => {
     const { MaBanner, ...updateData } = req.body;
     if (updateData.ThuTu !== undefined) {
       updateData.ThuTu = Number(updateData.ThuTu);
+    }
+    if (updateData.ThoiGianKetThuc !== undefined) {
+      updateData.ThoiGianKetThuc = updateData.ThoiGianKetThuc ? new Date(updateData.ThoiGianKetThuc) : null;
     }
     const banner = await prisma.banner.update({
       where: { MaBanner: Number(id) },
