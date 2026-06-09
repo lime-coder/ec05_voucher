@@ -288,7 +288,7 @@ export function OrderDetailPage() {
                     <div className="flex items-center gap-3 flex-1">
                       <Ticket className="w-10 h-10 text-muted-foreground" />
                       <div>
-                        <Link to={`/voucher/${voucher.MaCTDonHang}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
+                        <Link to={`/voucher/${voucher.VoucherID}`} className="font-bold text-lg text-foreground hover:underline hover:text-primary mb-1 inline-block">
                           {voucher.Voucher.TenVoucher}
                         </Link>
                         <p className="font-mono text-sm text-muted-foreground">

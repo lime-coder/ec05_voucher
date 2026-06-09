@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { LogService } from './log.service';
 import { AnomalyService } from './anomaly.service';
 import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
+import { ACCOUNT_STATUS } from '../constants';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 if (!JWT_SECRET) {
@@ -32,7 +33,7 @@ export class AuthService {
         MatKhau: hashedPassword,
         Email: data.Email,
         HoTenNguoiDung: data.HoTenNguoiDung,
-        TrangThaiTaiKhoan: 'Hoạt động',
+        TrangThaiTaiKhoan: ACCOUNT_STATUS.ACTIVE,
       },
     });
 
@@ -96,7 +97,7 @@ export class AuthService {
           MatKhau: hashedPassword,
           Email: data.Email,
           HoTenNguoiDung: data.HoTenNguoiDung,
-          TrangThaiTaiKhoan: 'Hoạt động',
+          TrangThaiTaiKhoan: ACCOUNT_STATUS.ACTIVE,
         },
       });
 
@@ -152,7 +153,7 @@ export class AuthService {
           MatKhau: hashedPassword,
           Email: data.Email,
           HoTenNguoiDung: data.TenDoanhNghiep,
-          TrangThaiTaiKhoan: 'Chờ duyệt',
+          TrangThaiTaiKhoan: ACCOUNT_STATUS.PENDING,
         },
       });
 
@@ -162,7 +163,7 @@ export class AuthService {
           MaSoThue: data.MaSoThue,
           CaNhanDaiDien: data.CaNhanDaiDien,
           LinhVucKinhDoanh: data.LinhVucKinhDoanh,
-          TrangThai: 'Chờ duyệt',
+          TrangThai: ACCOUNT_STATUS.PENDING,
           EmailLienHe: data.EmailLienHe || 'contact@domain.com',
           SDTLienHe: data.SDTLienHe || '0000000000',
         },
@@ -264,7 +265,7 @@ export class AuthService {
 
     // ── Handle: Partner is locked ──
     if (currentRole === 'partner' && user.NhanVienDoiTacs?.[0]?.DoiTac) {
-      if (user.NhanVienDoiTacs[0].DoiTac.TrangThai === 'Bị khóa') {
+      if (user.NhanVienDoiTacs[0].DoiTac.TrangThai === ACCOUNT_STATUS.LOCKED) {
         await LogService.createLog({
           IDTaiKhoan: user.IDTaiKhoan,
           HanhDong: AUDIT_ACTIONS.DANG_NHAP_THAT_BAI,
@@ -278,7 +279,7 @@ export class AuthService {
     }
 
     // ── Handle: not ACTIVE account ──
-    if (user.TrangThaiTaiKhoan !== 'Hoạt động') {
+    if (user.TrangThaiTaiKhoan !== ACCOUNT_STATUS.ACTIVE) {
       const role = this._determineRole(user);
 
       await LogService.createLog({

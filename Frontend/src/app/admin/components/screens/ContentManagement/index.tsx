@@ -1,9 +1,12 @@
+import { FaqModal } from './FaqModal';
+import { ArticleModal } from './ArticleModal';
+import { CategoryModal } from './CategoryModal';
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Eye, Tag } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { useLanguage } from '../../../shared/contexts/LanguageContext';
+import { useLanguage } from '../../../../shared/contexts/LanguageContext';
 import {
   Button,
   Badge,
@@ -23,7 +26,7 @@ import {
   DialogFooter,
   Input,
 } from '@voucherhub/ui';
-import api from '../../../../lib/api';
+import api from '../../../../../lib/api';
 
 const PRESET_ICONS = [
   // Ăn uống & Đồ uống
@@ -153,20 +156,20 @@ export function ContentManagement() {
   // Load content from API
   const fetchAllContent = () => {
     api.get(`/admin/content?t=${Date.now()}`)
-      .then(res => res.data)
-      .then(data => {
+      .then((res: any) => res.data)
+      .then((data: any) => {
         if (Array.isArray(data.banners)) setBanners(data.banners);
         if (Array.isArray(data.articles)) setArticles(data.articles);
         if (Array.isArray(data.faqs)) setFaqs(data.faqs);
       })
-      .catch(err => console.error('Fetch content error:', err));
+      .catch((err: any) => console.error('Fetch content error:', err));
 
     api.get(`/content/categories?t=${Date.now()}`)
-      .then(res => res.data)
-      .then(data => {
+      .then((res: any) => res.data)
+      .then((data: any) => {
         if (Array.isArray(data)) setCategories(data);
       })
-      .catch(err => console.error('Fetch categories error:', err));
+      .catch((err: any) => console.error('Fetch categories error:', err));
   };
 
   useEffect(() => {
@@ -678,247 +681,35 @@ export function ContentManagement() {
         </div>
       </Tabs>
 
-      {/* --- FAQ Dialog --- */}
-      <Dialog open={showFaqModal} onOpenChange={setShowFaqModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-primary">
-              {currentFaq ? tText('Edit FAQ', 'Chỉnh Sửa FAQ') : tText('Add New FAQ', 'Thêm FAQ Mới')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Question *', 'Câu hỏi *')}</label>
-              <Input
-                value={faqForm.CauHoi}
-                onChange={e => setFaqForm(prev => ({ ...prev, CauHoi: e.target.value }))}
-                placeholder={tText("e.g. How to buy a voucher?", "VD: Làm thế nào để mua voucher?")}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Answer *', 'Trả lời *')}</label>
-              <textarea
-                value={faqForm.TraLoi}
-                onChange={e => setFaqForm(prev => ({ ...prev, TraLoi: e.target.value }))}
-                placeholder={tText("e.g. Choose your voucher and click Buy now to pay online...", "VD: Bạn chọn voucher và ấn nút mua thanh toán trực tuyến...")}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">{tText('FAQ Category', 'Danh mục FAQ')}</label>
-                <select
-                  value={faqForm.DanhMucFAQ}
-                  onChange={e => setFaqForm(prev => ({ ...prev, DanhMucFAQ: e.target.value }))}
-                  className="w-full h-10 border border-gray-200 rounded-md bg-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="Mua hàng">{tText('Purchase', 'Mua hàng')}</option>
-                  <option value="Thanh toán">{tText('Payment', 'Thanh toán')}</option>
-                  <option value="Sử dụng">{tText('Usage', 'Sử dụng')}</option>
-                  <option value="Đối tác">{tText('Partner', 'Đối tác')}</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">{tText('Display Order', 'Thứ tự hiển thị')}</label>
-                <Input
-                  type="number"
-                  value={faqForm.ThuTu}
-                  onChange={e => setFaqForm(prev => ({ ...prev, ThuTu: Number(e.target.value) }))}
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Status', 'Trạng thái')}</label>
-              <select
-                value={faqForm.TrangThai}
-                onChange={e => setFaqForm(prev => ({ ...prev, TrangThai: e.target.value }))}
-                className="w-full h-10 border border-gray-200 rounded-md bg-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="Hiển thị">{tText('Visible', 'Hiển thị')}</option>
-                <option value="Ẩn">{tText('Hidden', 'Ẩn')}</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowFaqModal(false)}>{tText('Cancel', 'Hủy')}</Button>
-            <Button onClick={handleSaveFaq}>{tText('Save', 'Lưu lại')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FaqModal 
+        showFaqModal={showFaqModal} 
+        setShowFaqModal={setShowFaqModal} 
+        currentFaq={currentFaq} 
+        faqForm={faqForm} 
+        setFaqForm={setFaqForm} 
+        handleSaveFaq={handleSaveFaq} 
+      />
 
-      {/* --- Article Dialog --- */}
-      <Dialog open={showArticleModal} onOpenChange={setShowArticleModal}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="text-primary">
-              {currentArticle ? tText('Edit Article', 'Chỉnh Sửa Bài Viết') : tText('Add New Article', 'Thêm Bài Viết Mới')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Article Title *', 'Tiêu đề bài viết *')}</label>
-              <Input
-                value={articleForm.TieuDe}
-                onChange={e => setArticleForm(prev => ({ ...prev, TieuDe: e.target.value }))}
-                placeholder={tText("Enter title...", "Nhập tiêu đề...")}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Author', 'Tác giả')}</label>
-              <Input
-                value={articleForm.TacGia}
-                onChange={e => setArticleForm(prev => ({ ...prev, TacGia: e.target.value }))}
-                placeholder="e.g. Admin"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Article Content', 'Nội dung bài viết')}</label>
-              <textarea
-                value={articleForm.NoiDung}
-                onChange={e => setArticleForm(prev => ({ ...prev, NoiDung: e.target.value }))}
-                placeholder={tText("Enter detailed content here...", "Nhập nội dung chi tiết bài viết...")}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y text-sm"
-                rows={6}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Status', 'Trạng thái')}</label>
-              <select
-                value={articleForm.TrangThai}
-                onChange={e => setArticleForm(prev => ({ ...prev, TrangThai: e.target.value }))}
-                className="w-full h-10 border border-gray-200 rounded-md bg-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="Đã xuất bản">{tText('Published', 'Đã xuất bản')}</option>
-                <option value="Nháp">{tText('Draft', 'Bản nháp')}</option>
-                <option value="Ẩn">{tText('Hidden', 'Ẩn')}</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowArticleModal(false)}>{tText('Cancel', 'Hủy')}</Button>
-            <Button onClick={handleSaveArticle}>{tText('Save', 'Lưu lại')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ArticleModal 
+        showArticleModal={showArticleModal} 
+        setShowArticleModal={setShowArticleModal} 
+        currentArticle={currentArticle} 
+        articleForm={articleForm} 
+        setArticleForm={setArticleForm} 
+        handleSaveArticle={handleSaveArticle} 
+      />
 
-      {/* --- Category Dialog --- */}
-      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-primary">
-              {currentCategory ? tText('Edit Category', 'Chỉnh Sửa Danh Mục') : tText('Add New Category', 'Thêm Danh Mục Mới')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Category Name *', 'Tên danh mục *')}</label>
-              <Input
-                value={categoryForm.TenDanhMuc}
-                onChange={e => setCategoryForm(prev => ({ ...prev, TenDanhMuc: e.target.value }))}
-                placeholder={tText("e.g. Food & Dining, Entertainment...", "VD: Ăn uống, Giải trí...")}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">{tText('Category Description', 'Mô tả danh mục')}</label>
-              <textarea
-                value={categoryForm.MoTa}
-                onChange={e => setCategoryForm(prev => ({ ...prev, MoTa: e.target.value }))}
-                placeholder={tText("Enter description for this category...", "Nhập mô tả cho danh mục...")}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
-                rows={4}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">{tText('Category Icon', 'Icon danh mục')}</label>
-                {(() => {
-                  const SelectedIconComponent = (LucideIcons as any)[categoryForm.Icon] || LucideIcons.Tag;
-                  return (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/10 text-xs text-primary font-semibold border border-primary/20">
-                      <span>{tText('Selected:', 'Đã chọn:')}</span>
-                      <SelectedIconComponent className="w-3.5 h-3.5" />
-                      <span>{categoryForm.Icon}</span>
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="grid grid-cols-5 gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50 max-h-36 overflow-y-auto">
-                {PRESET_ICONS.map((iconName) => {
-                  const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Tag;
-                  const isSelected = categoryForm.Icon === iconName;
-                  return (
-                    <button
-                      key={iconName}
-                      type="button"
-                      onClick={() => setCategoryForm(prev => ({ ...prev, Icon: iconName }))}
-                      className={`flex flex-col items-center justify-center p-2 rounded-md border transition-all ${
-                        isSelected
-                          ? 'bg-primary/10 border-primary text-primary shadow-sm font-medium'
-                          : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100/50'
-                      }`}
-                      title={iconName}
-                    >
-                      <IconComponent className="w-5 h-5" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCategoryModal(false)}>{tText('Cancel', 'Hủy')}</Button>
-            <Button onClick={handleSaveCategory}>{tText('Save', 'Lưu lại')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* --- View Banner Dialog --- */}
-      <Dialog open={showViewBannerModal} onOpenChange={setShowViewBannerModal}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-primary text-lg font-bold">
-              {previewBanner?.TieuDe}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4 text-sm">
-            {previewBanner?.HinhAnh && (
-              <div className="border rounded-lg overflow-hidden bg-gray-50">
-                <img
-                  src={previewBanner.HinhAnh}
-                  alt={previewBanner.TieuDe || 'Banner'}
-                  className="w-full max-h-64 object-cover"
-                />
-              </div>
-            )}
-            <div className="space-y-3">
-              <div className="flex justify-between border-b pb-2 gap-4">
-                <span className="text-gray-500 font-medium">{tText('Position:', 'Vị trí:')}</span>
-                <span className="font-semibold text-gray-900 text-right">{previewBanner?.ViTri || '-'}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2 gap-4">
-                <span className="text-gray-500 font-medium">{tText('Status:', 'Trạng thái:')}</span>
-                <span className="font-semibold text-gray-900 text-right">{previewBanner?.TrangThai || '-'}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2 gap-4">
-                <span className="text-gray-500 font-medium">{tText('Created Date:', 'Ngày tạo:')}</span>
-                <span className="font-semibold text-gray-900 text-right">
-                  {previewBanner?.NgayTao ? new Date(previewBanner.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') : '-'}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-gray-500 font-medium block">{tText('Destination Link:', 'Đường dẫn đích:')}</span>
-                <p className="text-gray-700 bg-gray-50 p-2.5 rounded border border-gray-100 break-all">
-                  {previewBanner?.LinkURL || tText('No link.', 'Không có đường dẫn.')}
-                </p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setShowViewBannerModal(false)}>{tText('Close', 'Đóng')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CategoryModal 
+        showCategoryModal={showCategoryModal} 
+        setShowCategoryModal={setShowCategoryModal} 
+        currentCategory={currentCategory} 
+        categoryForm={categoryForm} 
+        setCategoryForm={setCategoryForm} 
+        handleSaveCategory={handleSaveCategory} 
+        iconSearch={iconSearch}
+        setIconSearch={setIconSearch}
+        PRESET_ICONS={PRESET_ICONS}
+      />
 
       {/* --- View Article Dialog --- */}
       <Dialog open={showViewArticleModal} onOpenChange={setShowViewArticleModal}>

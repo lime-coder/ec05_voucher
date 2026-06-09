@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import bcrypt from 'bcrypt';
 import { getTarget, setTarget } from '../config/revenueTargetStore';
+import { VOUCHER_STATUS, PAYMENT_STATUS } from '../constants';
 
 export class PartnerService {
   /**
@@ -134,7 +135,7 @@ export class PartnerService {
           MaDoiTac: partnerId,
         },
         DonHang: {
-          TrangThaiThanhToan: 'Đã thanh toán',
+          TrangThaiThanhToan: PAYMENT_STATUS.PAID,
         },
       },
     });
@@ -143,7 +144,7 @@ export class PartnerService {
     const pendingVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'Chờ duyệt',
+        TrangThaiVoucher: VOUCHER_STATUS.PENDING,
       },
     });
 
@@ -151,7 +152,7 @@ export class PartnerService {
     const activeVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'Đang hoạt động',
+        TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
       },
     });
 
@@ -191,7 +192,7 @@ export class PartnerService {
           ThoiGianThanhToan: {
             gte: sixMonthsAgo
           },
-          TrangThaiThanhToan: 'Đã thanh toán',
+          TrangThaiThanhToan: PAYMENT_STATUS.PAID,
         }
       },
       include: {
@@ -258,7 +259,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: start, lte: end },
-            TrangThaiThanhToan: 'Đã thanh toán'
+            TrangThaiThanhToan: PAYMENT_STATUS.PAID
           }
         },
         include: { DonHang: true }
@@ -281,7 +282,7 @@ export class PartnerService {
               DonHang: {
                 IDTaiKhoan: customerId,
                 ThoiGianThanhToan: { lt: start },
-                TrangThaiThanhToan: 'Đã thanh toán',
+                TrangThaiThanhToan: PAYMENT_STATUS.PAID,
               }
             }
           });
@@ -380,7 +381,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: yearAgo },
-            TrangThaiThanhToan: 'Đã thanh toán'
+            TrangThaiThanhToan: PAYMENT_STATUS.PAID
           }
         }
       });

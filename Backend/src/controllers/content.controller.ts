@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
+import { VOUCHER_STATUS } from '../constants';
 
 // === FAQ ===
 export const getFAQs = async (req: Request, res: Response) => {
@@ -214,9 +215,9 @@ export const getCategories = async (req: Request, res: Response) => {
         Vouchers: {
           where: {
             OR: [
-              { TrangThaiVoucher: 'Đang hoạt động' },
+              { TrangThaiVoucher: VOUCHER_STATUS.ACTIVE },
               {
-                TrangThaiVoucher: 'Tạm ngưng',
+                TrangThaiVoucher: VOUCHER_STATUS.PAUSED,
                 ThoiGianKetThuc: { gt: new Date() }
               }
             ]
@@ -300,9 +301,9 @@ export const deleteCategory = async (req: Request, res: Response) => {
       where: {
         MaDanhMuc: Number(id),
         OR: [
-          { TrangThaiVoucher: 'Đang hoạt động' },
+          { TrangThaiVoucher: VOUCHER_STATUS.ACTIVE },
           {
-            TrangThaiVoucher: 'Tạm ngưng',
+            TrangThaiVoucher: VOUCHER_STATUS.PAUSED,
             ThoiGianKetThuc: { gt: new Date() }
           }
         ]

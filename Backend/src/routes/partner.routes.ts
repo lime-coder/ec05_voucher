@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { getPartnerStatistics, getPartnerReports, getPartnerProfile, updatePartnerProfile, uploadAvatar, changePartnerPassword, updateRevenueTarget } from '../controllers/partner.controller';
-import { getPartnerBranchStats } from '../controllers/admin.controller';
+import { getPartnerBranchStats } from '../controllers/admin';
 import { uploadAvatarMiddleware } from '../middlewares/upload.middleware';
 
 const router = Router();

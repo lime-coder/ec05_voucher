@@ -10,7 +10,7 @@ import {
   getDashboardStats, getLogs,
   getAdminProfile, updateAdminProfile, updateAdminPassword,
   getAdminNotifications,
-} from '../controllers/admin.controller';
+} from '../controllers/admin';
 
 const router = Router();
 

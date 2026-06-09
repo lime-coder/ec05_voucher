@@ -1,6 +1,8 @@
 import prisma from '../config/db';
 import { customAlphabet } from 'nanoid';
 import { commitVoucherImage } from '../utils/media.util';
+import { mapApiStatusToDb } from '../utils/statusMapper';
+import { VOUCHER_STATUS, VOUCHER_USAGE_STATUS } from '../constants';
 
 // Bộ ký tự an toàn (bỏ 0, O, 1, I, L)
 const SAFE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -32,18 +34,7 @@ export class VoucherService {
    * Dữ liệu gửi lên sẽ kèm TrangThaiVoucher là 'DRAFT' hoặc 'PENDING_APPROVAL'
    */
   static async createVoucher(data: any) {
-    let statusDb = data.status || 'Bản nháp';
-    if (data.status) {
-      switch (data.status.toLowerCase()) {
-        case 'active': statusDb = 'Đang hoạt động'; break;
-        case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
-        case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
-        case 'rejected': statusDb = 'Từ chối'; break;
-        case 'deleted': statusDb = 'Đã xóa'; break;
-        case 'expired': statusDb = 'Hết hạn'; break;
-        case 'draft': statusDb = 'Bản nháp'; break;
-      }
-    }
+    let statusDb = data.status ? mapApiStatusToDb(data.status) : VOUCHER_STATUS.DRAFT;
 
     const partnerId = data.partnerId || 1;
     const partner = await prisma.doiTac.findUnique({ where: { MaDoiTac: partnerId } });
@@ -92,15 +83,7 @@ export class VoucherService {
   static async updateVoucher(id: number, data: any) {
     let statusDb = data.status;
     if (data.status) {
-      switch (data.status.toLowerCase()) {
-        case 'active': statusDb = 'Đang hoạt động'; break;
-        case 'pending_approval': case 'pending': statusDb = 'Chờ duyệt'; break;
-        case 'paused': case 'suspended': statusDb = 'Tạm ngưng'; break;
-        case 'rejected': statusDb = 'Từ chối'; break;
-        case 'deleted': statusDb = 'Đã xóa'; break;
-        case 'expired': statusDb = 'Hết hạn'; break;
-        case 'draft': statusDb = 'Bản nháp'; break;
-      }
+      statusDb = mapApiStatusToDb(data.status);
     }
 
     const oldVoucher = await prisma.voucher.findUnique({
@@ -108,7 +91,7 @@ export class VoucherService {
       include: { DoiTac: true }
     });
 
-    if (oldVoucher?.TrangThaiVoucher === 'Từ chối' && statusDb === 'Đang hoạt động') {
+    if (oldVoucher?.TrangThaiVoucher === VOUCHER_STATUS.REJECTED && statusDb === VOUCHER_STATUS.ACTIVE) {
       throw new Error('Không thể tự kích hoạt lại voucher đã bị từ chối/khóa bởi hệ thống.');
     }
 
@@ -163,7 +146,7 @@ export class VoucherService {
 
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: { TrangThaiVoucher: 'Đã xóa', ImageUrl: null }
+      data: { TrangThaiVoucher: VOUCHER_STATUS.DELETED, ImageUrl: null }
     });
   }
 
@@ -173,7 +156,7 @@ export class VoucherService {
   static async restoreVoucher(id: number) {
     return await prisma.voucher.update({
       where: { VoucherID: id },
-      data: { TrangThaiVoucher: 'Bản nháp' }
+      data: { TrangThaiVoucher: VOUCHER_STATUS.DRAFT }
     });
   }
 
@@ -230,9 +213,9 @@ export class VoucherService {
 
     // Determine status
     let status = 'valid';
-    if (maVoucher.TrangThaiSuDung === 'Đã sử dụng') {
+    if (maVoucher.TrangThaiSuDung === VOUCHER_USAGE_STATUS.USED) {
       status = 'used';
-    } else if (voucher.ThoiGianKetThuc < new Date() || maVoucher.TrangThaiSuDung === 'Hết hạn') {
+    } else if (voucher.ThoiGianKetThuc < new Date() || maVoucher.TrangThaiSuDung === VOUCHER_USAGE_STATUS.EXPIRED) {
       status = 'expired';
     }
 
@@ -275,7 +258,7 @@ export class VoucherService {
     await prisma.maVoucher.update({
       where: { SoMaVoucher: code },
       data: {
-        TrangThaiSuDung: 'Đã sử dụng',
+        TrangThaiSuDung: VOUCHER_USAGE_STATUS.USED,
         ThoiDiemSuDung: new Date(),
         // @ts-ignore
         MaChiNhanhSuDung: branchId || null
@@ -291,7 +274,7 @@ export class VoucherService {
   static async getVerificationHistory(partnerId: number) {
     const usedVouchers: any[] = await prisma.maVoucher.findMany({
       where: {
-        TrangThaiSuDung: 'Đã sử dụng',
+        TrangThaiSuDung: VOUCHER_USAGE_STATUS.USED,
         ChiTietDonHang: {
           Voucher: {
             MaDoiTac: partnerId
