@@ -30,6 +30,11 @@ export interface Voucher {
   partner?: {
     id: number;
     name: string;
+    branches?: Array<{
+      id: number;
+      name: string;
+      address: string;
+    }>;
   };
 
   categoryId?: number;

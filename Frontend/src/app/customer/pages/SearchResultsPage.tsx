@@ -9,6 +9,35 @@ import { useLanguage } from "../../shared/contexts/LanguageContext";
 
 
 
+const getCityFromAddress = (address?: string) => {
+  if (!address) return "TP. Hồ Chí Minh";
+  const addr = address.toLowerCase();
+  if (addr.includes("hà nội") || addr.includes("hn")) return "Hà Nội";
+  if (addr.includes("đà nẵng") || addr.includes("dn")) return "Đà Nẵng";
+  return "TP. Hồ Chí Minh";
+};
+
+const getDistrictFromAddress = (address?: string) => {
+  if (!address) return "Khác";
+  const addr = address.toLowerCase();
+  
+  if (addr.includes("quận 1") || addr.includes("q.1") || addr.includes("q1")) return "Quận 1";
+  if (addr.includes("quận 3") || addr.includes("q.3") || addr.includes("q3")) return "Quận 3";
+  if (addr.includes("quận 4") || addr.includes("q.4") || addr.includes("q4")) return "Quận 4";
+  if (addr.includes("quận 5") || addr.includes("q.5") || addr.includes("q5")) return "Quận 5";
+  if (addr.includes("quận 7") || addr.includes("q.7") || addr.includes("q7")) return "Quận 7";
+  if (addr.includes("bình thạnh")) return "Bình Thạnh";
+  if (addr.includes("gò vấp")) return "Gò Vấp";
+  if (addr.includes("bình tân")) return "Bình Tân";
+  if (addr.includes("hoàn kiếm")) return "Hoàn Kiếm";
+  if (addr.includes("đống đa")) return "Đống Đa";
+  if (addr.includes("cầu giấy")) return "Cầu Giấy";
+  if (addr.includes("hải châu")) return "Hải Châu";
+  if (addr.includes("thanh khê")) return "Thanh Khê";
+  
+  return "Khác";
+};
+
 export function SearchResultsPage() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
@@ -30,10 +59,23 @@ export function SearchResultsPage() {
   const categoryId = searchParams.get("category");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isBrandsModalOpen, setIsBrandsModalOpen] = useState(false);
+  
+  // Dynamic Price Range
+  const [maxVoucherPrice, setMaxVoucherPrice] = useState(2000000);
   const [priceRange, setPriceRange] = useState([0, 2000000]);
+  
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedState, setSelectedState] = useState("California (124)");
+
+  // Dynamic Locations Data
+  const [locationsData, setLocationsData] = useState<Record<string, Array<{ name: string; count: number }>>>({
+    "TP. Hồ Chí Minh": [
+      { name: "Quận 1", count: 42 },
+      { name: "Quận 7", count: 28 },
+      { name: "Bình Thạnh", count: 19 },
+    ]
+  });
+  const [selectedState, setSelectedState] = useState("TP. Hồ Chí Minh (89)");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [sliderResetKey, setSliderResetKey] = useState(0);
@@ -59,10 +101,12 @@ export function SearchResultsPage() {
   const handleClearAll = () => {
     setSelectedCategories([]);
     setSelectedBrands([]);
-    setSelectedState("California (124)");
+    const defaultCity = Object.keys(locationsData)[0] || "TP. Hồ Chí Minh";
+    const defaultCount = (locationsData[defaultCity] || []).reduce((sum, item) => sum + item.count, 0);
+    setSelectedState(`${defaultCity} (${defaultCount})`);
     setSelectedCities([]);
     setSelectedRatings([]);
-    setPriceRange([0, 2000000]);
+    setPriceRange([0, maxVoucherPrice]);
     setSliderResetKey(prev => prev + 1);
     setCurrentPage(1);
   };
@@ -110,10 +154,52 @@ export function SearchResultsPage() {
             new Map(data.map((v: any) => [v.partner?.id, v.partner])).values()
           ).filter(Boolean);
           setPartners(uniquePartners);
+
+          // Dynamic Max Price calculation
+          if (data.length > 0) {
+            const prices = data.map((v: any) => v.salePrice || 0);
+            const maxPrice = Math.max(...prices, 100000);
+            const roundedMax = Math.ceil(maxPrice / 100000) * 100000;
+            setMaxVoucherPrice(roundedMax);
+            setPriceRange([0, roundedMax]);
+          }
         }
       })
       .catch((err) => console.error("Fetch vouchers error:", err));
   }, [categoryId, searchParams]);
+
+  useEffect(() => {
+    // Build locations tree from allVouchers
+    const tree: Record<string, Record<string, number>> = {};
+    
+    allVouchers.forEach(v => {
+      const branches = v.partner?.branches || [];
+      branches.forEach((b: any) => {
+        const city = getCityFromAddress(b.address);
+        const district = getDistrictFromAddress(b.address);
+        
+        if (!tree[city]) tree[city] = {};
+        tree[city][district] = (tree[city][district] || 0) + 1;
+      });
+    });
+    
+    const formatted: Record<string, Array<{ name: string; count: number }>> = {};
+    Object.keys(tree).forEach(city => {
+      formatted[city] = Object.keys(tree[city]).map(district => ({
+        name: district,
+        count: tree[city][district]
+      })).sort((a, b) => b.count - a.count);
+    });
+    
+    if (Object.keys(formatted).length > 0) {
+      setLocationsData(formatted);
+      const cities = Object.keys(formatted);
+      const currentCity = selectedState.split(" (")[0];
+      const activeCity = cities.includes(currentCity) ? currentCity : (cities.find(c => c === "TP. Hồ Chí Minh") || cities[0]);
+      const count = formatted[activeCity].reduce((sum, item) => sum + item.count, 0);
+      setSelectedState(`${activeCity} (${count})`);
+    }
+  }, [allVouchers]);
 
   useEffect(() => {
     if (categoryId && categoryName) {
@@ -137,11 +223,20 @@ export function SearchResultsPage() {
       sortedData = sortedData.filter(v => v.partner && selectedBrands.includes(String(v.partner.id)));
     }
     if (priceRange) {
-      sortedData = sortedData.filter(v => v.salePrice >= priceRange[0] && (priceRange[1] === 2000000 ? true : v.salePrice <= priceRange[1]));
+      sortedData = sortedData.filter(v => v.salePrice >= priceRange[0] && (priceRange[1] === maxVoucherPrice ? true : v.salePrice <= priceRange[1]));
+    }
+    if (selectedCities.length > 0) {
+      const activeStateName = selectedState.split(" (")[0];
+      sortedData = sortedData.filter(v => {
+        const branches = v.partner?.branches || [];
+        return branches.some((b: any) => {
+          const city = getCityFromAddress(b.address);
+          const district = getDistrictFromAddress(b.address);
+          return city === activeStateName && selectedCities.includes(district);
+        });
+      });
     }
     if (selectedRatings.length > 0) {
-      // For now rating is missing, so this will filter out everything unless we use mock
-      // Just keep it as is
       sortedData = sortedData.filter(v => {
         const rating = Math.floor(v.rating || 0);
         return selectedRatings.includes(rating);
@@ -465,19 +560,18 @@ export function SearchResultsPage() {
                 <select 
                   className="w-full px-3 py-2 bg-input-background rounded-lg border border-border text-sm"
                   value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedState(e.target.value);
+                    setSelectedCities([]);
+                  }}
                 >
-                  <option>California (124)</option>
-                  <option>New York (98)</option>
-                  <option>Florida (67)</option>
-                  <option>Texas (54)</option>
+                  {Object.keys(locationsData).map(city => {
+                    const count = locationsData[city].reduce((sum, item) => sum + item.count, 0);
+                    return <option key={city} value={`${city} (${count})`}>{city} ({count})</option>;
+                  })}
                 </select>
                 <div className="space-y-2 mt-3 ml-4">
-                  {[
-                    { name: "Miami", count: 42 },
-                    { name: "Orlando", count: 28 },
-                    { name: "Tampa", count: 19 },
-                  ].map((city) => (
+                  {(locationsData[selectedState.split(" (")[0]] || []).map((city) => (
                     <label key={city.name} className="flex items-center gap-2 cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -502,7 +596,7 @@ export function SearchResultsPage() {
                   <PriceRangeSlider 
                     key={sliderResetKey}
                     min={0} 
-                    max={2000000} 
+                    max={maxVoucherPrice} 
                     value={priceRange}
                     onChange={(min, max) => setPriceRange([min, max])} 
                   />
@@ -510,9 +604,9 @@ export function SearchResultsPage() {
                   <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
                     <span>0đ</span>
                     <span className="font-semibold text-foreground text-sm">
-                      {priceRange[0].toLocaleString("vi-VN")}đ - {priceRange[1].toLocaleString("vi-VN")}đ{priceRange[1] === 2000000 ? '+' : ''}
+                      {priceRange[0].toLocaleString("vi-VN")}đ - {priceRange[1].toLocaleString("vi-VN")}đ{priceRange[1] >= maxVoucherPrice ? '+' : ''}
                     </span>
-                    <span>2,000,000đ+</span>
+                    <span>{maxVoucherPrice.toLocaleString("vi-VN")}đ+</span>
                   </div>
               </div>
 

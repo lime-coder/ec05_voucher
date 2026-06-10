@@ -59,7 +59,11 @@ export const getAllVouchers = async (
 
       include: {
         DanhMuc: true,
-        DoiTac: true,
+        DoiTac: {
+          include: {
+            ChiNhanh: true
+          }
+        },
         DanhGias: true,
       },
     });
@@ -104,6 +108,12 @@ export const getAllVouchers = async (
             id: v.DoiTac.MaDoiTac,
 
             name: v.DoiTac.TenDoanhNghiep,
+
+            branches: v.DoiTac.ChiNhanh?.map((b: any) => ({
+              id: b.MaChiNhanh,
+              name: b.TenChiNhanh,
+              address: b.DiaChiChiNhanh
+            })) || []
           }
         : null,
     }));
@@ -743,7 +753,11 @@ export const searchVouchers = async (
       // Include dữ liệu liên quan
       include: {
         DanhMuc: true,
-        DoiTac: true,
+        DoiTac: {
+          include: {
+            ChiNhanh: true
+          }
+        },
       },
     });
 
@@ -780,6 +794,12 @@ export const searchVouchers = async (
             id: v.DoiTac.MaDoiTac,
 
             name: v.DoiTac.TenDoanhNghiep,
+
+            branches: v.DoiTac.ChiNhanh?.map((b: any) => ({
+              id: b.MaChiNhanh,
+              name: b.TenChiNhanh,
+              address: b.DiaChiChiNhanh
+            })) || []
           }
         : null,
     }));

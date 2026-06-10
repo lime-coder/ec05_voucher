@@ -7,34 +7,32 @@ interface PriceRangeSliderProps {
   onChange: (min: number, max: number) => void;
 }
 
-export function PriceRangeSlider({ min, max, onChange }: PriceRangeSliderProps) {
+export function PriceRangeSlider({ min, max, value, onChange }: PriceRangeSliderProps) {
   const [minVal, setMinVal] = useState(min);
   const [maxVal, setMaxVal] = useState(max);
-  const minValRef = useRef(min);
-  const maxValRef = useRef(max);
   const range = useRef<HTMLDivElement>(null);
 
+  // Sync state with props when min or max changes
+  useEffect(() => {
+    setMinVal(value ? value[0] : min);
+    setMaxVal(value ? value[1] : max);
+  }, [min, max, value]);
+
   // Convert to percentage
-  const getPercent = (value: number) => Math.round(((value - min) / (max - min)) * 100);
+  const getPercent = (value: number) => {
+    if (max === min) return 0;
+    return Math.round(((value - min) / (max - min)) * 100);
+  };
 
   useEffect(() => {
     const minPercent = getPercent(minVal);
-    const maxPercent = getPercent(maxValRef.current);
+    const maxPercent = getPercent(maxVal);
 
     if (range.current) {
       range.current.style.left = `${minPercent}%`;
       range.current.style.width = `${maxPercent - minPercent}%`;
     }
-  }, [minVal, getPercent]);
-
-  useEffect(() => {
-    const minPercent = getPercent(minValRef.current);
-    const maxPercent = getPercent(maxVal);
-
-    if (range.current) {
-      range.current.style.width = `${maxPercent - minPercent}%`;
-    }
-  }, [maxVal, getPercent]);
+  }, [minVal, maxVal, min, max]);
 
   return (
     <div className="relative w-full py-4 px-2 flex items-center justify-center">
@@ -46,7 +44,6 @@ export function PriceRangeSlider({ min, max, onChange }: PriceRangeSliderProps) 
         onChange={(event) => {
           const value = Math.min(Number(event.target.value), maxVal - 1);
           setMinVal(value);
-          minValRef.current = value;
           onChange(value, maxVal);
         }}
         className="thumb thumb--left absolute w-full h-0 z-30 outline-none pointer-events-none appearance-none"
@@ -60,7 +57,6 @@ export function PriceRangeSlider({ min, max, onChange }: PriceRangeSliderProps) 
         onChange={(event) => {
           const value = Math.max(Number(event.target.value), minVal + 1);
           setMaxVal(value);
-          maxValRef.current = value;
           onChange(minVal, value);
         }}
         className="thumb thumb--right absolute w-full h-0 z-40 outline-none pointer-events-none appearance-none"
