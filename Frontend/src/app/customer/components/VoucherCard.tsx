@@ -39,11 +39,14 @@ interface VoucherCardProps {
   voucher: Voucher;
 
   viewMode?: "grid" | "list";
+
+  buttonType?: "buy_now" | "view_detail";
 }
 
 export function VoucherCard({
   voucher,
   viewMode = "grid",
+  buttonType = "view_detail",
 }: VoucherCardProps) {
   const navigate =
     useNavigate();
@@ -224,13 +227,9 @@ export function VoucherCard({
             }
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-semibold cursor-pointer"
           >
-            {voucher.rating
-              ? t(
-                  "voucher.view_detail"
-                )
-              : t(
-                  "voucher.buy_now"
-                )}
+            {buttonType === "buy_now"
+              ? t("voucher.buy_now")
+              : t("voucher.view_detail")}
           </button>
         </div>
       </div>

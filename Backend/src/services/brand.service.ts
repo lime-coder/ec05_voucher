@@ -69,6 +69,7 @@ export class BrandService {
         name: v.TenVoucher,
         partner: partner.TenDoanhNghiep,
         price: Number(v.GiaBan || 0),
+        salePrice: Number(v.GiaBan || 0),
         originalPrice: Number(v.GiaGoc || 0),
         discount: v.GiaGoc && v.GiaBan ? Math.round(((Number(v.GiaGoc) - Number(v.GiaBan)) / Number(v.GiaGoc)) * 100) : 0,
         rating: averageRating,
