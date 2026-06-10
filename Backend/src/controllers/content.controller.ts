@@ -214,13 +214,7 @@ export const getCategories = async (req: Request, res: Response) => {
         },
         Vouchers: {
           where: {
-            OR: [
-              { TrangThaiVoucher: VOUCHER_STATUS.ACTIVE },
-              {
-                TrangThaiVoucher: VOUCHER_STATUS.PAUSED,
-                ThoiGianKetThuc: { gt: new Date() }
-              }
-            ]
+            TrangThaiVoucher: VOUCHER_STATUS.ACTIVE
           },
           select: { VoucherID: true }
         }
@@ -238,7 +232,7 @@ export const getCategories = async (req: Request, res: Response) => {
           }
         }
       } catch (e) {
-    console.error('Server error:', e);
+        console.error('Server error:', e);
         console.error('Error parsing category MoTa:', e);
       }
       return {
@@ -323,8 +317,8 @@ export const deleteCategory = async (req: Request, res: Response) => {
       } else {
         moTaObj.text = category.MoTa || '';
       }
-    } catch(e) {}
-    
+    } catch (e) { }
+
     moTaObj.isDeleted = true;
 
     await prisma.danhMuc.update({

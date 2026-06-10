@@ -1,7 +1,7 @@
 import { VoucherCard, Voucher } from "../components/VoucherCard";
 import { useState, useEffect, } from "react";
 import { useSearchParams, Link } from "react-router";
-import { ChevronDown, Grid3x3, List, X, ChevronRight } from "lucide-react";
+import { ChevronDown, Grid3x3, List, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button, Input, Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@voucherhub/ui";
 import Autoplay from "embla-carousel-autoplay";
 import { PriceRangeSlider } from "../components/PriceRangeSlider";
@@ -563,6 +563,46 @@ export function SearchResultsPage() {
               0 && (
               <div className="text-center py-20 text-muted-foreground">
                 No vouchers found
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8 pb-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white cursor-pointer disabled:opacity-50"
+                >
+                  <ChevronLeft className="w-5 h-5 text-foreground" />
+                </Button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 flex items-center justify-center font-bold rounded-lg border cursor-pointer ${
+                      currentPage === page
+                        ? "bg-primary text-primary-foreground border-primary hover:opacity-90"
+                        : "bg-white text-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white cursor-pointer disabled:opacity-50"
+                >
+                  <ChevronRight className="w-5 h-5 text-foreground" />
+                </Button>
               </div>
             )}
 

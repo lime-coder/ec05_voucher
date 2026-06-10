@@ -139,13 +139,7 @@ export function VoucherCard({
       </div>
 
       {/* Content */}
-      <div
-        className={`p-4 flex flex-col ${
-          viewMode === "list"
-            ? "flex-1"
-            : ""
-        }`}
-      >
+      <div className="p-4 flex flex-col flex-1">
         {/* Category */}
         {voucher.categoryId && (
           <div className="w-fit px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wide mb-2">
@@ -221,13 +215,7 @@ export function VoucherCard({
         </div>
 
         {/* Button */}
-        <div
-          className={
-            viewMode === "list"
-              ? "mt-auto"
-              : ""
-          }
-        >
+        <div className="mt-auto">
           <button
             onClick={() =>
               navigate(

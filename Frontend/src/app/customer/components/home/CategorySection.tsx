@@ -9,6 +9,7 @@ interface CategoryItem {
   name: string;
   moTa: string;
   vouchers: number;
+  activeVouchers?: number;
   icon: string;
 }
 
@@ -113,9 +114,9 @@ export function CategorySection() {
                   <span className="text-base font-bold text-center text-gray-800">
                     {label}
                   </span>
-                  {category.vouchers > 0 && (
+                  {category.activeVouchers !== undefined && category.activeVouchers > 0 && (
                     <span className="text-[10px] text-gray-400 font-medium">
-                      {category.vouchers} {tText('vouchers', 'voucher')}
+                      {category.activeVouchers} {tText('vouchers', 'voucher')}
                     </span>
                   )}
                 </button>
