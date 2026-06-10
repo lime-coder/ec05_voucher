@@ -84,9 +84,17 @@ export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
               <>
                 <div className="relative group">
                   <button className="flex items-center gap-2 text-foreground hover:text-primary transition-colors p-2">
-                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                      {user?.TenDangNhap?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    {user?.AvatarUrl ? (
+                      <img
+                        src={user.AvatarUrl.startsWith('http') ? user.AvatarUrl : `http://localhost:5000${user.AvatarUrl}`}
+                        alt="Avatar"
+                        className="w-8 h-8 rounded-full object-cover border border-border shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                        {user?.TenDangNhap?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
                     <span className="hidden md:inline font-medium">{user?.TenDangNhap || t('nav.account')}</span>
                   </button>
                   

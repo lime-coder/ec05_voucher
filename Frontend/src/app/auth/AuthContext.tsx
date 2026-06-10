@@ -11,6 +11,7 @@ interface User {
   Email: string;
   HoTenNguoiDung: string;
   MaDoiTac?: number;
+  AvatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,8 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useCartStore.getState().clearCart();
   };
 
+  const updateUser = (updatedUser: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const newUser = { ...prev, ...updatedUser };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      return newUser;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

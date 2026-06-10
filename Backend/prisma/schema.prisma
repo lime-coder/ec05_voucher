@@ -148,6 +148,7 @@ model KhachHang {
   NgaySinh        DateTime? @db.Date
   GioiTinh        String?   @db.NVarChar(10)
   DiaChiKhachHang String?   @db.NVarChar(500)
+  AvatarUrl       String?   @db.NVarChar(500)
   TaiKhoan        TaiKhoan? @relation(fields: [IDTaiKhoan], references: [IDTaiKhoan], onDelete: NoAction, onUpdate: NoAction, map: "FK_KhachHang_TaiKhoan")
 }
 

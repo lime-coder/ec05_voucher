@@ -4,6 +4,7 @@ import { User, Mail, Phone, MapPin, Calendar, Save, ShieldCheck, Camera, Setting
 import { Button, Input } from "@voucherhub/ui";
 import { ImageUploadModal } from "../../shared/components/ImageUploadModal";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
+import { useAuth } from "../../auth/AuthContext";
 import api from "../../../lib/api";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -12,17 +13,18 @@ export function CustomerProfilePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
+  const { updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "security" | "settings">((searchParams.get("tab") as any) || "profile");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("https://ui-avatars.com/api/?name=Alex+Walker&background=f59e0b&color=fff&size=128");
+  const [avatarUrl, setAvatarUrl] = useState("https://ui-avatars.com/api/?name=User&background=f59e0b&color=fff&size=128");
   const [formData, setFormData] = useState({
-    username: "alex_walker_99",
-    fullName: "Alex Walker",
-    email: "alex.walker@provider.com",
-    phone: "+1 (555) 000-1234",
+    username: "",
+    fullName: "",
+    email: "",
+    phone: "",
     gender: "MALE",
-    dateOfBirth: "1995-06-15",
-    address: "123 Industrial Way, Suite 400, New York, NY",
+    dateOfBirth: "",
+    address: "",
   });
   const [originalData, setOriginalData] = useState(formData);
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -39,10 +41,15 @@ export function CustomerProfilePage() {
           phone: data.KhachHang?.SDT_KH || "",
           gender: data.KhachHang?.GioiTinh === 'Nữ' ? 'FEMALE' : data.KhachHang?.GioiTinh === 'Khác' ? 'OTHER' : 'MALE',
           dateOfBirth: data.KhachHang?.NgaySinh ? new Date(data.KhachHang.NgaySinh).toISOString().split('T')[0] : "",
-          address: data.KhachHang?.DiaChi_KH || "",
+          address: data.KhachHang?.DiaChiKhachHang || "",
         };
         setFormData(mappedData);
         setOriginalData(mappedData);
+
+        const avatar = data.AvatarUrl
+          ? (data.AvatarUrl.startsWith('http') ? data.AvatarUrl : `http://localhost:5000${data.AvatarUrl}`)
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.HoTenNguoiDung || data.TenDangNhap || "User")}&background=f59e0b&color=fff&size=128`;
+        setAvatarUrl(avatar);
       } catch (error) {
         toast.error(t('profile.error_fetch_profile') || "Lỗi khi tải thông tin hồ sơ");
       }
@@ -78,6 +85,10 @@ export function CustomerProfilePage() {
         address: formData.address,
       });
       setOriginalData(formData);
+      updateUser({
+        HoTenNguoiDung: formData.fullName,
+        Email: formData.email,
+      });
       setModalState({ isOpen: true, title: t('profile.success_title'), message: t('profile.success_update_profile') });
     } catch (error) {
       toast.error(t('profile.error_save_profile') || "Lỗi khi lưu thông tin hồ sơ");
@@ -495,9 +506,27 @@ export function CustomerProfilePage() {
       <ImageUploadModal 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
-        onUpload={(file) => {
-          const url = URL.createObjectURL(file);
-          setAvatarUrl(url);
+        onUpload={async (file) => {
+          try {
+            const uploadData = new FormData();
+            uploadData.append("avatar", file);
+            
+            const res = await api.post('/customers/upload-avatar', uploadData, {
+              headers: {
+                "Content-Type": "multipart/form-data"
+              }
+            });
+            
+            const newAvatarUrl = res.data.avatarUrl;
+            setAvatarUrl(newAvatarUrl.startsWith('http') ? newAvatarUrl : `http://localhost:5000${newAvatarUrl}`);
+            updateUser({
+              AvatarUrl: newAvatarUrl
+            });
+            toast.success(t('profile.success_upload_avatar') || "Cập nhật ảnh đại diện thành công!");
+          } catch (error) {
+            console.error("Upload avatar failed:", error);
+            toast.error(t('profile.error_upload_avatar') || "Không thể tải ảnh đại diện lên");
+          }
         }} 
       />
 

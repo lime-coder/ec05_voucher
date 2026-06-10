@@ -322,7 +322,7 @@ export class AuthService {
       TrangThai: LOG_STATUS.SUCCESS,
     });
 
-    return { token, user: { ...safeUser, role, MaDoiTac } };
+    return { token, user: { ...safeUser, role, MaDoiTac, AvatarUrl: (user.KhachHang as any)?.AvatarUrl || undefined } };
   }
 
   // ── Verify Me ───────────────────────────────────────────────────
@@ -340,7 +340,7 @@ export class AuthService {
     const { MatKhau, NhanVienDoiTacs, ...safeUser } = user;
     const MaDoiTac = role === 'partner' && NhanVienDoiTacs && NhanVienDoiTacs.length > 0 ? NhanVienDoiTacs[0].MaDoiTac : undefined;
 
-    return { user: { ...safeUser, role, MaDoiTac } };
+    return { user: { ...safeUser, role, MaDoiTac, AvatarUrl: (user.KhachHang as any)?.AvatarUrl || undefined } };
   }
 
   // ── Logout ──────────────────────────────────────────────────────

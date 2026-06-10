@@ -3,6 +3,7 @@ import prisma from '../config/db';
 import * as bcrypt from 'bcrypt';
 import { LogService } from '../services/log.service';
 import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
+import { commitCustomerAvatar } from '../utils/media.util';
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
@@ -134,6 +135,70 @@ export const changePassword = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Server error:', error);
     console.error('Lỗi đổi mật khẩu:', error);
+    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+export const uploadAvatar = async (req: Request, res: Response) => {
+  try {
+    const customerId = (req as any).user?.IDTaiKhoan;
+    if (!customerId) return res.status(401).json({ message: 'error.unauthorized' });
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không tìm thấy file ảnh' });
+    }
+
+    const tempUrl = `/uploads/temp/${req.file.filename}`;
+    const user = await prisma.taiKhoan.findUnique({
+      where: { IDTaiKhoan: customerId },
+      include: { KhachHang: true }
+    });
+
+    if (!user) return res.status(404).json({ message: 'error.user_not_found' });
+
+    // Move temp file to persistent customer folder
+    const relativeUrl = commitCustomerAvatar(
+      tempUrl,
+      customerId,
+      user.TenDangNhap,
+      (user.KhachHang as any)?.AvatarUrl || undefined
+    );
+
+    if (!relativeUrl) {
+      return res.status(500).json({ error: 'Không thể xử lý file ảnh' });
+    }
+
+    // Update database
+    if (user.KhachHang) {
+      await prisma.khachHang.update({
+        where: { IDTaiKhoan: customerId },
+        data: { AvatarUrl: relativeUrl } as any
+      });
+    } else {
+      await prisma.khachHang.create({
+        data: {
+          IDTaiKhoan: customerId,
+          SDT_KH: '', // fallback or dummy
+          AvatarUrl: relativeUrl
+        } as any
+      });
+    }
+
+    await LogService.createLog({
+      IDTaiKhoan: customerId,
+      HanhDong: 'Cập nhật Avatar Khách hàng' as any,
+      DoiTuong: user.TenDangNhap,
+      ChiTiet: `Đã cập nhật ảnh đại diện mới: ${relativeUrl}`,
+      DiaChiIP: req.ip,
+      TrangThai: LOG_STATUS.SUCCESS,
+    });
+
+    res.json({
+      message: 'Avatar uploaded successfully',
+      avatarUrl: relativeUrl
+    });
+  } catch (error) {
+    console.error('Error uploading customer avatar:', error);
     res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
   }
 };
