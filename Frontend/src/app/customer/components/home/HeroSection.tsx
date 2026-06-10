@@ -26,7 +26,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
       .then((data) => {
         if (Array.isArray(data)) {
           const active = data
-            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (!b.ViTri || b.ViTri === 'Homepage Top' || b.ViTri === ''))
+            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (!b.ViTri || b.ViTri === 'Homepage Top' || b.ViTri === 'homepage_top' || b.ViTri === ''))
             .sort((a: any, b: any) => a.ThuTu - b.ThuTu);
           setActiveBanners(active);
         }
@@ -68,7 +68,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                         }}
                         className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-8 py-6 rounded-lg"
                       >
-                        {activeBanner.VanBanNut || t('home.explore_deals')}
+                        {activeBanner.VanBanNut === 'Đặt vé ngay' || activeBanner.VanBanNut === 'Book Now' ? (t('home.book_now') !== 'home.book_now' ? t('home.book_now') : (t('common.confirm') === 'Xác nhận' ? 'Đặt vé ngay' : 'Book Now')) : (activeBanner.VanBanNut || t('home.explore_deals'))}
                       </Button>
                       <Button
                         variant="outline"
@@ -89,10 +89,16 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                     
                     {/* Floating countdown card */}
                     {activeBanner.ThoiGianKetThuc && new Date(activeBanner.ThoiGianKetThuc) > now ? (() => {
-                      const diff = new Date(activeBanner.ThoiGianKetThuc).getTime() - now.getTime();
-                      const h = Math.floor(diff / (1000 * 60 * 60));
-                      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                      const s = Math.floor((diff % (1000 * 60)) / 1000);
+                      const targetDate = new Date(activeBanner.ThoiGianKetThuc);
+                      const isMoreThan24Hours = (targetDate.getTime() - now.getTime()) > (24 * 60 * 60 * 1000);
+                      const finalTarget = isMoreThan24Hours 
+                        ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime()
+                        : targetDate.getTime();
+
+                      const diff = finalTarget - now.getTime();
+                      const h = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
+                      const m = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+                      const s = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
                       return (
                         <div className="absolute bottom-6 right-6 bg-white rounded-xl shadow-xl p-4 flex items-center gap-3">
                           <Clock className="w-6 h-6 text-[#FF4444]" />

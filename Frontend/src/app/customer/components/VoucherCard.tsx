@@ -30,6 +30,11 @@ export interface Voucher {
   partner?: {
     id: number;
     name: string;
+    branches?: Array<{
+      id: number;
+      name: string;
+      address: string;
+    }>;
   };
 
   categoryId?: number;
@@ -39,11 +44,14 @@ interface VoucherCardProps {
   voucher: Voucher;
 
   viewMode?: "grid" | "list";
+
+  buttonType?: "buy_now" | "view_detail";
 }
 
 export function VoucherCard({
   voucher,
   viewMode = "grid",
+  buttonType = "view_detail",
 }: VoucherCardProps) {
   const navigate =
     useNavigate();
@@ -139,13 +147,7 @@ export function VoucherCard({
       </div>
 
       {/* Content */}
-      <div
-        className={`p-4 flex flex-col ${
-          viewMode === "list"
-            ? "flex-1"
-            : ""
-        }`}
-      >
+      <div className="p-4 flex flex-col flex-1">
         {/* Category */}
         {voucher.categoryId && (
           <div className="w-fit px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wide mb-2">
@@ -195,7 +197,7 @@ export function VoucherCard({
           </div>
         ) : (
           <div className="text-xs text-muted-foreground italic mb-3">
-            {t('voucher.no_rating', 'No rating yet')}
+            {t('voucher.no_rating') || 'No rating yet'}
           </div>
         )}
 
@@ -221,13 +223,7 @@ export function VoucherCard({
         </div>
 
         {/* Button */}
-        <div
-          className={
-            viewMode === "list"
-              ? "mt-auto"
-              : ""
-          }
-        >
+        <div className="mt-auto">
           <button
             onClick={() =>
               navigate(
@@ -236,13 +232,9 @@ export function VoucherCard({
             }
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-semibold cursor-pointer"
           >
-            {voucher.rating
-              ? t(
-                  "voucher.view_detail"
-                )
-              : t(
-                  "voucher.buy_now"
-                )}
+            {buttonType === "buy_now"
+              ? t("voucher.buy_now")
+              : t("voucher.view_detail")}
           </button>
         </div>
       </div>

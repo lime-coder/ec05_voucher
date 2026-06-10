@@ -30,7 +30,7 @@ import { UserManagement } from "./admin/components/screens/UserManagement";
 import { PartnerManagement } from "./admin/components/screens/PartnerManagement";
 import { VoucherApproval } from "./admin/components/screens/VoucherApproval";
 import { OrderManagement as AdminOrderManagement } from "./admin/components/screens/OrderManagement";
-import { ContentManagement } from "./admin/components/screens/ContentManagement";
+import { ContentManagement } from "./admin/components/screens/ContentManagement/index";
 import { SystemLogs } from "./admin/components/screens/SystemLogs";
 import { BannerEdit } from "./admin/components/screens/BannerEdit";
 import { AdminProfile } from "./admin/components/screens/AdminProfile";
@@ -43,13 +43,15 @@ import { ErrorPage } from "./shared/pages/ErrorPage";
 // Partner Route Components
 import { PartnerLayout } from "./partner/layout/PartnerLayout";
 import DashboardView from "./partner/features/DashboardView";
-import VoucherManagement from "./partner/features/VoucherManagement";
+import VoucherManagement from "./partner/features/VoucherManagement/index";
 import CreateVoucher from "./partner/features/CreateVoucher";
 import VerifyVoucher from "./partner/features/VerifyVoucher";
 import ReportsView from "./partner/features/ReportsView";
 import BranchManagement from "./partner/features/BranchManagement";
 import ProfileSettings from "./partner/features/ProfileSettings";
 import StoreStats from "./partner/features/StoreStats";
+import StaffManagement from "./partner/features/StaffManagement";
+import CustomerPurchases from "./partner/features/CustomerPurchases";
 
 export const router = createBrowserRouter([
 
@@ -107,6 +109,8 @@ export const router = createBrowserRouter([
       { path: "branches", element: <BranchManagement /> },
       { path: "profile", element: <ProfileSettings /> },
       { path: "store", element: <StoreStats /> },
+      { path: "staff", element: <StaffManagement /> },
+      { path: "purchases", element: <CustomerPurchases /> },
       { path: "notifications", element: <NotificationsPage /> },
     ],
   },

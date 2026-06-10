@@ -31,6 +31,8 @@ export default function VerifyVoucher() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
 
   const [recentHistory, setRecentHistory] = useState<RecentVerification[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
@@ -186,6 +188,14 @@ export default function VerifyVoucher() {
                           <p className="text-sm">Voucher này đã hết hạn sử dụng vào ngày {new Date(verificationResult.validUntil).toLocaleDateString('vi-VN')}</p>
                         </div>
                       </div>
+                    ) : verificationResult.status === 'refunded' ? (
+                      <div className="bg-red-50 text-red-800 rounded-lg p-4 flex items-start gap-3">
+                        <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="font-bold mb-1">Voucher đã bị hủy/hoàn tiền</h3>
+                          <p className="text-sm">Voucher này không còn giá trị sử dụng và đã bị hủy khỏi hệ thống.</p>
+                        </div>
+                      </div>
                     ) : (
                       <div className="bg-green-50 text-green-800 rounded-lg p-4 flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -262,6 +272,7 @@ export default function VerifyVoucher() {
                   <TableHead>{t('verify.history.time')}</TableHead>
                   <TableHead>{t('verify.history.branch')}</TableHead>
                   <TableHead>{t('verify.history.result')}</TableHead>
+                  <TableHead>{t('verify.history.action') || 'Thao tác'}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -278,6 +289,18 @@ export default function VerifyVoucher() {
                       >
                         {item.status === 'verified' ? t('verify.history.verified') : t('verify.history.rejected')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedHistoryItem(item);
+                          setDetailModalOpen(true);
+                        }}
+                      >
+                        {t('verify.history.view_detail') || 'Chi tiết'}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -394,6 +417,58 @@ export default function VerifyVoucher() {
                 {t('common.confirm') || 'OK'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {detailModalOpen && selectedHistoryItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200 shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="font-bold text-xl">{t('verify.history.detail_title') || 'Chi tiết sử dụng'}</h3>
+              <button onClick={() => setDetailModalOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-sm text-gray-500">{t('verify.code')}</p>
+                <p className="font-bold text-lg">{selectedHistoryItem.code}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{t('verify.voucher_name')}</p>
+                <p className="font-medium">{selectedHistoryItem.voucherName}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">{t('verify.history.time')}</p>
+                  <p className="font-medium">{new Date(selectedHistoryItem.time).toLocaleString('vi-VN')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">{t('verify.branch')}</p>
+                  <p className="font-medium">{selectedHistoryItem.branch}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 mt-2">
+                <h4 className="font-semibold text-sm mb-3 text-gray-700">{t('verify.history.order_info') || 'Thông tin đơn hàng'}</h4>
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">{t('verify.history.order_id') || 'Mã đơn hàng:'}</span>
+                    <span className="font-mono font-medium">#{selectedHistoryItem.orderId || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">{t('verify.history.customer_name') || 'Tên khách hàng:'}</span>
+                    <span className="font-medium">{selectedHistoryItem.customerName || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setDetailModalOpen(false)}
+              className="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              {t('common.close') || 'Đóng'}
+            </button>
           </div>
         </div>
       )}

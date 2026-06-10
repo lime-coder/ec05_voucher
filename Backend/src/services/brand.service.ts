@@ -1,4 +1,5 @@
 import prisma from '../config/db';
+import { VOUCHER_STATUS, PAYMENT_STATUS } from '../constants';
 
 export class BrandService {
   /**
@@ -10,7 +11,7 @@ export class BrandService {
       include: {
         ChiNhanh: true,
         Vouchers: {
-          where: { TrangThaiVoucher: 'Đang hoạt động' }
+          where: { TrangThaiVoucher: VOUCHER_STATUS.ACTIVE }
         }
       }
     });
@@ -56,7 +57,7 @@ export class BrandService {
         },
         where: {
           VoucherID: { in: voucherIds },
-          DonHang: { TrangThaiThanhToan: 'Đã thanh toán' }
+          DonHang: { TrangThaiThanhToan: PAYMENT_STATUS.PAID }
         }
       });
       totalSales = Number(orderStats._sum.SoLuongMua || 0);
@@ -68,6 +69,7 @@ export class BrandService {
         name: v.TenVoucher,
         partner: partner.TenDoanhNghiep,
         price: Number(v.GiaBan || 0),
+        salePrice: Number(v.GiaBan || 0),
         originalPrice: Number(v.GiaGoc || 0),
         discount: v.GiaGoc && v.GiaBan ? Math.round(((Number(v.GiaGoc) - Number(v.GiaBan)) / Number(v.GiaGoc)) * 100) : 0,
         rating: averageRating,

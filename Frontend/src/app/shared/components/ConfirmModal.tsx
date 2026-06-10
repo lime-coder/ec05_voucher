@@ -25,10 +25,10 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, description }:
         </div>
         <DialogFooter className="flex space-x-3 justify-end sm:justify-end">
           <Button variant="outline" onClick={onClose}>
-            {t('common.cancel') || 'Cancel'}
+            {t('common.cancel') || 'Hủy'}
           </Button>
           <Button onClick={() => { onConfirm(); onClose(); }}>
-            {t('common.confirm') || 'OK'}
+            {t('common.confirm') || 'Đồng ý'}
           </Button>
         </DialogFooter>
       </DialogContent>

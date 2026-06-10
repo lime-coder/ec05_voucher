@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router";
-import { Star, MapPin, Globe, Phone, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
+import { Star, MapPin, Globe, Phone, Mail, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { VoucherCard, Voucher } from "../components/VoucherCard";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
+const getStoreBanner = (storeId: number, storeName: string) => {
+  const name = storeName?.toLowerCase() || '';
+  if (storeId === 1 || name.includes('highlands')) {
+    return "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=1920"; // Highlands Coffee - Cozy cafe
+  }
+  if (storeId === 2 || name.includes('cgv')) {
+    return "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=1920"; // CGV Cinemas - Movie theatre
+  }
+  if (storeId === 3 || name.includes('phúc long') || name.includes('phuclong')) {
+    return "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=1920"; // Phúc Long - Tea cafe
+  }
+  return "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1920"; // Default
+};
+
 export function BrandStorePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [readMoreAbout, setReadMoreAbout] = useState(false);
   const [sortOption, setSortOption] = useState("default");
@@ -66,11 +81,20 @@ export function BrandStorePage() {
       {/* Hero Banner */}
       <div className="relative h-[300px] w-full bg-primary/20">
         <img
-          src="https://images.unsplash.com/photo-1542840410-3092f99611a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGF8ZW58MXx8fHwxNzc5NjQxMjEyfDA&ixlib=rb-4.1.0&q=80&w=1920"
+          src={getStoreBanner(Number(store.id), store.name)}
           alt="Brand Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)}
+          className="absolute top-6 left-6 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 transition-colors text-white"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
       </div>
 
       <div className="max-w-[1200px] mx-auto px-6 mt-8">

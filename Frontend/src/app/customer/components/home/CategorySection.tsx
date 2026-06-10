@@ -9,6 +9,7 @@ interface CategoryItem {
   name: string;
   moTa: string;
   vouchers: number;
+  activeVouchers?: number;
   icon: string;
 }
 
@@ -95,7 +96,7 @@ export function CategorySection() {
 
           <div 
             ref={scrollContainerRef}
-            className="flex overflow-x-auto gap-6 pb-6 pt-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex overflow-x-auto mx-auto max-w-full w-max gap-6 pb-6 pt-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             {categories.map((category) => {
               const IconComponent = getCategoryIconComponent(category.icon);
@@ -113,9 +114,9 @@ export function CategorySection() {
                   <span className="text-base font-bold text-center text-gray-800">
                     {label}
                   </span>
-                  {category.vouchers > 0 && (
+                  {category.activeVouchers !== undefined && category.activeVouchers > 0 && (
                     <span className="text-[10px] text-gray-400 font-medium">
-                      {category.vouchers} {tText('vouchers', 'voucher')}
+                      {category.activeVouchers} {tText('vouchers', 'voucher')}
                     </span>
                   )}
                 </button>

@@ -31,11 +31,24 @@ export function ReviewOrderPage() {
       try {
         const res = await api.get('/auth/me');
         const data = res.data.user;
-        const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}");
-        
-        if (!saved.fullName && !fullName) setFullName(data.HoTenNguoiDung || "");
-        if (!saved.email && !email) setEmail(data.Email || "");
-        if (!saved.phone && !phone) setPhone(data.KhachHang?.SDT_KH || "");
+
+        let saved: any = {};
+        try {
+          saved = JSON.parse(localStorage.getItem("checkout-info") || "{}");
+        } catch (e) { }
+
+        // Nếu checkout-info đã lưu có email trùng với email của tài khoản đang đăng nhập,
+        // thì ưu tiên sử dụng thông tin đã lưu (do người dùng tự chỉnh sửa).
+        // Ngược lại, lấy thông tin chính xác từ database profile.
+        if (saved && saved.email === data.Email) {
+          if (saved.fullName) setFullName(saved.fullName);
+          if (saved.phone) setPhone(saved.phone);
+          if (saved.email) setEmail(saved.email);
+        } else {
+          setFullName(data.HoTenNguoiDung || "");
+          setEmail(data.Email || "");
+          setPhone(data.KhachHang?.SDT_KH || "");
+        }
       } catch (error) {
         console.error("Failed to fetch profile for checkout prefill");
       }
@@ -50,13 +63,13 @@ export function ReviewOrderPage() {
   const { items: vouchers, getCartTotal } = useCartStore();
 
   const subtotal = getCartTotal();
-  const processingFee = 12.5;
-  const tax = 45.0;
+  const processingFee = 800;
+  const tax = subtotal * 0.08;
   const grandTotal = subtotal + processingFee + tax;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      
+
       <main className="flex-1 max-w-[1440px] mx-auto px-6 py-8 w-full">
         {/* Breadcrumb */}
         <div className="mb-6 text-sm flex items-center gap-2">
@@ -97,7 +110,7 @@ export function ReviewOrderPage() {
                   type="text"
                   name="fullName"
                   value={fullName}
-                  onChange={(e) => { setFullName( e.target.value ); setErrors(prev => ({...prev, fullName: false})); }}
+                  onChange={(e) => { setFullName(e.target.value); setErrors(prev => ({ ...prev, fullName: false })); }}
                   placeholder="e.g. Alexander Hamilton"
                   className={`bg-input-background ${errors.fullName ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
@@ -111,7 +124,7 @@ export function ReviewOrderPage() {
                   type="tel"
                   name="phone"
                   value={phone}
-                  onChange={(e) => { setPhone( e.target.value ); setErrors(prev => ({...prev, phone: false})); }}
+                  onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: false })); }}
                   placeholder="+1 (555) 000-0000"
                   className={`bg-input-background ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
@@ -125,7 +138,7 @@ export function ReviewOrderPage() {
                   type="email"
                   name="email"
                   value={email}
-                  onChange={(e) => { setEmail( e.target.value ); setErrors(prev => ({...prev, email: false})); }}
+                  onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: false })); }}
                   placeholder="alexander@treasury.gov"
                   className={`bg-input-background ${errors.email ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
@@ -156,7 +169,7 @@ export function ReviewOrderPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          {t('review.per_item').replace('{price}', voucher.price.toFixed(2))}
+                          {t('review.per_item').replace('{price}', voucher.price.toLocaleString("vi-VN") + 'đ')}
                         </p>
                         <span className="inline-block mt-1 bg-secondary px-2 py-1 rounded text-xs font-semibold">
                           {t('review.qty').replace('{qty}', String(voucher.quantity))}
@@ -193,17 +206,17 @@ export function ReviewOrderPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('cart.subtotal')}</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">{subtotal.toLocaleString("vi-VN")}đ</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('review.processing_fee')}</span>
                   <span className="font-semibold">
-                    ${processingFee.toFixed(2)}
+                    {processingFee.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('review.tax_calc')}</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold">{tax.toLocaleString("vi-VN")}đ</span>
                 </div>
               </div>
 
@@ -211,7 +224,7 @@ export function ReviewOrderPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold">{t('review.grand_total')}</span>
                   <span className="font-black text-3xl">
-                    ${grandTotal.toFixed(2)}
+                    {grandTotal.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
               </div>
@@ -264,7 +277,6 @@ export function ReviewOrderPage() {
                     // =====================
                     localStorage.setItem(
                       "checkout-info",
-
                       JSON.stringify({
                         fullName,
                         phone,
@@ -273,19 +285,22 @@ export function ReviewOrderPage() {
                     );
 
                     // =====================
-                    // Chuyển payment
+                    // Chuyển sang payment method page KHÔNG CÓ orderId
+                    // (Đơn hàng sẽ được tạo khi user click Xác nhận Thanh Toán)
                     // =====================
                     navigate(
-                      "/checkout/payment"
+                      `/checkout/payment`
                     );
-                  } catch (e) {
+                  } catch (e: any) {
                     console.error("Checkout error:", e);
+                    setErrorModalMessage(e.response?.data?.message || e.message || "Kiểm tra thông tin thất bại, vui lòng thử lại.");
+                    setShowErrorModal(true);
                     setIsCheckingOut(false);
                   }
                 }}
                 className="w-full py-6 bg-primary text-primary-foreground font-bold hover:opacity-90 transition-colors mb-3 flex items-center justify-center gap-2"
               >
-                {isCheckingOut ? t('review.processing', 'Processing...') : <>{t('review.pay_now')} <CreditCard className="w-5 h-5" /></>}
+                {isCheckingOut ? t('review.processing') || 'Processing...' : <>{t('review.pay_now')} <CreditCard className="w-5 h-5" /></>}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground mb-4 flex items-center justify-center gap-1">
@@ -328,7 +343,7 @@ export function ReviewOrderPage() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6" />
-              {t('review.error_title', 'Lỗi')}
+              {t('review.error_title') || 'Lỗi'}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 text-gray-700">

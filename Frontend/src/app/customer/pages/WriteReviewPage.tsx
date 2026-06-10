@@ -12,11 +12,20 @@ export function WriteReviewPage() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [review, setReview] = useState("");
 
-  const [voucher, setVoucher] =
-    useState<any>(null);
+  const [voucher, setVoucher] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const getRedemptionDate = () => {
+    if (!voucher) return "N/A";
+    const usedCode = voucher.MaVouchers?.find((mv: any) => mv.ThoiDiemSuDung);
+    if (usedCode && usedCode.ThoiDiemSuDung) {
+      return new Date(usedCode.ThoiDiemSuDung).toLocaleDateString();
+    }
+    if (voucher.DonHang?.ThoiGianThanhToan) {
+      return new Date(voucher.DonHang.ThoiGianThanhToan).toLocaleDateString();
+    }
+    return "N/A";
+  };
 
     useEffect(() => {
 
@@ -150,13 +159,15 @@ export function WriteReviewPage() {
             {/* Voucher Info */}
             <div className="border border-border rounded-lg p-4 mb-8 flex gap-4">
               {/* Thumbnail */}
-              <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0">
+              <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-gray-50 border border-gray-100 flex items-center justify-center">
                 <img
                   src={
-                    voucher?.Voucher?.HinhAnh ||
-                    "https://placehold.co/120x120"
+                    voucher?.Voucher?.ImageUrl
+                      ? (voucher.Voucher.ImageUrl.split(',')[0].startsWith('http') ? voucher.Voucher.ImageUrl.split(',')[0] : `http://localhost:5000${voucher.Voucher.ImageUrl.split(',')[0]}`)
+                      : "https://placehold.co/120x120"
                   }
-                  alt=""
+                  alt={voucher?.Voucher?.TenVoucher || ""}
+                  className="w-full h-full object-cover"
                 />
               </div>
 
@@ -167,8 +178,8 @@ export function WriteReviewPage() {
                 </div>
 
                 {/* Provider */}
-                <p className="text-sm text-muted mb-1">
-                  {voucher?.Voucher?.TenNhaCungCap || "The Grand Waterfront Hotel — Marina Bay"}
+                <p className="text-sm text-muted-foreground mb-1 font-semibold text-primary">
+                  {voucher?.Voucher?.DoiTac?.TenDoanhNghiep || "The Grand Waterfront Hotel — Marina Bay"}
                 </p>
 
                 {/* Voucher Name */}
@@ -181,13 +192,7 @@ export function WriteReviewPage() {
                   <Check className="w-4 h-4" />
                   <span>
                     {t('review.redeemed_on')}{" "}
-                    {
-                      voucher?.NgayTao
-                        ? new Date(
-                            voucher.NgayTao
-                          ).toLocaleDateString()
-                        : "N/A"
-                    }
+                    {getRedemptionDate()}
                   </span>
                 </div>
               </div>

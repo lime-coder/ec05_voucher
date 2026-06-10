@@ -13,7 +13,7 @@ interface NavbarProps {
 export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const { items } = useCartStore(); 
   const cartCount = items.reduce( ( total, item ) => total + item.quantity, 0 );
@@ -80,13 +80,30 @@ export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4 shrink-0">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
+              className="flex items-center justify-center w-10 h-10 text-sm font-bold text-foreground hover:text-primary transition-colors border border-border rounded-full hover:bg-secondary/50"
+              title={language === 'vi' ? 'Switch to English' : 'Đổi sang Tiếng Việt'}
+            >
+              {language === 'vi' ? 'VI' : 'EN'}
+            </button>
+
             {isLoggedIn ? (
               <>
                 <div className="relative group">
                   <button className="flex items-center gap-2 text-foreground hover:text-primary transition-colors p-2">
-                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                      {user?.TenDangNhap?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    {user?.AvatarUrl ? (
+                      <img
+                        src={user.AvatarUrl.startsWith('http') ? user.AvatarUrl : `http://localhost:5000${user.AvatarUrl}`}
+                        alt="Avatar"
+                        className="w-8 h-8 rounded-full object-cover border border-border shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                        {user?.TenDangNhap?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
                     <span className="hidden md:inline font-medium">{user?.TenDangNhap || t('nav.account')}</span>
                   </button>
                   

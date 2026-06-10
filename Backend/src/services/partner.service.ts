@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import bcrypt from 'bcrypt';
 import { getTarget, setTarget } from '../config/revenueTargetStore';
+import { VOUCHER_STATUS, PAYMENT_STATUS } from '../constants';
 
 export class PartnerService {
   /**
@@ -24,12 +25,12 @@ export class PartnerService {
       businessType: partner.LinhVucKinhDoanh || '',
       taxCode: partner.MaSoThue || '',
       representativeName: partner.CaNhanDaiDien || '',
-      ...(email && { email }),
-      website: '',
-      address: '',
-      phone: '',
-      representativePhone: '',
-      representativeEmail: '',
+      email: (partner as any).EmailLienHe || email || '',
+      website: (partner as any).Website || '',
+      address: (partner as any).DiaChiTruSo || '',
+      phone: (partner as any).SDTLienHe || '',
+      representativePhone: (partner as any).SDTDaiDien || '',
+      representativeEmail: (partner as any).EmailDaiDien || '',
       avatarUrl: (partner as any).AvatarUrl ? `http://localhost:5000${(partner as any).AvatarUrl}` : ''
     };
   }
@@ -45,8 +46,14 @@ export class PartnerService {
         TenDoanhNghiep: data.businessName,
         LinhVucKinhDoanh: data.businessType,
         MaSoThue: data.taxCode,
-        CaNhanDaiDien: data.representativeName
-      }
+        CaNhanDaiDien: data.representativeName,
+        Website: data.website,
+        DiaChiTruSo: data.address,
+        SDTLienHe: data.phone,
+        EmailLienHe: data.email,
+        SDTDaiDien: data.representativePhone,
+        EmailDaiDien: data.representativeEmail
+      } as any
     });
   }
 
@@ -128,7 +135,7 @@ export class PartnerService {
           MaDoiTac: partnerId,
         },
         DonHang: {
-          TrangThaiThanhToan: 'Đã thanh toán',
+          TrangThaiThanhToan: PAYMENT_STATUS.PAID,
         },
       },
     });
@@ -137,7 +144,7 @@ export class PartnerService {
     const pendingVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'Chờ duyệt',
+        TrangThaiVoucher: VOUCHER_STATUS.PENDING,
       },
     });
 
@@ -145,7 +152,7 @@ export class PartnerService {
     const activeVouchers = await prisma.voucher.count({
       where: {
         MaDoiTac: partnerId,
-        TrangThaiVoucher: 'Đang hoạt động',
+        TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
       },
     });
 
@@ -185,7 +192,7 @@ export class PartnerService {
           ThoiGianThanhToan: {
             gte: sixMonthsAgo
           },
-          TrangThaiThanhToan: 'Đã thanh toán',
+          TrangThaiThanhToan: PAYMENT_STATUS.PAID,
         }
       },
       include: {
@@ -252,7 +259,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: start, lte: end },
-            TrangThaiThanhToan: 'Đã thanh toán'
+            TrangThaiThanhToan: PAYMENT_STATUS.PAID
           }
         },
         include: { DonHang: true }
@@ -275,7 +282,7 @@ export class PartnerService {
               DonHang: {
                 IDTaiKhoan: customerId,
                 ThoiGianThanhToan: { lt: start },
-                TrangThaiThanhToan: 'Đã thanh toán',
+                TrangThaiThanhToan: PAYMENT_STATUS.PAID,
               }
             }
           });
@@ -374,7 +381,7 @@ export class PartnerService {
           Voucher: { MaDoiTac: partnerId },
           DonHang: {
             ThoiGianThanhToan: { gte: yearAgo },
-            TrangThaiThanhToan: 'Đã thanh toán'
+            TrangThaiThanhToan: PAYMENT_STATUS.PAID
           }
         }
       });
@@ -480,5 +487,87 @@ export class PartnerService {
     if (target < 0) throw new Error('Mục tiêu phải >= 0');
     setTarget(partnerId, timeRange, target);
     return { success: true, timeRange, target };
+  }
+
+  /**
+   * Tạo tài khoản nhân viên đối tác
+   */
+  static async getStaff(partnerId: number) {
+    const staff = await prisma.nhanVienDoiTac.findMany({
+      where: { MaDoiTac: partnerId },
+      include: {
+        TaiKhoan: true
+      }
+    });
+
+    return staff.map((s) => ({
+      id: s.IDNhanVien,
+      name: s.TaiKhoan?.HoTenNguoiDung || '',
+      email: s.TaiKhoan?.Email || '',
+      phone: '', // SDT was removed from TaiKhoan
+      position: s.ChucVu || 'Nhân viên',
+      branch: 'Tất cả chi nhánh', // Simplification for now
+      status: s.TaiKhoan?.TrangThaiTaiKhoan || 'Hoạt động',
+      username: s.TaiKhoan?.TenDangNhap || ''
+    }));
+  }
+
+  static async createStaff(partnerId: number, data: any) {
+    // Validate if partner exists
+    const partner = await prisma.doiTac.findUnique({
+      where: { MaDoiTac: partnerId }
+    });
+    if (!partner) throw new Error('Đối tác không tồn tại');
+
+    // Validate Username
+    if (data.username.includes(' ')) {
+      throw new Error('Tên đăng nhập không được chứa khoảng trắng');
+    }
+
+    // Validate Password
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(data.password)) {
+      throw new Error('Mật khẩu phải dài ít nhất 8 ký tự, gồm cả chữ hoa, chữ thường và chữ số');
+    }
+
+    // Check if username/email exists
+    const existingUsername = await prisma.taiKhoan.findUnique({ where: { TenDangNhap: data.username } });
+    if (existingUsername) throw new Error('Tên đăng nhập đã tồn tại');
+
+    const existingEmail = await prisma.taiKhoan.findUnique({ where: { Email: data.email } });
+    if (existingEmail) throw new Error('Email đã tồn tại');
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Create TaiKhoan and NhanVienDoiTac in a transaction
+    return await prisma.$transaction(async (tx) => {
+      const newAccount = await tx.taiKhoan.create({
+        data: {
+          TenDangNhap: data.username,
+          MatKhau: hashedPassword,
+          Email: data.email,
+          HoTenNguoiDung: data.fullName,
+          TrangThaiTaiKhoan: 'Hoạt động',
+          LoaiTK: 'DoiTac'
+        }
+      });
+
+      const newStaff = await tx.nhanVienDoiTac.create({
+        data: {
+          IDTaiKhoan: newAccount.IDTaiKhoan,
+          MaDoiTac: partnerId,
+          ChucVu: data.position || 'Nhân viên'
+        }
+      });
+
+      return {
+        IDTaiKhoan: newAccount.IDTaiKhoan,
+        IDNhanVien: newStaff.IDNhanVien,
+        TenDangNhap: newAccount.TenDangNhap,
+        Email: newAccount.Email,
+        HoTenNguoiDung: newAccount.HoTenNguoiDung,
+        ChucVu: newStaff.ChucVu
+      };
+    });
   }
 }

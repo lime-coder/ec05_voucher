@@ -17,24 +17,57 @@ import {
 
 const mapLogActionToEnglish = (action: string) => {
   if (!action) return '';
-  if (action.includes('Khóa tài khoản')) return 'Lock Account';
-  if (action.includes('Mở khóa tài khoản')) return 'Unlock Account';
-  if (action.includes('Thêm đối tác')) return 'Add Partner';
-  if (action.includes('Cập nhật đối tác')) return 'Update Partner';
-  if (action.includes('Xóa đối tác')) return 'Delete Partner';
-  if (action.includes('Phê duyệt đối tác')) return 'Approve Partner';
-  if (action.includes('Từ chối đối tác')) return 'Reject Partner';
-  if (action.includes('Phê duyệt voucher')) return 'Approve Voucher';
-  if (action.includes('Từ chối voucher')) return 'Reject Voucher';
-  if (action.includes('Cập nhật đơn hàng')) return action.replace('Cập nhật đơn hàng', 'Update Order');
-  if (action.includes('Đăng nhập hệ thống')) return 'System Login';
-  if (action.includes('Kích hoạt tài khoản')) return 'Activate Account';
-  if (action.includes('Hoàn tiền đơn hàng')) return 'Refund Order';
-  if (action.includes('Thêm danh mục')) return 'Add Category';
-  if (action.includes('Cập nhật danh mục')) return 'Update Category';
-  if (action.includes('Xóa danh mục')) return 'Delete Category';
-  if (action.includes('Cập nhật banner')) return 'Update Banner';
-  if (action.includes('Xóa banner')) return 'Delete Banner';
+  const lower = action.toLowerCase();
+  if (lower.includes('mở khóa tài khoản') || lower.includes('unlock account')) return 'Unlock Account';
+  if (lower.includes('khóa tài khoản') || lower.includes('lock account')) return 'Lock Account';
+  if (lower.includes('mở khóa đối tác') || lower.includes('unlock partner')) return 'Unlock Partner';
+  if (lower.includes('khóa đối tác') || lower.includes('lock partner')) return 'Lock Partner';
+  if (lower.includes('thêm đối tác') || lower.includes('add partner')) return 'Add Partner';
+  if (lower.includes('cập nhật đối tác') || lower.includes('update partner')) return 'Update Partner';
+  if (lower.includes('xóa đối tác') || lower.includes('delete partner')) return 'Delete Partner';
+  if (lower.includes('phê duyệt đối tác') || lower.includes('approve partner')) return 'Approve Partner';
+  if (lower.includes('từ chối đối tác') || lower.includes('reject partner')) return 'Reject Partner';
+  if (lower.includes('phê duyệt voucher') || lower.includes('approve voucher')) return 'Approve Voucher';
+  if (lower.includes('từ chối voucher') || lower.includes('reject voucher')) return 'Reject Voucher';
+  if (lower.includes('cập nhật đơn hàng') || lower.includes('update order')) return 'Update Order';
+  if (lower.includes('đăng nhập hệ thống') || lower.includes('system login')) return 'System Login';
+  if (lower.includes('đăng nhập thành công') || lower.includes('login success') || lower.includes('login successful')) return 'Login Success';
+  if (lower.includes('đăng nhập thất bại') || lower.includes('login fail') || lower.includes('login failed')) return 'Login Failed';
+  if (lower.includes('kích hoạt tài khoản') || lower.includes('activate account')) return 'Activate Account';
+  if (lower.includes('hoàn tiền đơn hàng') || lower.includes('refund order')) return 'Refund Order';
+  if (lower.includes('thêm danh mục') || lower.includes('add category')) return 'Add Category';
+  if (lower.includes('cập nhật danh mục') || lower.includes('update category')) return 'Update Category';
+  if (lower.includes('xóa danh mục') || lower.includes('delete category')) return 'Delete Category';
+  if (lower.includes('cập nhật banner') || lower.includes('update banner')) return 'Update Banner';
+  if (lower.includes('xóa banner') || lower.includes('delete banner')) return 'Delete Banner';
+  return action;
+};
+
+const mapLogActionToVietnamese = (action: string) => {
+  if (!action) return '';
+  const lower = action.toLowerCase();
+  if (lower.includes('mở khóa tài khoản') || lower.includes('unlock account')) return 'Mở khóa tài khoản';
+  if (lower.includes('khóa tài khoản') || lower.includes('lock account')) return 'Khóa tài khoản';
+  if (lower.includes('mở khóa đối tác') || lower.includes('unlock partner')) return 'Mở khóa đối tác';
+  if (lower.includes('khóa đối tác') || lower.includes('lock partner')) return 'Khóa đối tác';
+  if (lower.includes('thêm đối tác') || lower.includes('add partner')) return 'Thêm đối tác';
+  if (lower.includes('cập nhật đối tác') || lower.includes('update partner')) return 'Cập nhật đối tác';
+  if (lower.includes('xóa đối tác') || lower.includes('delete partner')) return 'Xóa đối tác';
+  if (lower.includes('phê duyệt đối tác') || lower.includes('approve partner')) return 'Phê duyệt đối tác';
+  if (lower.includes('từ chối đối tác') || lower.includes('reject partner')) return 'Từ chối đối tác';
+  if (lower.includes('phê duyệt voucher') || lower.includes('approve voucher')) return 'Phê duyệt voucher';
+  if (lower.includes('từ chối voucher') || lower.includes('reject voucher')) return 'Từ chối voucher';
+  if (lower.includes('cập nhật đơn hàng') || lower.includes('update order')) return 'Cập nhật đơn hàng';
+  if (lower.includes('đăng nhập hệ thống') || lower.includes('system login')) return 'Đăng nhập hệ thống';
+  if (lower.includes('đăng nhập thành công') || lower.includes('login success') || lower.includes('login successful')) return 'Đăng nhập thành công';
+  if (lower.includes('đăng nhập thất bại') || lower.includes('login fail') || lower.includes('login failed')) return 'Đăng nhập thất bại';
+  if (lower.includes('kích hoạt tài khoản') || lower.includes('activate account')) return 'Kích hoạt tài khoản';
+  if (lower.includes('hoàn tiền đơn hàng') || lower.includes('refund order')) return 'Hoàn tiền đơn hàng';
+  if (lower.includes('thêm danh mục') || lower.includes('add category')) return 'Thêm danh mục';
+  if (lower.includes('cập nhật danh mục') || lower.includes('update category')) return 'Cập nhật danh mục';
+  if (lower.includes('xóa danh mục') || lower.includes('delete category')) return 'Xóa danh mục';
+  if (lower.includes('cập nhật banner') || lower.includes('update banner')) return 'Cập nhật banner';
+  if (lower.includes('xóa banner') || lower.includes('delete banner')) return 'Xóa banner';
   return action;
 };
 
@@ -96,6 +129,7 @@ export function SystemLogs() {
   const processedLogs = logs.map(log => ({
     ...log,
     englishAction: mapLogActionToEnglish(log.action || log.HanhDong || ''),
+    vietnameseAction: mapLogActionToVietnamese(log.action || log.HanhDong || ''),
     englishStatus: (log.status || log.TrangThai) === 'Thành công' ? 'Success' :
                    (log.status || log.TrangThai) === 'Thất bại' ? 'Failed' : (log.status || log.TrangThai)
   }));
@@ -120,9 +154,23 @@ export function SystemLogs() {
     let matchesAction = actionFilter === 'all';
     if (actionFilter === 'approve' && (log.englishAction.toLowerCase().includes('approve') || actionStr.toLowerCase().includes('phê duyệt'))) matchesAction = true;
     if (actionFilter === 'reject' && (log.englishAction.toLowerCase().includes('reject') || actionStr.toLowerCase().includes('từ chối'))) matchesAction = true;
-    if (actionFilter === 'lock' && (log.englishAction.toLowerCase().includes('lock') || actionStr.toLowerCase().includes('khóa'))) matchesAction = true;
+    if (actionFilter === 'lock' && (
+      (log.englishAction.toLowerCase().includes('lock') && !log.englishAction.toLowerCase().includes('unlock')) || 
+      (actionStr.toLowerCase().includes('khóa') && !actionStr.toLowerCase().includes('mở khóa'))
+    )) matchesAction = true;
+    if (actionFilter === 'unlock' && (
+      log.englishAction.toLowerCase().includes('unlock') || 
+      log.englishAction.toLowerCase().includes('activate') || 
+      actionStr.toLowerCase().includes('mở khóa') || 
+      actionStr.toLowerCase().includes('kích hoạt')
+    )) matchesAction = true;
     if (actionFilter === 'update' && (log.englishAction.toLowerCase().includes('update') || actionStr.toLowerCase().includes('cập nhật'))) matchesAction = true;
     if (actionFilter === 'delete' && (log.englishAction.toLowerCase().includes('delete') || actionStr.toLowerCase().includes('xóa'))) matchesAction = true;
+    if (actionFilter === 'login' && (
+      log.englishAction.toLowerCase().includes('login') || 
+      log.englishAction.toLowerCase().includes('sign in') || 
+      actionStr.toLowerCase().includes('đăng nhập')
+    )) matchesAction = true;
 
     let matchesDate = true;
     if (dateFilter) {
@@ -195,7 +243,7 @@ export function SystemLogs() {
         index + 1,
         userStr,
         privilegeStr,
-        tText(log.englishAction, actionStr),
+        tText(log.englishAction, log.vietnameseAction),
         targetStr,
         formatDate(timeStr) || timeStr,
         tText(log.englishStatus, statusStr)
@@ -242,9 +290,11 @@ export function SystemLogs() {
             <option value="all">{tText("All Actions", "Tất cả hành động")}</option>
             <option value="approve">{tText("Approve", "Phê duyệt")}</option>
             <option value="reject">{tText("Reject", "Từ chối")}</option>
-            <option value="lock">{tText("Lock/Unlock", "Khóa/Kích hoạt")}</option>
+            <option value="lock">{tText("Lock Account", "Khóa tài khoản")}</option>
+            <option value="unlock">{tText("Unlock/Activate", "Mở khóa/Kích hoạt")}</option>
             <option value="update">{tText("Update", "Cập nhật")}</option>
             <option value="delete">{tText("Delete", "Xóa")}</option>
+            <option value="login">{tText("Login/Sign In", "Đăng nhập")}</option>
           </select>
           <Input
             type="date"
@@ -328,7 +378,7 @@ export function SystemLogs() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium text-gray-900">
-                      {tText(log.englishAction, actionStr)}
+                      {tText(log.englishAction, log.vietnameseAction)}
                     </TableCell>
                     <TableCell className="text-gray-700">{targetStr}</TableCell>
                     <TableCell className="text-gray-500">{formatDate(timeStr) || timeStr}</TableCell>

@@ -1,206 +1,169 @@
-import { Request, Response } from 'express';
-import { VoucherService } from '../services/voucher.service';
-import prisma from '../config/db';
-import { logActivity } from './admin.controller';
-import fs from 'fs';
-import { LogService } from '../services/log.service';
-import path from 'path';
+import { Request, Response, NextFunction } from "express";
+import { VoucherService } from "../services/voucher.service";
+import prisma from "../config/db";
+import { logActivity, deleteImageFile } from "./admin";
+import fs from "fs";
+import { LogService } from "../services/log.service";
+import path from "path";
+import { VOUCHER_STATUS } from "../constants";
 
 /**
  * Controller handles the HTTP Request/Response flow.
  * It extracts data from 'req' and calls the appropriate Service function.
  */
 
-export const getAllVouchers =
-  async (
-    req: Request,
-    res: Response
-  ) => {
-    try {
-      const {
-        search,
-        category,
-        minPrice,
-        maxPrice,
-      } = req.query;
+export const getAllVouchers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { search, category, minPrice, maxPrice } = req.query;
 
-      const vouchers =
-        await prisma.voucher.findMany(
-          {
-            where: {
-              TrangThaiVoucher: 'Đang hoạt động',
+    const vouchers = await prisma.voucher.findMany({
+      where: {
+        TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
 
-              ...(search
-                ? {
-                    TenVoucher:
-                      {
-                        contains:
-                          String(
-                            search
-                          ),
-                      },
-                  }
-                : {}),
+        ...(search
+          ? {
+              TenVoucher: {
+                contains: String(search),
+              },
+            }
+          : {}),
 
-              ...(category
-                ? {
-                    MaDanhMuc:
-                      Number(
-                        category
-                      ),
-                  }
-                : {}),
+        ...(category
+          ? {
+              MaDanhMuc: Number(category),
+            }
+          : {}),
 
-              ...(minPrice ||
-              maxPrice
-                ? {
-                    GiaBan: {
-                      ...(minPrice
-                        ? {
-                            gte: Number(
-                              minPrice
-                            ),
-                          }
-                        : {}),
+        ...(minPrice || maxPrice
+          ? {
+              GiaBan: {
+                ...(minPrice
+                  ? {
+                      gte: Number(minPrice),
+                    }
+                  : {}),
 
-                      ...(maxPrice
-                        ? {
-                            lte: Number(
-                              maxPrice
-                            ),
-                          }
-                        : {}),
-                    },
-                  }
-                : {}),
-            },
+                ...(maxPrice
+                  ? {
+                      lte: Number(maxPrice),
+                    }
+                  : {}),
+              },
+            }
+          : {}),
+      },
 
-            include: {
-              DanhMuc: true,
-              DoiTac: true,
-              DanhGias: true,
-            },
+      include: {
+        DanhMuc: true,
+        DoiTac: {
+          include: {
+            ChiNhanh: true
           }
-        );
+        },
+        DanhGias: true,
+      },
+    });
 
-      const mapped =
-        vouchers.map(
-          (v: any) => ({
-            id:
-              v.VoucherID,
+    const mapped = vouchers.map((v: any) => ({
+      id: v.VoucherID,
 
-            name:
-              v.TenVoucher,
+      name: v.TenVoucher,
 
-            description:
-              v.MoTaVoucher,
+      description: v.MoTaVoucher,
 
-            condition:
-              v.MoTaDieuKien,
+      condition: v.MoTaDieuKien,
 
-            originalPrice:
-              Number(
-                v.GiaGoc
-              ),
+      originalPrice: Number(v.GiaGoc),
 
-            salePrice:
-              Number(
-                v.GiaBan
-              ),
+      salePrice: Number(v.GiaBan),
 
-            image:
-              v.ImageUrl ||
-              v.HinhAnhVoucher,
+      image: v.ImageUrl || v.HinhAnhVoucher,
 
-            quantity:
-              v.SoLuong,
+      quantity: v.SoLuong,
 
-            status:
-              v.TrangThaiVoucher,
+      status: v.TrangThaiVoucher,
 
-            rating:
-              v.DanhGias && v.DanhGias.length > 0
-                ? v.DanhGias.reduce((sum: number, r: any) => sum + (r.DiemDanhGia || 0), 0) / v.DanhGias.length
-                : 0,
+      rating:
+        v.DanhGias && v.DanhGias.length > 0
+          ? v.DanhGias.reduce(
+              (sum: number, r: any) => sum + (r.DiemDanhGia || 0),
+              0,
+            ) / v.DanhGias.length
+          : 0,
 
-            category:
-              v.DanhMuc
-                ? {
-                    id:
-                      v
-                        .DanhMuc
-                        .MaDanhMuc,
+      category: v.DanhMuc
+        ? {
+            id: v.DanhMuc.MaDanhMuc,
 
-                    name:
-                      v
-                        .DanhMuc
-                        .TenDanhMuc,
-                  }
-                : null,
+            name: v.DanhMuc.TenDanhMuc,
+          }
+        : null,
 
-            partner:
-              v.DoiTac
-                ? {
-                    id:
-                      v
-                        .DoiTac
-                        .MaDoiTac,
+      partner: v.DoiTac
+        ? {
+            id: v.DoiTac.MaDoiTac,
 
-                    name:
-                      v
-                        .DoiTac
-                        .TenDoanhNghiep,
-                  }
-                : null,
-          })
-        );
+            name: v.DoiTac.TenDoanhNghiep,
 
-      res.json(mapped);
-    } catch (error) {
-    console.error('Server error:', error);
-      console.error(error);
+            branches: v.DoiTac.ChiNhanh?.map((b: any) => ({
+              id: b.MaChiNhanh,
+              name: b.TenChiNhanh,
+              address: b.DiaChiChiNhanh
+            })) || []
+          }
+        : null,
+    }));
 
-      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
-    }
-  };
+    res.json(mapped);
+  } catch (error) {
+    console.error("Server error:", error);
+    console.error(error);
 
-
-
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
 
 export const getVoucherById = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction,
 ) => {
   try {
     const { id } = req.params;
 
-    const voucher =
-      await prisma.voucher.findFirst({
-        where: {
-          VoucherID: Number(id),
+    const voucher = await prisma.voucher.findFirst({
+      where: {
+        VoucherID: Number(id),
 
-          TrangThaiVoucher: 'Đang hoạt động',
-        },
+        TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
+      },
 
-        include: {
-          DanhMuc: true,
+      include: {
+        DanhMuc: true,
 
-          DoiTac: true,
+        DoiTac: true,
 
-          DanhGias: true,
+        DanhGias: true,
 
-          ChiNhanhs: {
-            include: {
-              ChiNhanh: true,
-            },
+        ChiNhanhs: {
+          include: {
+            ChiNhanh: true,
           },
         },
-      });
+      },
+    });
 
     if (!voucher) {
       return res.status(404).json({
-        message:
-          "Voucher not found",
+        message: "Voucher not found",
       });
     }
 
@@ -208,312 +171,320 @@ export const getVoucherById = async (
     const avgRating =
       voucher.DanhGias.length > 0
         ? voucher.DanhGias.reduce(
-            (
-              acc: number,
-              review: any
-            ) =>
-              acc +
-              Number(
-                review.DiemDanhGia ||
-                  0
-              ),
-            0
-          ) /
-          voucher.DanhGias.length
+            (acc: number, review: any) => acc + Number(review.DiemDanhGia || 0),
+            0,
+          ) / voucher.DanhGias.length
         : 0;
 
     const mapped = {
       id: voucher.VoucherID,
 
-      name:
-        voucher.TenVoucher,
+      name: voucher.TenVoucher,
 
-      description:
-        voucher.MoTaVoucher,
+      description: voucher.MoTaVoucher,
 
-      condition:
-        voucher.MoTaDieuKien,
+      condition: voucher.MoTaDieuKien,
 
-      refundPolicy:
-        voucher.ChinhSachHoanTien,
+      refundPolicy: voucher.ChinhSachHoanTien,
 
-      usageGuide:
-        voucher.HuongDanSuDung,
+      usageGuide: voucher.HuongDanSuDung,
 
-      originalPrice:
-        Number(voucher.GiaGoc),
+      originalPrice: Number(voucher.GiaGoc),
 
-      salePrice:
-        Number(voucher.GiaBan),
+      salePrice: Number(voucher.GiaBan),
 
-      quantity:
-        voucher.SoLuongChoPhep,
+      quantity: voucher.SoLuongChoPhep,
 
-      sold:
-        voucher.SoLuongDaBan || 0,
+      sold: voucher.SoLuongDaBan || 0,
 
-      stock:
-        voucher.SoLuongChoPhep -
-        (voucher.SoLuongDaBan ||
-          0),
+      stock: voucher.SoLuongChoPhep - (voucher.SoLuongDaBan || 0),
 
-      status:
-        voucher.TrangThaiVoucher,
+      status: voucher.TrangThaiVoucher,
 
-      startDate:
-        voucher.ThoiGianBatDau,
+      startDate: voucher.ThoiGianBatDau,
 
-      endDate:
-        voucher.ThoiGianKetThuc,
+      endDate: voucher.ThoiGianKetThuc,
 
-      image:
-        voucher.ImageUrl,
+      image: voucher.ImageUrl,
 
       category: voucher.DanhMuc
         ? {
-            id:
-              voucher.DanhMuc
-                .MaDanhMuc,
+            id: voucher.DanhMuc.MaDanhMuc,
 
-            name:
-              voucher.DanhMuc
-                .TenDanhMuc,
+            name: voucher.DanhMuc.TenDanhMuc,
           }
         : null,
 
       partner: voucher.DoiTac
         ? {
-            id:
-              voucher.DoiTac
-                .MaDoiTac,
+            id: voucher.DoiTac.MaDoiTac,
 
-            name:
-              voucher.DoiTac
-                .TenDoanhNghiep,
+            name: voucher.DoiTac.TenDoanhNghiep,
 
-            taxCode:
-              voucher.DoiTac
-                .MaSoThue,
+            taxCode: voucher.DoiTac.MaSoThue,
 
-            avatar:
-              voucher.DoiTac
-                .AvatarUrl,
+            avatar: voucher.DoiTac.AvatarUrl,
 
-            businessField:
-              voucher.DoiTac
-                .LinhVucKinhDoanh,
+            businessField: voucher.DoiTac.LinhVucKinhDoanh,
           }
         : null,
 
-      rating: Number(
-        avgRating.toFixed(1)
-      ),
+      rating: Number(avgRating.toFixed(1)),
 
-      reviewCount:
-        voucher.DanhGias.length,
+      reviewCount: voucher.DanhGias.length,
 
-      reviews:
-        voucher.DanhGias.map(
-          (review: any) => ({
-            id:
-              review.MaDanhGia,
+      reviews: voucher.DanhGias.map((review: any) => ({
+        id: review.MaDanhGia,
 
-            rating:
-              review.DiemDanhGia,
+        rating: review.DiemDanhGia,
 
-            comment:
-              review.NoiDung,
+        comment: review.NoiDung,
 
-            createdAt:
-              review.NgayDanhGia,
+        createdAt: review.NgayDanhGia,
 
-            reply:
-              review.PhanHoiXuLy,
-          })
-        ),
+        reply: review.PhanHoiXuLy,
+      })),
 
-      branches:
-        voucher.ChiNhanhs.map(
-          (branch: any) => ({
-            id:
-              branch.ChiNhanh
-                ?.MaChiNhanh,
+      branches: voucher.ChiNhanhs.map((branch: any) => ({
+        id: branch.ChiNhanh?.MaChiNhanh,
 
-            name:
-              branch.ChiNhanh
-                ?.TenChiNhanh,
+        name: branch.ChiNhanh?.TenChiNhanh,
 
-            phone:
-              branch.ChiNhanh
-                ?.SDT_CN,
+        phone: branch.ChiNhanh?.SDT_CN,
 
-            address:
-              branch.ChiNhanh
-                ?.DiaChiChiNhanh,
-          })
-        ),
+        address: branch.ChiNhanh?.DiaChiChiNhanh,
+      })),
     };
 
-    res.status(200).json(
-      mapped
-    );
+    res.status(200).json(mapped);
   } catch (error) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
 
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-
-export const createVoucher = async (req: Request, res: Response) => {
+export const createVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const data = req.body;
     const newVoucher = await VoucherService.createVoucher(data);
     LogService.createLog({
       IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
-      HanhDong: 'Tạo voucher',
+      HanhDong: "Tạo voucher",
       DoiTuong: newVoucher.TenVoucher || `Voucher ID: ${newVoucher.VoucherID}`,
-      ChiTiet: 'Partner đã tạo voucher mới',
-      DiaChiIP: req.ip || '127.0.0.1',
-      TrangThai: 'Thành công'
+      ChiTiet: "Partner đã tạo voucher mới",
+      DiaChiIP: req.ip || "127.0.0.1",
+      TrangThai: "Thành công",
     }).catch(console.error);
     res.status(201).json(newVoucher);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const updateVoucher = async (req: Request, res: Response) => {
+export const updateVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     const data = req.body;
-    const updatedVoucher = await VoucherService.updateVoucher(parseInt(id, 10), data);
+    const updatedVoucher = await VoucherService.updateVoucher(
+      parseInt(id, 10),
+      data,
+    );
     LogService.createLog({
       IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
-      HanhDong: 'Cập nhật voucher',
-      DoiTuong: updatedVoucher.TenVoucher || `Voucher ID: ${updatedVoucher.VoucherID}`,
-      ChiTiet: 'Partner đã cập nhật voucher',
-      DiaChiIP: req.ip || '127.0.0.1',
-      TrangThai: 'Thành công'
+      HanhDong: "Cập nhật voucher",
+      DoiTuong:
+        updatedVoucher.TenVoucher || `Voucher ID: ${updatedVoucher.VoucherID}`,
+      ChiTiet: "Partner đã cập nhật voucher",
+      DiaChiIP: req.ip || "127.0.0.1",
+      TrangThai: "Thành công",
     }).catch(console.error);
     res.status(200).json(updatedVoucher);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const getVouchersByPartnerId = async (req: Request, res: Response) => {
+export const getVouchersByPartnerId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const partnerId = parseInt(req.params.partnerId, 10);
     const vouchers = await VoucherService.getVouchersByPartnerId(partnerId);
     res.status(200).json(vouchers);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-
-export const deleteVoucher = async (req: Request, res: Response) => {
+export const deleteVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     await VoucherService.softDeleteVoucher(parseInt(id, 10));
     LogService.createLog({
       IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
-      HanhDong: 'Xóa voucher',
+      HanhDong: "Xóa voucher",
       DoiTuong: `Voucher ID: ${id}`,
-      ChiTiet: 'Partner đã xóa (soft delete) voucher',
-      DiaChiIP: req.ip || '127.0.0.1',
-      TrangThai: 'Thành công'
+      ChiTiet: "Partner đã xóa (soft delete) voucher",
+      DiaChiIP: req.ip || "127.0.0.1",
+      TrangThai: "Thành công",
     }).catch(console.error);
     res.status(200).json({ message: "Voucher deleted successfully" });
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const restoreVoucher = async (req: Request, res: Response) => {
+export const restoreVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     await VoucherService.restoreVoucher(parseInt(id, 10));
     LogService.createLog({
       IDTaiKhoan: (req as any).user?.IDTaiKhoan || null,
-      HanhDong: 'Khôi phục voucher',
+      HanhDong: "Khôi phục voucher",
       DoiTuong: `Voucher ID: ${id}`,
-      ChiTiet: 'Partner đã khôi phục voucher',
-      DiaChiIP: req.ip || '127.0.0.1',
-      TrangThai: 'Thành công'
+      ChiTiet: "Partner đã khôi phục voucher",
+      DiaChiIP: req.ip || "127.0.0.1",
+      TrangThai: "Thành công",
     }).catch(console.error);
     res.status(200).json({ message: "Voucher restored successfully" });
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const verifyVoucher = async (req: Request, res: Response) => {
+export const verifyVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { code } = req.params;
     const partnerId = parseInt(req.query.partnerId as string, 10);
-    
+
     if (isNaN(partnerId)) {
       return res.status(400).json({ message: "Thiếu thông tin partnerId" });
     }
 
     const result = await VoucherService.verifyVoucherCode(code, partnerId);
     if (!result) {
-      return res.status(404).json({ message: "Voucher không tồn tại hoặc không thuộc đối tác này" });
+      return res.status(404).json({
+        message: "Voucher không tồn tại hoặc không thuộc đối tác này",
+      });
     }
-    
+
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const confirmVoucher = async (req: Request, res: Response) => {
+export const confirmVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { code } = req.params;
     const { partnerId, branchId } = req.body;
-    
+
     if (!partnerId) {
       return res.status(400).json({ message: "Thiếu thông tin partnerId" });
     }
 
     const result = await VoucherService.confirmVoucherUsage(
-      code, 
+      code,
       parseInt(partnerId, 10),
-      branchId ? parseInt(branchId, 10) : undefined
+      branchId ? parseInt(branchId, 10) : undefined,
     );
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    if (error.message.includes('không tồn tại')) {
+    if (error.message.includes("không tồn tại")) {
       return res.status(404).json({ message: error.message });
     }
-    if (error.message.includes('đã được sử dụng') || error.message.includes('hết hạn')) {
+    if (
+      error.message.includes("đã được sử dụng") ||
+      error.message.includes("hết hạn")
+    ) {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const getVerifyHistory = async (req: Request, res: Response) => {
+export const getVerifyHistory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const partnerId = parseInt(req.params.partnerId, 10);
-    
+
     if (isNaN(partnerId)) {
       return res.status(400).json({ message: "partnerId không hợp lệ" });
     }
@@ -521,298 +492,318 @@ export const getVerifyHistory = async (req: Request, res: Response) => {
     const history = await VoucherService.getVerificationHistory(partnerId);
     res.status(200).json(history);
   } catch (error: any) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const uploadVoucherImage = async (req: Request, res: Response) => {
+export const uploadVoucherImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded.' });
+      return res.status(400).json({ message: "No file uploaded." });
     }
-    
+
     // Create the relative URL to access the uploaded file in temp
     const relativeUrl = `/uploads/temp/${req.file.filename}`;
-    
-    res.status(200).json({ 
-      message: 'Voucher image uploaded successfully', 
-      imageUrl: relativeUrl 
+
+    res.status(200).json({
+      message: "Voucher image uploaded successfully",
+      imageUrl: relativeUrl,
     });
   } catch (error) {
-    console.error('Server error:', error);
-    console.error('Error uploading voucher image:', error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    console.error("Server error:", error);
+    console.error("Error uploading voucher image:", error);
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const deleteVoucherImage = async (req: Request, res: Response) => {
+export const deleteVoucherImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const imageUrl = req.query.url as string;
     if (!imageUrl) {
-      return res.status(400).json({ message: 'No image URL provided.' });
+      return res.status(400).json({ message: "No image URL provided." });
     }
 
-    const { deleteMediaFile } = require('../utils/media.util');
-    
+    const { deleteMediaFile } = require("../utils/media.util");
+
     // deleteMediaFile will handle reconstructing the correct path from the URL
     // (e.g. /uploads/temp/file.jpg or /uploads/vouchers/...)
     deleteMediaFile(imageUrl);
-    
-    return res.status(200).json({ message: 'Image deletion triggered' });
+
+    return res.status(200).json({ message: "Image deletion triggered" });
   } catch (error) {
-    console.error('Error deleting voucher image:', error);
-    res.status(500).json({ message: 'An error occurred while deleting the image.' });
+    console.error("Error deleting voucher image:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while deleting the image." });
   }
 };
 // === Admin functions ===
-export const getPendingVouchers = async (req: Request, res: Response) => {
+export const getPendingVouchers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const vouchers = await prisma.voucher.findMany({
-      where: { TrangThaiVoucher: 'Chờ duyệt' },
-      include: { DoiTac: true }
+      where: { TrangThaiVoucher: VOUCHER_STATUS.PENDING },
+      include: { DoiTac: true },
     });
 
     const mapped = vouchers.map((v: any) => {
       const timeStr = v.ThoiGianBatDau
-        ? new Date(v.ThoiGianBatDau).toLocaleDateString('vi-VN')
-        : '';
+        ? new Date(v.ThoiGianBatDau).toLocaleDateString("vi-VN")
+        : "";
       return {
         id: v.VoucherID,
         name: v.TenVoucher,
-        partner: v.DoiTac?.TenDoanhNghiep || 'Đối tác ẩn',
-        originalPrice: Number(v.GiaGoc).toLocaleString('vi-VN') + 'đ',
-        salePrice: Number(v.GiaBan).toLocaleString('vi-VN') + 'đ',
+        partner: v.DoiTac?.TenDoanhNghiep || "Đối tác ẩn",
+        originalPrice: Number(v.GiaGoc).toLocaleString("vi-VN") + "đ",
+        salePrice: Number(v.GiaBan).toLocaleString("vi-VN") + "đ",
         quantity: v.SoLuongChoPhep,
         date: timeStr,
-        status: 'Chờ duyệt'
+        status: "Chờ duyệt",
       };
     });
 
     res.json(mapped);
   } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    console.error("Server error:", error);
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const approveVoucher = async (req: Request, res: Response) => {
+export const approveVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     const voucher = await prisma.voucher.update({
       where: { VoucherID: Number(id) },
-      data: { TrangThaiVoucher: 'Đang hoạt động' }
+      data: { TrangThaiVoucher: VOUCHER_STATUS.ACTIVE },
     });
-    logActivity(req, 'Phê duyệt voucher', voucher.TenVoucher);
+    logActivity(req, "Phê duyệt voucher", voucher.TenVoucher);
     res.json(voucher);
   } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    console.error("Server error:", error);
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
-export const rejectVoucher = async (req: Request, res: Response) => {
+export const rejectVoucher = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { id } = req.params;
     const { lyDo } = req.body;
 
     const voucher = await prisma.voucher.update({
       where: { VoucherID: Number(id) },
-      data: { TrangThaiVoucher: 'Từ chối' }
+      data: { TrangThaiVoucher: VOUCHER_STATUS.REJECTED },
     });
 
-    logActivity(req, 'Từ chối voucher', `${voucher.TenVoucher} (Lý do: ${lyDo})`);
+    logActivity(
+      req,
+      "Từ chối voucher",
+      `${voucher.TenVoucher} (Lý do: ${lyDo})`,
+    );
     console.log(`Từ chối voucher ${id} với lý do: ${lyDo}`);
     res.json(voucher);
   } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
-
+    console.error("Server error:", error);
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
 export const getCategories = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction,
 ) => {
   try {
-    const categories =
-      await prisma.danhMuc.findMany({
-        include: {
-          _count: {
-            select: {
-              Vouchers: {
-                where: {
-                  TrangThaiVoucher: 'Đang hoạt động',
-                },
+    const categories = await prisma.danhMuc.findMany({
+      include: {
+        _count: {
+          select: {
+            Vouchers: {
+              where: {
+                TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
               },
             },
           },
         },
+      },
 
-        orderBy: {
-          MaDanhMuc: "asc",
-        },
-      });
+      orderBy: {
+        MaDanhMuc: "asc",
+      },
+    });
 
-    const mapped =
-      categories.map(((c: any) => ({
-        id: c.MaDanhMuc,
+    const mapped = categories.map((c: any) => ({
+      id: c.MaDanhMuc,
 
-        name: c.TenDanhMuc,
+      name: c.TenDanhMuc,
 
-        totalVouchers:
-          c._count.Vouchers,
-      })));
+      totalVouchers: c._count.Vouchers,
+    }));
 
     res.json(mapped);
   } catch (error) {
-    console.error('Server error:', error);
+    console.error("Server error:", error);
     console.error(error);
 
-    res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 
+export const searchVouchers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // =========================
+    // Lấy keyword search
+    // Ví dụ:
+    // /api/vouchers/search?q=coffee
+    // =========================
+    const q = String(req.query.q || "").trim();
+      
+      let keywords = [q];
+      const lowerQ = q.toLowerCase();
+      if (lowerQ === 'entertainment' || lowerQ === 'giải trí') {
+        keywords = ['giải trí', 'entertainment', 'phim', 'cinema'];
+      } else if (lowerQ === 'food' || lowerQ === 'ẩm thực') {
+        keywords = ['ẩm thực', 'food', 'nhà hàng', 'cafe'];
+      } else if (lowerQ === 'travel' || lowerQ === 'du lịch') {
+        keywords = ['du lịch', 'travel', 'khách sạn', 'hotel'];
+      } else if (lowerQ === 'spa' || lowerQ === 'sức khỏe') {
+        keywords = ['spa', 'sức khỏe', 'massage'];
+      } else if (lowerQ === 'sports' || lowerQ === 'thể thao') {
+        keywords = ['thể thao', 'sports', 'gym'];
+      }
 
-export const searchVouchers =
-  async (
-    req: Request,
-    res: Response
-  ) => {
-    try {
-      // =========================
-      // Lấy keyword search
-      // Ví dụ:
-      // /api/vouchers/search?q=coffee
-      // =========================
-      const q = String(
-        req.query.q || ""
-      ).trim();
+      // Remove empty strings
+      keywords = Array.from(new Set(keywords.filter(Boolean)));
 
-      // =========================
-      // Query tìm kiếm voucher
-      // =========================
-      const vouchers =
-        await prisma.voucher.findMany({
-          where: {
-            // Chỉ lấy voucher ACTIVE
-            TrangThaiVoucher: 'Đang hoạt động',
+    // =========================
+    // Query tìm kiếm voucher
+    // =========================
+    const vouchers = await prisma.voucher.findMany({
+      where: {
+        // Chỉ lấy voucher ACTIVE
+        TrangThaiVoucher: VOUCHER_STATUS.ACTIVE,
 
-            // OR:
-            // chỉ cần match 1 điều kiện
-            OR: [
-              // =====================
-              // Tìm theo tên voucher
-              // =====================
-              {
-                TenVoucher: {
-                  contains: q,
-                },
-              },
+        // OR:
+        // chỉ cần match 1 điều kiện
+        OR: keywords.flatMap(kw => [
+          { TenVoucher: { contains: kw } },
+          { DanhMuc: { TenDanhMuc: { contains: kw } } },
+          { DoiTac: { TenDoanhNghiep: { contains: kw } } },
+        ]),
+      },
 
-              // =====================
-              // Tìm theo tên danh mục
-              // =====================
-              {
-                DanhMuc: {
-                  TenDanhMuc: {
-                    contains: q,
-                  },
-                },
-              },
-
-              // =====================
-              // Tìm theo tên đối tác
-              // =====================
-              {
-                DoiTac: {
-                  TenDoanhNghiep:
-                    {
-                      contains: q,
-                    },
-                },
-              },
-            ],
-          },
-
-          // Include dữ liệu liên quan
+      // Include dữ liệu liên quan
+      include: {
+        DanhMuc: true,
+        DoiTac: {
           include: {
-            DanhMuc: true,
-            DoiTac: true,
-          },
-        });
+            ChiNhanh: true
+          }
+        },
+      },
+    });
 
-      // =========================
-      // Convert dữ liệu
-      // =========================
-      const mapped =
-        vouchers.map(
-          (v: any) => ({
-            id:
-              v.VoucherID,
+    // =========================
+    // Convert dữ liệu
+    // =========================
+    const mapped = vouchers.map((v: any) => ({
+      id: v.VoucherID,
 
-            name:
-              v.TenVoucher,
+      name: v.TenVoucher,
 
-            description:
-              v.MoTaVoucher,
+      description: v.MoTaVoucher,
 
-            originalPrice:
-              Number(
-                v.GiaGoc
-              ),
+      originalPrice: Number(v.GiaGoc),
 
-            salePrice:
-              Number(
-                v.GiaBan
-              ),
+      salePrice: Number(v.GiaBan),
 
-            image:
-              v.ImageUrl,
+      image: v.ImageUrl,
 
-            categoryId:
-              v.MaDanhMuc,
+      categoryId: v.MaDanhMuc,
 
-            partnerId:
-              v.MaDoiTac,
+      partnerId: v.MaDoiTac,
 
-            category:
-              v.DanhMuc
-                ? {
-                    id:
-                      v.DanhMuc
-                        .MaDanhMuc,
+      category: v.DanhMuc
+        ? {
+            id: v.DanhMuc.MaDanhMuc,
 
-                    name:
-                      v.DanhMuc
-                        .TenDanhMuc,
-                  }
-                : null,
+            name: v.DanhMuc.TenDanhMuc,
+          }
+        : null,
 
-            partner:
-              v.DoiTac
-                ? {
-                    id:
-                      v.DoiTac
-                        .MaDoiTac,
+      partner: v.DoiTac
+        ? {
+            id: v.DoiTac.MaDoiTac,
 
-                    name:
-                      v.DoiTac
-                        .TenDoanhNghiep,
-                  }
-                : null,
-          })
-        );
+            name: v.DoiTac.TenDoanhNghiep,
 
-      // Trả dữ liệu về frontend
-      res.json(mapped);
-    } catch (error) {
-    console.error('Server error:', error);
-      console.error(error);
+            branches: v.DoiTac.ChiNhanh?.map((b: any) => ({
+              id: b.MaChiNhanh,
+              name: b.TenChiNhanh,
+              address: b.DiaChiChiNhanh
+            })) || []
+          }
+        : null,
+    }));
 
-      res.status(500).json({ errorCode: 'ERR_500', message: 'An unknown error occurred. Please contact support.', details: error instanceof Error ? error.message : String(error) });
-    }
-  };
+    // Trả dữ liệu về frontend
+    res.json(mapped);
+  } catch (error) {
+    console.error("Server error:", error);
+    console.error(error);
 
+    res.status(500).json({
+      errorCode: "ERR_500",
+      message: "An unknown error occurred. Please contact support.",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+};

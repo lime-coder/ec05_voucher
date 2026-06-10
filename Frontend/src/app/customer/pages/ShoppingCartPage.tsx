@@ -42,7 +42,7 @@ export function ShoppingCartPage() {
 
   const subtotal = getCartTotal();
   const tax = subtotal * 0.08;
-  const platformFee = 2.5;
+  const platformFee = 800;
   const total = subtotal + tax + platformFee;
 
   const handleCheckout = () => { navigate( "/checkout/review" ); };

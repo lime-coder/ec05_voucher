@@ -163,3 +163,35 @@ export const updateRevenueTarget = (req: Request, res: Response) => {
     res.status(400).json({ message: error.message || 'Lỗi khi cập nhật mục tiêu' });
   }
 };
+
+export const getStaff = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const partnerId = parseInt(id, 10);
+    if (isNaN(partnerId)) return res.status(400).json({ message: 'Invalid partner ID' });
+
+    const staffList = await PartnerService.getStaff(partnerId);
+    res.status(200).json(staffList);
+  } catch (error: any) {
+    console.error('Server error:', error);
+    res.status(500).json({ message: error.message || 'Lỗi khi lấy danh sách nhân viên' });
+  }
+};
+
+export const createStaff = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const partnerId = parseInt(id, 10);
+    const { username, password, email, fullName, position } = req.body;
+
+    if (isNaN(partnerId)) return res.status(400).json({ message: 'Invalid partner ID' });
+    if (!username || !password || !email) return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+
+    const newStaff = await PartnerService.createStaff(partnerId, { username, password, email, fullName, position });
+
+    res.status(201).json({ message: "Tạo nhân viên thành công", data: newStaff });
+  } catch (error: any) {
+    console.error('Server error:', error);
+    res.status(400).json({ message: error.message || 'Lỗi khi tạo nhân viên' });
+  }
+};

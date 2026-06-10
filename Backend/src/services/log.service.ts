@@ -59,9 +59,25 @@ export class LogService {
 
       // Filter by action type
       if (filters.action && filters.action !== 'all') {
-        conditions.push(`sl.HanhDong = @P${paramIndex}`);
-        params.push(filters.action);
-        paramIndex++;
+        if (filters.action === 'approve') {
+          conditions.push(`(sl.HanhDong LIKE N'%Phê duyệt%' OR sl.HanhDong LIKE N'%Approve%')`);
+        } else if (filters.action === 'reject') {
+          conditions.push(`(sl.HanhDong LIKE N'%Từ chối%' OR sl.HanhDong LIKE N'%Reject%')`);
+        } else if (filters.action === 'lock') {
+          conditions.push(`((sl.HanhDong LIKE N'%Khóa%' OR sl.HanhDong LIKE N'%Lock%') AND sl.HanhDong NOT LIKE N'%Mở khóa%' AND sl.HanhDong NOT LIKE N'%Unlock%')`);
+        } else if (filters.action === 'unlock') {
+          conditions.push(`(sl.HanhDong LIKE N'%Mở khóa%' OR sl.HanhDong LIKE N'%Unlock%' OR sl.HanhDong LIKE N'%Kích hoạt%' OR sl.HanhDong LIKE N'%Activate%')`);
+        } else if (filters.action === 'update') {
+          conditions.push(`(sl.HanhDong LIKE N'%Cập nhật%' OR sl.HanhDong LIKE N'%Update%')`);
+        } else if (filters.action === 'delete') {
+          conditions.push(`(sl.HanhDong LIKE N'%Xóa%' OR sl.HanhDong LIKE N'%Delete%')`);
+        } else if (filters.action === 'login') {
+          conditions.push(`(sl.HanhDong LIKE N'%Đăng nhập%' OR sl.HanhDong LIKE N'%Login%')`);
+        } else {
+          conditions.push(`sl.HanhDong = @P${paramIndex}`);
+          params.push(filters.action);
+          paramIndex++;
+        }
       }
 
       // Filter by status (Thành công / Thất bại / CANH_BAO)

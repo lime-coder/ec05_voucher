@@ -13,7 +13,7 @@ export function MiddleBannerSection() {
       .then((data) => {
         if (Array.isArray(data)) {
           const active = data
-            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && b.ViTri === 'Homepage Middle')
+            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (b.ViTri === 'Homepage Middle' || b.ViTri === 'homepage_middle'))
             .sort((a: any, b: any) => a.ThuTu - b.ThuTu);
           setActiveBanners(active);
         }

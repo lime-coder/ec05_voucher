@@ -96,6 +96,7 @@ export function FlashSaleSection({
             <VoucherCard
               key={voucher.id}
               voucher={voucher}
+              buttonType="buy_now"
             />
           )
         )}

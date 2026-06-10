@@ -239,8 +239,7 @@ export default function CreateVoucher() {
       !formData.saleEndDate ||
       !formData.validStartDate ||
       !formData.validEndDate ||
-      !formData.description ||
-      !formData.terms
+      (!isDraft && (!formData.description || !formData.terms))
     ) {
       toast.error(t('toast.voucher.missing_fields') || 'Vui lòng điền đầy đủ các trường bắt buộc (*)!');
       return;
@@ -391,7 +390,7 @@ export default function CreateVoucher() {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium">{t('partner.create.description_label') || 'Mô tả'}</label>
+                <label className="text-sm font-medium">{t('partner.create.description_label') || 'Mô tả'} *</label>
                 <textarea
                   className="flex min-h-[150px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={formData.description}
@@ -411,7 +410,7 @@ export default function CreateVoucher() {
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium">{t('partner.create.terms_label')}</label>
+                <label className="text-sm font-medium">{t('partner.create.terms_label') || 'Điều kiện'} *</label>
                 <textarea
                   className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={formData.terms}
