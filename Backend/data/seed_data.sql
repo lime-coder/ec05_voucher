@@ -645,7 +645,32 @@ VALUES
     '/uploads/general/banner/homepage_top/phuclong_banner.jpg', '/brand/3', N'homepage_top', N'Đang hiển thị', 3,
     '2026-05-03 00:00:00', N'Ẩm thực',
     N'Thưởng thức trà sữa và cà phê Phúc Long đậm vị cùng ưu đãi cực hot.',
-    '2026-12-31 23:59:59', N'Khám phá ngay');
+    '2026-12-31 23:59:59', N'Khám phá ngay'),
+(4, N'Siêu deal giữa trang - Giảm tới 50%',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', '/search', N'homepage_middle', N'Đang hiển thị', 1,
+    '2026-05-04 00:00:00', N'Khuyến mãi',
+    N'Chào hè rực rỡ cùng hàng ngàn deal xịn sò trên khắp cả nước.',
+    '2026-12-31 23:59:59', N'Nhận deal ngay'),
+(5, N'Ẩm thực đường phố - Ăn ngon giá rẻ',
+    'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1200', '/search?category=1', N'category_page', N'Đang hiển thị', 1,
+    '2026-05-05 00:00:00', N'Ẩm thực',
+    N'Ăn uống thả ga không lo về giá cùng voucher giảm giá ẩm thực lên tới 50%.',
+    '2026-12-31 23:59:59', N'Tìm hiểu thêm'),
+(6, N'Bom tấn rạp Việt - CGV & Lotte Cinemas',
+    'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=1200', '/search?category=2', N'category_page', N'Đang hiển thị', 1,
+    '2026-05-06 00:00:00', N'Giải trí',
+    N'Trải nghiệm bom tấn điện ảnh cực đã cùng hàng loạt quà tặng vé xem phim hot.',
+    '2026-12-31 23:59:59', N'Đặt vé ngay'),
+(7, N'Săn sale sập sàn - Hàng hiệu giá cực chất',
+    'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=1200', '/search?category=3', N'category_page', N'Đang hiển thị', 1,
+    '2026-05-07 00:00:00', N'Mua sắm',
+    N'Mua sắm thỏa thích các mặt hàng thời trang, mỹ phẩm và công nghệ hàng đầu.',
+    '2026-12-31 23:59:59', N'Săn sale ngay'),
+(8, N'Chăm sóc sức khỏe - Spa & Gym trọn gói',
+    'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200', '/search?category=4', N'category_page', N'Đang hiển thị', 1,
+    '2026-05-08 00:00:00', N'Dịch vụ',
+    N'Tận hưởng giây phút thư giãn cơ thể và tập luyện nâng cao thể lực trọn gói.',
+    '2026-12-31 23:59:59', N'Đăng ký ngay');
 SET IDENTITY_INSERT [Banner] OFF;
 
 

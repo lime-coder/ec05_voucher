@@ -456,19 +456,20 @@ export const getOrderDetailById =
           req.params.id
         );
 
-      // lấy theo VoucherID
+      // lấy theo MaCTDonHang
       const detail =
-        await prisma.chiTietDonHang.findFirst({
-
+        await prisma.chiTietDonHang.findUnique({
           where: {
-            VoucherID: id,
+            MaCTDonHang: id,
           },
-
           include: {
-
-            Voucher: true,
-
+            Voucher: {
+              include: {
+                DoiTac: true,
+              },
+            },
             MaVouchers: true,
+            DonHang: true,
           },
         });
 

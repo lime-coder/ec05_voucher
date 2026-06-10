@@ -96,7 +96,7 @@ export function CategorySection() {
 
           <div 
             ref={scrollContainerRef}
-            className="flex overflow-x-auto gap-6 pb-6 pt-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex overflow-x-auto mx-auto max-w-full w-max gap-6 pb-6 pt-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             {categories.map((category) => {
               const IconComponent = getCategoryIconComponent(category.icon);

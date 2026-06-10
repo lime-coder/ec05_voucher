@@ -31,11 +31,24 @@ export function ReviewOrderPage() {
       try {
         const res = await api.get('/auth/me');
         const data = res.data.user;
-        const saved = JSON.parse(localStorage.getItem("checkout-info") || "{}");
-        
-        if (!saved.fullName && !fullName) setFullName(data.HoTenNguoiDung || "");
-        if (!saved.email && !email) setEmail(data.Email || "");
-        if (!saved.phone && !phone) setPhone(data.KhachHang?.SDT_KH || "");
+
+        let saved: any = {};
+        try {
+          saved = JSON.parse(localStorage.getItem("checkout-info") || "{}");
+        } catch (e) { }
+
+        // Nếu checkout-info đã lưu có email trùng với email của tài khoản đang đăng nhập,
+        // thì ưu tiên sử dụng thông tin đã lưu (do người dùng tự chỉnh sửa).
+        // Ngược lại, lấy thông tin chính xác từ database profile.
+        if (saved && saved.email === data.Email) {
+          if (saved.fullName) setFullName(saved.fullName);
+          if (saved.phone) setPhone(saved.phone);
+          if (saved.email) setEmail(saved.email);
+        } else {
+          setFullName(data.HoTenNguoiDung || "");
+          setEmail(data.Email || "");
+          setPhone(data.KhachHang?.SDT_KH || "");
+        }
       } catch (error) {
         console.error("Failed to fetch profile for checkout prefill");
       }
@@ -56,7 +69,7 @@ export function ReviewOrderPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      
+
       <main className="flex-1 max-w-[1440px] mx-auto px-6 py-8 w-full">
         {/* Breadcrumb */}
         <div className="mb-6 text-sm flex items-center gap-2">
@@ -97,7 +110,7 @@ export function ReviewOrderPage() {
                   type="text"
                   name="fullName"
                   value={fullName}
-                  onChange={(e) => { setFullName( e.target.value ); setErrors(prev => ({...prev, fullName: false})); }}
+                  onChange={(e) => { setFullName(e.target.value); setErrors(prev => ({ ...prev, fullName: false })); }}
                   placeholder="e.g. Alexander Hamilton"
                   className={`bg-input-background ${errors.fullName ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
@@ -111,7 +124,7 @@ export function ReviewOrderPage() {
                   type="tel"
                   name="phone"
                   value={phone}
-                  onChange={(e) => { setPhone( e.target.value ); setErrors(prev => ({...prev, phone: false})); }}
+                  onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: false })); }}
                   placeholder="+1 (555) 000-0000"
                   className={`bg-input-background ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />
@@ -125,7 +138,7 @@ export function ReviewOrderPage() {
                   type="email"
                   name="email"
                   value={email}
-                  onChange={(e) => { setEmail( e.target.value ); setErrors(prev => ({...prev, email: false})); }}
+                  onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: false })); }}
                   placeholder="alexander@treasury.gov"
                   className={`bg-input-background ${errors.email ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                 />

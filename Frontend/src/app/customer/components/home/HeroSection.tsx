@@ -26,7 +26,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
       .then((data) => {
         if (Array.isArray(data)) {
           const active = data
-            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (!b.ViTri || b.ViTri === 'Homepage Top' || b.ViTri === ''))
+            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (!b.ViTri || b.ViTri === 'Homepage Top' || b.ViTri === 'homepage_top' || b.ViTri === ''))
             .sort((a: any, b: any) => a.ThuTu - b.ThuTu);
           setActiveBanners(active);
         }

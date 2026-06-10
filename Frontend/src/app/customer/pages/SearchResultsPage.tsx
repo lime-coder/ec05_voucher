@@ -18,6 +18,7 @@ export function SearchResultsPage() {
 
   const [categories, setCategories] = useState<any[]>([]);
   const [categoryBanners, setCategoryBanners] = useState<any[]>([]);
+  const [allCategoryBanners, setAllCategoryBanners] = useState<any[]>([]);
 
   const [sortType, setSortType] =
     useState("popular");
@@ -92,9 +93,9 @@ export function SearchResultsPage() {
       .then((data) => {
         if (Array.isArray(data)) {
           const active = data
-            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && b.ViTri === 'Category Page')
+            .filter((b: any) => b.TrangThai === 'Đang hiển thị' && (b.ViTri === 'Category Page' || b.ViTri === 'category_page'))
             .sort((a: any, b: any) => a.ThuTu - b.ThuTu);
-          setCategoryBanners(active);
+          setAllCategoryBanners(active);
         }
       })
       .catch((err) => console.error('Fetch category banners error:', err));
@@ -113,6 +114,17 @@ export function SearchResultsPage() {
       })
       .catch((err) => console.error("Fetch vouchers error:", err));
   }, [categoryId, searchParams]);
+
+  useEffect(() => {
+    if (categoryId && categoryName) {
+      const filtered = allCategoryBanners.filter(
+        (b) => !b.Tag || b.Tag.toLowerCase() === categoryName.toLowerCase()
+      );
+      setCategoryBanners(filtered);
+    } else {
+      setCategoryBanners(allCategoryBanners);
+    }
+  }, [allCategoryBanners, categoryName, categoryId]);
 
   useEffect(() => {
     let sortedData = [...allVouchers];

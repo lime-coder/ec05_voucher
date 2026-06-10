@@ -4,6 +4,20 @@ import { Star, MapPin, Globe, Phone, Mail, ChevronDown, ChevronUp, ArrowLeft } f
 import { VoucherCard, Voucher } from "../components/VoucherCard";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 
+const getStoreBanner = (storeId: number, storeName: string) => {
+  const name = storeName?.toLowerCase() || '';
+  if (storeId === 1 || name.includes('highlands')) {
+    return "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=1920"; // Highlands Coffee - Cozy cafe
+  }
+  if (storeId === 2 || name.includes('cgv')) {
+    return "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=1920"; // CGV Cinemas - Movie theatre
+  }
+  if (storeId === 3 || name.includes('phúc long') || name.includes('phuclong')) {
+    return "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=1920"; // Phúc Long - Tea cafe
+  }
+  return "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1920"; // Default
+};
+
 export function BrandStorePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -67,7 +81,7 @@ export function BrandStorePage() {
       {/* Hero Banner */}
       <div className="relative h-[300px] w-full bg-primary/20">
         <img
-          src="https://images.unsplash.com/photo-1542840410-3092f99611a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGF8ZW58MXx8fHwxNzc5NjQxMjEyfDA&ixlib=rb-4.1.0&q=80&w=1920"
+          src={getStoreBanner(Number(store.id), store.name)}
           alt="Brand Banner"
           className="w-full h-full object-cover"
         />
