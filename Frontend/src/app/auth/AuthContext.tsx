@@ -35,7 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = response.data.user;
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
-          
+
+          if (userData.role === 'partner' && userData.MaDoiTac) {
+            localStorage.setItem('partnerId', String(userData.MaDoiTac));
+          }
+
           if (userData.role === 'customer') {
             useCartStore.getState().syncCartWithServer();
           }
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Token verification failed:", error);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          localStorage.removeItem('partnerId');
           setUser(null);
         }
       }
@@ -55,20 +60,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await api.post('/auth/login', { TenDangNhap: username, MatKhau: password });
       const { token, user: userData } = response.data;
-      
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+
+      if (userData.role === 'partner' && userData.MaDoiTac) {
+        localStorage.setItem('partnerId', String(userData.MaDoiTac));
+      }
+
       setUser(userData);
-      
+
       if (userData.role === 'customer') {
         useCartStore.getState().syncCartWithServer();
       }
-      
+
       return { success: true, user: userData };
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Login failed'
       };
     }
   };
@@ -76,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('partnerId');
     setUser(null);
     useCartStore.getState().clearCart();
   };
