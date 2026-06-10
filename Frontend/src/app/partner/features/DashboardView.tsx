@@ -8,10 +8,6 @@ import {
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { cn } from '@voucherhub/ui';
 
-import {
-  salesData as mockSalesData,
-  topVouchers as mockTopVouchers,
-} from '../data/mockData';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
 
 const statIcons: Record<string, React.ReactNode> = {
@@ -28,8 +24,8 @@ export default function DashboardView() {
     totalSold: 0,
     pendingVouchers: 0,
     activeVouchers: 0,
-    topVouchers: mockTopVouchers,
-    salesData: mockSalesData // Fallback or initial state
+    topVouchers: [] as any[],
+    salesData: [] as any[] // Fallback or initial state
   });
 
   useEffect(() => {
@@ -48,8 +44,8 @@ export default function DashboardView() {
           setStats(prev => ({
             ...prev,
             ...data,
-            topVouchers: data.topVouchers && data.topVouchers.length > 0 ? data.topVouchers : mockTopVouchers,
-            salesData: data.salesData || mockSalesData
+            topVouchers: data.topVouchers || [],
+            salesData: data.salesData || []
           }));
         }
       } catch (err) {
