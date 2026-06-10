@@ -50,8 +50,8 @@ export function ReviewOrderPage() {
   const { items: vouchers, getCartTotal } = useCartStore();
 
   const subtotal = getCartTotal();
-  const processingFee = 12.5;
-  const tax = 45.0;
+  const processingFee = 800;
+  const tax = subtotal * 0.08;
   const grandTotal = subtotal + processingFee + tax;
 
   return (
@@ -156,7 +156,7 @@ export function ReviewOrderPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          {t('review.per_item').replace('{price}', voucher.price.toFixed(2))}
+                          {t('review.per_item').replace('{price}', voucher.price.toLocaleString("vi-VN") + 'đ')}
                         </p>
                         <span className="inline-block mt-1 bg-secondary px-2 py-1 rounded text-xs font-semibold">
                           {t('review.qty').replace('{qty}', String(voucher.quantity))}
@@ -193,17 +193,17 @@ export function ReviewOrderPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('cart.subtotal')}</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">{subtotal.toLocaleString("vi-VN")}đ</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('review.processing_fee')}</span>
                   <span className="font-semibold">
-                    ${processingFee.toFixed(2)}
+                    {processingFee.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('review.tax_calc')}</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold">{tax.toLocaleString("vi-VN")}đ</span>
                 </div>
               </div>
 
@@ -211,7 +211,7 @@ export function ReviewOrderPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold">{t('review.grand_total')}</span>
                   <span className="font-black text-3xl">
-                    ${grandTotal.toFixed(2)}
+                    {grandTotal.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
               </div>

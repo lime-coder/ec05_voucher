@@ -279,7 +279,7 @@ export const en = {
   'review.email': 'Email Address',
   'review.step2': 'Step 2',
   'review.review_vouchers': 'Review Vouchers',
-  'review.per_item': '${price} per item',
+  'review.per_item': '{price} per item',
   'review.qty': 'Qty: {qty}',
   'review.warning': 'Double check your items. Once payment is confirmed, digital vouchers are issued immediately and are non-refundable.',
   'review.step3': 'Step 3',

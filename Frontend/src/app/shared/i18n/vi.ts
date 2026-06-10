@@ -278,7 +278,7 @@ export const vi = {
   'review.email': 'Địa Chỉ Email',
   'review.step2': 'Bước 2',
   'review.review_vouchers': 'Xem Lại Voucher',
-  'review.per_item': '${price} mỗi sản phẩm',
+  'review.per_item': '{price} mỗi sản phẩm',
   'review.qty': 'SL: {qty}',
   'review.warning': 'Kiểm tra kỹ các sản phẩm của bạn. Sau khi thanh toán được xác nhận, voucher kỹ thuật số sẽ được phát hành ngay lập tức và không được hoàn tiền.',
   'review.step3': 'Bước 3',

@@ -3,24 +3,21 @@ import { Link, useNavigate } from "react-router";
 import { Shield, ChevronRight, Wallet, CreditCard, Landmark } from "lucide-react";
 import { Button } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
-import { useCartStore } from "../../../store/useCartStore"; 
-import { useAuth } from "../../auth/AuthContext"; 
+import { useCartStore } from "../../../store/useCartStore";
+import { useAuth } from "../../auth/AuthContext";
 type PaymentMethod = "EWALLET" | "CARD" | "BANK";
 
 export function PaymentMethodPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items, clearCart, getCartTotal,} = useCartStore();
+  const { items, clearCart, getCartTotal, } = useCartStore();
   const { t } = useLanguage();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("CARD");
 
 
   const subtotal = getCartTotal();
-
-  const processingFee = 0;
-
+  const processingFee = 800;
   const tax = subtotal * 0.08;
-
   const orderTotal = subtotal + processingFee + tax;
 
   useEffect(() => {
@@ -31,7 +28,7 @@ export function PaymentMethodPage() {
     }
 
   }, [items, navigate]);
-  
+
   const handlePayment =
     async () => {
 
@@ -109,7 +106,7 @@ export function PaymentMethodPage() {
 
         const data =
           await response.json();
-        
+
         console.log(
           "PAYMENT RESPONSE:",
           data
@@ -118,7 +115,7 @@ export function PaymentMethodPage() {
         // Thành công
         // =====================
         if (
-          
+
           response.ok
         ) {
 
@@ -154,7 +151,7 @@ export function PaymentMethodPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      
+
       <main className="flex-1 max-w-[1440px] mx-auto px-6 py-8 w-full">
         {/* Breadcrumb */}
         <div className="mb-6 text-sm flex items-center gap-2">
@@ -185,11 +182,10 @@ export function PaymentMethodPage() {
             <div className="space-y-4 mb-6">
               {/* E-wallet Option */}
               <label
-                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "EWALLET"
+                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${selectedMethod === "EWALLET"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <input
@@ -216,11 +212,10 @@ export function PaymentMethodPage() {
 
               {/* Credit/Debit Card Option */}
               <label
-                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "CARD"
+                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${selectedMethod === "CARD"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <input
@@ -247,11 +242,10 @@ export function PaymentMethodPage() {
 
               {/* Bank Transfer Option */}
               <label
-                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  selectedMethod === "BANK"
+                className={`block border-2 rounded-lg p-6 cursor-pointer transition-all ${selectedMethod === "BANK"
                     ? "border-primary bg-secondary"
                     : "border-border bg-white hover:border-muted"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-4">
                   <input
@@ -300,7 +294,7 @@ export function PaymentMethodPage() {
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{item.name}:</span>
                     <span className="font-semibold">
-                      ${item.price.toFixed(2)}
+                      {item.price.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
                 ))}
@@ -310,17 +304,17 @@ export function PaymentMethodPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('cart.subtotal')}</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">{subtotal.toLocaleString("vi-VN")}đ</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('review.processing_fee')}</span>
                   <span className="font-semibold">
-                    ${processingFee.toFixed(2)}
+                    {processingFee.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('payment.tax_vat')}</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold">{tax.toLocaleString("vi-VN")}đ</span>
                 </div>
               </div>
 
@@ -328,7 +322,7 @@ export function PaymentMethodPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-lg">{t('payment.order_total')}</span>
                   <span className="font-black text-3xl">
-                    ${orderTotal.toFixed(2)}
+                    {orderTotal.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
               </div>
@@ -358,6 +352,6 @@ export function PaymentMethodPage() {
         </div>
       </main>
 
-          </div>
+    </div>
   );
 }
