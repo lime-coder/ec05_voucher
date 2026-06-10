@@ -214,7 +214,7 @@ VALUES
     N'Áp dụng mua nước và bánh tại hệ thống Highlands Coffee toàn quốc.',
     N'Mỗi hóa đơn chỉ áp dụng 1 voucher. Không áp dụng chung khuyến mãi khác.',
     50000, 45000, '2026-01-01 00:00:00', '2026-06-01 23:59:59', '2026-01-01 00:00:00', '2026-06-01 23:59:59',
-    1000, 6, N'Đang hoạt động',
+    1000, 7, N'Đang hoạt động',
     N'Voucher không có giá trị quy đổi thành tiền mặt. Không hoàn trả tiền thừa.',
     N'Đưa mã voucher cho nhân viên thu ngân quét khi thanh toán.',
     '/uploads/vouchers/partner_1_highlands-coffee/highlands_50k.jpg'),
@@ -269,7 +269,7 @@ VALUES
     N'Đổi 1 vé xem phim định dạng 2D tại tất cả các rạp CGV.',
     N'Chỉ áp dụng cho phim 2D, ghế thường/VIP. Không áp dụng suất chiếu đặc biệt.',
     110000, 85000, '2026-01-01 00:00:00', '2026-12-31 23:59:59', '2026-01-01 00:00:00', '2026-12-31 23:59:59',
-    2000, 2, N'Đang hoạt động',
+    2000, 3, N'Đang hoạt động',
     N'Vé đã mua miễn đổi trả.',
     N'Nhập mã code trên app CGV hoặc đưa trực tiếp tại quầy vé.',
     '/uploads/vouchers/partner_2_cgv-cinemas/cgv_2d.jpg'),
@@ -278,7 +278,7 @@ VALUES
     N'Combo bắp ngọt size L và 2 nước ngọt size M.',
     N'Đổi tại quầy bắp nước của CGV.',
     115000, 89000, '2026-02-01 00:00:00', '2026-11-30 23:59:59', '2026-02-01 00:00:00', '2026-11-30 23:59:59',
-    1000, 0, N'Đang hoạt động',
+    1000, 1, N'Đang hoạt động',
     N'Không hoàn tiền.',
     N'Quét mã tại quầy nhận bắp nước.',
     '/uploads/vouchers/partner_2_cgv-cinemas/cgv_combo.jpg'),
@@ -436,20 +436,20 @@ VALUES
 -- customer1 (IDTaiKhoan=14)
 (1,  14, '2026-05-10 10:00:00', 90000,  N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
 (2,  14, '2026-05-15 14:30:00', 59000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
-(3,  14, NULL,                  85000,  N'Ví điện tử',        N'Chờ xử lý',       N'Chưa thanh toán'),
+(3,  14, '2026-05-15 10:00:00', 85000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 (4,  14, NULL,                  46000,  N'Thẻ ATM nội địa',   N'Đã hủy',          N'Chưa thanh toán'),
 (5,  14, '2026-05-20 09:15:00', 138000, N'Ví điện tử',        N'Đã hủy',          N'Đã hoàn tiền'),
 
 -- customer2 (IDTaiKhoan=15)
 (6,  15, '2026-05-11 11:20:00', 170000, N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
 (7,  15, '2026-05-16 16:40:00', 46000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
-(8,  15, NULL,                  89000,  N'Ví điện tử',        N'Chờ xử lý',       N'Chưa thanh toán'),
+(8,  15, '2026-05-18 16:00:00', 89000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 (9,  15, NULL,                  35000,  N'Thẻ ATM',           N'Đã hủy',          N'Chưa thanh toán'),
 
 -- customer3 (IDTaiKhoan=16)
 (10, 16, '2026-05-12 15:10:00', 70000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 (11, 16, '2026-05-18 10:05:00', 184000, N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
-(12, 16, NULL,                  45000,  N'Ví điện tử',        N'Chờ xử lý',       N'Chưa thanh toán'),
+(12, 16, '2026-05-20 14:30:00', 45000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 
 -- customer4 (IDTaiKhoan=17)
 (13, 17, '2026-05-14 09:00:00', 45000,  N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
@@ -528,12 +528,18 @@ VALUES
 -- ===== Đơn 2 (Hoàn tất): 1x Highlands Combo - MaCTDH=2 =====
 ('HLSDCombo1', 2, N'Chưa sử dụng', '2026-05-15 14:30:00', NULL,                    NULL),
 
+-- ===== Đơn 3 (Hoàn tất): 1x CGV 2D - MaCTDH=3 =====
+('CGV2D82W90', 3, N'Chưa sử dụng', '2026-05-15 10:00:00', NULL,                    NULL),
+
 -- ===== Đơn 6 (Hoàn tất): 2x CGV 2D - MaCTDH=7 =====
 ('CGV2D93K8J', 7, N'Đã sử dụng',   '2026-05-11 11:20:00', '2026-05-14 20:00:00',   5),
 ('CGV2DJ8F2D', 7, N'Chưa sử dụng', '2026-05-11 11:20:00', NULL,                    NULL),
 
 -- ===== Đơn 7 (Hoàn tất): 1x Phúc Long 50k - MaCTDH=8 =====
 ('PL50K82J1W', 8, N'Chưa sử dụng', '2026-05-16 16:40:00', NULL,                    NULL),
+
+-- ===== Đơn 8 (Hoàn tất): 1x CGV Combo - MaCTDH=9 =====
+('CGVCB8X9Y2', 9, N'Chưa sử dụng', '2026-05-18 16:00:00', NULL,                    NULL),
 
 -- ===== Đơn 10 (Hoàn tất): 2x Phúc Long Trà Đào Sữa - MaCTDH=11 =====
 ('PLTDSSZ9K1', 11, N'Chưa sử dụng', '2026-05-12 15:10:00', NULL,                   NULL),
@@ -542,6 +548,9 @@ VALUES
 -- ===== Đơn 11 (Hoàn tất): 2x Phúc Long 100k - MaCTDH=12 =====
 ('PL100K92H1', 12, N'Chưa sử dụng', '2026-05-18 10:05:00', NULL,                   NULL),
 ('PL100K92H2', 12, N'Chưa sử dụng', '2026-05-18 10:05:00', NULL,                   NULL),
+
+-- ===== Đơn 12 (Hoàn tất): 1x Highlands 50k - MaCTDH=13 =====
+('HL50K12X3Y', 13, N'Chưa sử dụng', '2026-05-20 14:30:00', NULL,                    NULL),
 
 -- ===== Đơn 13 (Hoàn tất): 1x Highlands 50k - MaCTDH=14 =====
 ('HL50K8W7V9', 14, N'Chưa sử dụng', '2026-05-14 09:00:00', NULL,                   NULL),

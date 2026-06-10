@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db';
 import { logActivity } from './index';
+import { normalizeOrderStatus, normalizePaymentStatus } from '../../query_constraints';
+
 
 export const getAllOrders = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -9,10 +11,10 @@ export const getAllOrders = async (req: Request, res: Response, next: NextFuncti
     if (startDate && endDate) {
       where.ThoiGianThanhToan = { gte: new Date(String(startDate) + 'T00:00:00'), lte: new Date(String(endDate) + 'T23:59:59') };
     }
-    if (status === 'PAID') where.TrangThaiThanhToan = 'PAID';
-    else if (status === 'REFUNDED') where.TrangThaiThanhToan = 'REFUNDED';
-    else if (status === 'CANCELLED') where.TrangThaiDonHang = 'CANCELLED';
-    else if (status === 'PENDING') where.TrangThaiThanhToan = { notIn: ['PAID', 'REFUNDED'] };
+    if (status === 'PAID') where.TrangThaiThanhToan = 'Đã thanh toán';
+    else if (status === 'REFUNDED') where.TrangThaiThanhToan = 'Đã hoàn tiền';
+    else if (status === 'CANCELLED') where.TrangThaiDonHang = 'Đã hủy';
+    else if (status === 'PENDING') where.TrangThaiThanhToan = { notIn: ['Đã thanh toán', 'Đã hoàn tiền'] };
 
     const orders = await prisma.donHang.findMany({
       where,
@@ -66,7 +68,7 @@ export const updateOrderStatus = async (req: Request, res: Response, next: NextF
         where: { SoMaVoucher: { in: allCodes.map(mv => mv.SoMaVoucher) } },
         data: { TrangThaiSuDung: 'Hủy voucher' }
       });
-      await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data: { TrangThaiThanhToan: 'REFUNDED', TrangThaiDonHang: 'Đã hủy' } });
+      await prisma.donHang.update({ where: { MaDonHang: Number(id) }, data: { TrangThaiThanhToan: 'Đã hoàn tiền', TrangThaiDonHang: 'Đã hủy' } });
       logActivity(req, `Refund ORD-${id}`, `${allCodes.length} voucher codes → Hủy voucher`);
       return res.json({ message: 'Hoàn tiền thành công, các mã voucher đã được hủy.' });
     }

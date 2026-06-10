@@ -24,7 +24,7 @@ export const ORDER_STATUS = {
 
 export const PAYMENT_STATUS = {
   PAID: 'Đã thanh toán',
-  REFUNDED: 'REFUNDED',
+  REFUNDED: 'Đã hoàn tiền',
 } as const;
 
 export const VOUCHER_USAGE_STATUS = {

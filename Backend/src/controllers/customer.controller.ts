@@ -4,6 +4,8 @@ import * as bcrypt from 'bcrypt';
 import { LogService } from '../services/log.service';
 import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
 import { commitCustomerAvatar } from '../utils/media.util';
+import { normalizeGender } from '../query_constraints';
+
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
@@ -39,7 +41,7 @@ export const updateProfile = async (req: Request, res: Response) => {
           data: {
             SDT_KH: phone,
             DiaChiKhachHang: address,
-            GioiTinh: gender,
+            GioiTinh: gender ? normalizeGender(gender) : null,
             NgaySinh: dob ? new Date(dob) : null,
           }
         });
@@ -49,7 +51,7 @@ export const updateProfile = async (req: Request, res: Response) => {
             IDTaiKhoan: customerId,
             SDT_KH: phone,
             DiaChiKhachHang: address,
-            GioiTinh: gender,
+            GioiTinh: gender ? normalizeGender(gender) : null,
             NgaySinh: dob ? new Date(dob) : null,
           }
         });

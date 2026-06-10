@@ -5,6 +5,8 @@ import { LogService } from './log.service';
 import { AnomalyService } from './anomaly.service';
 import { AUDIT_ACTIONS, LOG_STATUS } from '../config/audit.config';
 import { ACCOUNT_STATUS } from '../constants';
+import { normalizeGender } from '../query_constraints';
+
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 if (!JWT_SECRET) {
@@ -106,7 +108,7 @@ export class AuthService {
           SDT_KH: data.SDT,
           IDTaiKhoan: taiKhoan.IDTaiKhoan,
           NgaySinh: data.NgaySinh ? new Date(data.NgaySinh) : undefined,
-          GioiTinh: data.GioiTinh,
+          GioiTinh: data.GioiTinh ? normalizeGender(data.GioiTinh) : undefined,
           DiaChiKhachHang: data.DiaChi,
         },
       });
