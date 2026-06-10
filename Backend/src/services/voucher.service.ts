@@ -213,7 +213,9 @@ export class VoucherService {
 
     // Determine status
     let status = 'valid';
-    if (maVoucher.TrangThaiSuDung === VOUCHER_USAGE_STATUS.USED) {
+    if (maVoucher.TrangThaiSuDung === 'Hủy voucher') {
+      status = 'refunded';
+    } else if (maVoucher.TrangThaiSuDung === VOUCHER_USAGE_STATUS.USED) {
       status = 'used';
     } else if (voucher.ThoiGianKetThuc < new Date() || maVoucher.TrangThaiSuDung === VOUCHER_USAGE_STATUS.EXPIRED) {
       status = 'expired';
@@ -252,6 +254,10 @@ export class VoucherService {
 
     if (result.status === 'expired') {
       throw new Error('Voucher đã hết hạn sử dụng');
+    }
+
+    if (result.status === 'refunded') {
+      throw new Error('Voucher đã bị hủy hoặc hoàn tiền');
     }
 
     // Update status in db

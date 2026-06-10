@@ -34,7 +34,7 @@ export interface StatusConfig {
   color: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'error';
 }
 
-export type VerificationStatus = 'valid' | 'used' | 'expired' | 'invalid';
+export type VerificationStatus = 'valid' | 'used' | 'expired' | 'invalid' | 'refunded';
 
 export interface VoucherCode {
   code: string;

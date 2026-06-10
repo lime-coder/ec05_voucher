@@ -50,6 +50,8 @@ import ReportsView from "./partner/features/ReportsView";
 import BranchManagement from "./partner/features/BranchManagement";
 import ProfileSettings from "./partner/features/ProfileSettings";
 import StoreStats from "./partner/features/StoreStats";
+import StaffManagement from "./partner/features/StaffManagement";
+import CustomerPurchases from "./partner/features/CustomerPurchases";
 
 export const router = createBrowserRouter([
 
@@ -107,6 +109,8 @@ export const router = createBrowserRouter([
       { path: "branches", element: <BranchManagement /> },
       { path: "profile", element: <ProfileSettings /> },
       { path: "store", element: <StoreStats /> },
+      { path: "staff", element: <StaffManagement /> },
+      { path: "purchases", element: <CustomerPurchases /> },
       { path: "notifications", element: <NotificationsPage /> },
     ],
   },

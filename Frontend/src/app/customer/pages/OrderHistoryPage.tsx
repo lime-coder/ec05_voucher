@@ -4,6 +4,7 @@
   import { Button, Input, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@voucherhub/ui";
   import { useLanguage } from "../../shared/contexts/LanguageContext";
   import { useAuth } from "../../auth/AuthContext";
+  import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 interface VoucherItem {
   voucherId: number;
@@ -27,6 +28,10 @@ interface Order {
     const [openSort, setOpenSort] = useState(false);
     const [sortBy, setSortBy] = useState("newest");
     const [ sortedOrders, setSortedOrders ] = useState<Order[]>( [] );
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 7;
     
     const [orders, setOrders] =
     useState<Order[]>([]);
@@ -115,35 +120,47 @@ interface Order {
 
     }, [user]);
 
-    const filteredOrders =
-    sortedOrders.filter(
-      (o) => {
+    const filteredOrders = sortedOrders.filter((o) => {
+      const orderId = o.orderId || "";
+      const vouchers = o.vouchers || [];
+      const matchesSearch =
+        orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vouchers.some((v) => String(v.name).toLowerCase().includes(searchQuery.toLowerCase()));
 
-        const orderId =
-          o.orderId || "";
-
-        const vouchers =
-          o.vouchers || [];
-
-        return (
-          orderId
-            .toLowerCase()
-            .includes(
-              searchQuery.toLowerCase()
-            )
-
-          ||
-
-          vouchers.some(
-            (v) =>
-              String(v)
-                .toLowerCase()
-                .includes(
-                  searchQuery.toLowerCase()
-                )
-          )
-        );
+      let matchesDate = true;
+      if (startDate && endDate) {
+        // Parse dd/MM/yyyy HH:mm:ss string to Date object for accurate comparison
+        const timeParts = o.paymentTime.split(" ");
+        let orderDate = new Date(o.paymentTime);
+        if (timeParts.length === 2) {
+            // Assume format like "14:30:00 12/05/2026"
+            const dateParts = timeParts[1]?.split("/") || timeParts[0]?.split("/");
+            if (dateParts.length === 3) {
+                const day = parseInt(dateParts[0], 10);
+                const month = parseInt(dateParts[1], 10) - 1;
+                const year = parseInt(dateParts[2], 10);
+                orderDate = new Date(year, month, day);
+            }
+        }
+        
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (orderDate < start || orderDate > end) matchesDate = false;
       }
+
+      return matchesSearch && matchesDate;
+    });
+
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [searchQuery, startDate, endDate, sortBy]);
+
+    const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+    const paginatedOrders = filteredOrders.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
     );
 
     
@@ -272,16 +289,42 @@ interface Order {
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="relative max-w-md mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('orders.search_placeholder')}
-                className="pl-10 bg-input-background"
-              />
+            {/* Search and Date Filter */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('orders.search_placeholder')}
+                  className="pl-10 bg-input-background"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-auto bg-white shadow-sm border-gray-200 text-sm"
+                />
+                <span className="text-gray-400 text-sm">-</span>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-auto bg-white shadow-sm border-gray-200 text-sm"
+                />
+                {(startDate || endDate) && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                    className="text-xs text-gray-500 hover:text-gray-700 px-2 h-10 border border-gray-200 bg-white"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -308,7 +351,7 @@ interface Order {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <TableRow key={order.id} className="hover:bg-primary/5 transition-colors">
                     <TableCell>
                       <span className="font-mono font-bold">{order.orderId}</span>
@@ -322,25 +365,29 @@ interface Order {
                           {(order.vouchers || [])[0]?.name}
                         </span>
                       ) : (
-                        <div className="relative inline-block w-auto min-w-[180px]">
-                          <button
-                            onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
-                            onBlur={() => setTimeout(() => setOpenDropdown(null), 200)}
-                            className="w-full flex items-center justify-between bg-secondary rounded-full px-4 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-transparent hover:border-primary hover:bg-white focus:bg-white transition-colors"
-                          >
-                            <span>{t('orders.vouchers_included').replace('{count}', String((order.vouchers || []).length))}</span>
-                            <ChevronDown className="w-4 h-4 text-foreground ml-2" />
-                          </button>
-                          {openDropdown === order.id && (
-                            <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-border overflow-hidden z-50 py-1">
+                        <DropdownMenu.Root>
+                          <DropdownMenu.Trigger asChild>
+                            <button
+                              className="w-[180px] flex items-center justify-between bg-secondary rounded-full px-4 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary cursor-pointer border border-transparent hover:border-primary hover:bg-white focus:bg-white transition-colors"
+                            >
+                              <span>{t('orders.vouchers_included').replace('{count}', String((order.vouchers || []).length))}</span>
+                              <ChevronDown className="w-4 h-4 text-foreground ml-2" />
+                            </button>
+                          </DropdownMenu.Trigger>
+                          <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                              className="bg-white rounded-xl shadow-lg border border-border overflow-hidden z-[100] py-1 min-w-[180px]"
+                              align="start"
+                              sideOffset={4}
+                            >
                               {(order.vouchers || []).map((v, i) => (
-                                <div key={i} className="px-4 py-2 hover:bg-primary/5 text-sm text-left">
+                                <DropdownMenu.Item key={i} className="px-4 py-2 hover:bg-primary/5 text-sm text-left outline-none cursor-pointer">
                                   {v.name}
-                                </div>
+                                </DropdownMenu.Item>
                               ))}
-                            </div>
-                          )}
-                        </div>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-bold">
@@ -360,6 +407,35 @@ interface Order {
               </TableBody>
             </Table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-sm text-gray-500">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} of {filteredOrders.length} entries
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm font-medium">
+                  {currentPage} / {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Notice Box */}
           <div className="border border-border rounded-lg p-6 bg-white">

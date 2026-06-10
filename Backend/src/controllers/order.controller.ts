@@ -262,6 +262,9 @@ export const getOrders =
           where: {
             IDTaiKhoan:
               customerId,
+            TrangThaiThanhToan: {
+              in: ["Đã thanh toán", "Đã hoàn tiền"]
+            },
           },
 
           include: {
@@ -466,17 +469,17 @@ export const confirmOrderPayment = async (req: Request, res: Response) => {
           },
         });
 
-        // Phát hành MaVoucher
-        for (let i = 0; i < Number(item.SoLuongMua); i++) {
-          await tx.maVoucher.create({
-            data: {
-              SoMaVoucher: nanoid(12),
-              MaCTDonHang: item.MaCTDonHang,
-              TrangThaiSuDung: "Chưa sử dụng",
-              ThoiDiemPhatHanh: new Date(),
-            },
-          });
-        }
+        // Phát hành MaVoucher (sử dụng createMany để tránh timeout)
+        const maVouchersData = Array.from({ length: Number(item.SoLuongMua) }).map(() => ({
+          SoMaVoucher: nanoid(12),
+          MaCTDonHang: item.MaCTDonHang,
+          TrangThaiSuDung: "Chưa sử dụng",
+          ThoiDiemPhatHanh: new Date(),
+        }));
+        
+        await tx.maVoucher.createMany({
+          data: maVouchersData,
+        });
       }
 
       // 3. Clear Cart
@@ -523,22 +526,45 @@ export const cancelOrderPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Trạng thái đơn hàng không hợp lệ để hủy" });
     }
 
-    // Cập nhật trạng thái đơn hàng
-    await prisma.donHang.update({
-      where: { MaDonHang: orderId },
-      data: {
-        TrangThaiDonHang: 'Đã hủy',
-        TrangThaiThanhToan: 'Thất bại',
-      },
+    // Tự động xóa đơn hàng khi hủy thanh toán
+    await prisma.$transaction(async (tx) => {
+      // Xóa chi tiết đơn hàng
+      await tx.chiTietDonHang.deleteMany({
+        where: { MaDonHang: orderId }
+      });
+      
+      // Xóa đơn hàng
+      await tx.donHang.delete({
+        where: { MaDonHang: orderId }
+      });
     });
 
     res.status(200).json({
-      message: "Hủy thanh toán thành công",
+      message: "Hủy thanh toán thành công, đơn hàng đã bị xóa",
       orderId: order.MaDonHang,
     });
   } catch (error: any) {
     console.error("Payment cancellation error:", error);
     res.status(500).json({ message: "Lỗi hệ thống khi hủy thanh toán", error: error.message });
+  }
+};
+
+export const deleteOrder = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.id);
+    
+    await prisma.$transaction(async (tx) => {
+      await tx.chiTietDonHang.deleteMany({
+        where: { MaDonHang: orderId }
+      });
+      await tx.donHang.delete({
+        where: { MaDonHang: orderId }
+      });
+    });
+
+    res.status(200).json({ message: "Đã xóa đơn hàng thành công" });
+  } catch (error: any) {
+    res.status(500).json({ message: "Lỗi khi xóa đơn hàng" });
   }
 };
 

@@ -75,10 +75,12 @@ export function OrderDetailPage() {
 
   }, [orderId]);
 
-  const StatusBadge = ({ status }: { status: "unused" | "used" }) => {
+  const StatusBadge = ({ status }: { status: "unused" | "used" | "refunded" }) => {
     const styles =
       status === "unused"
         ? "border-primary text-primary bg-primary/10"
+        : status === "refunded"
+        ? "border-red-500 text-red-500 bg-red-500/10"
         : "border-[#9CA3AF] text-[#9CA3AF] bg-[#9CA3AF]/10";
 
     return (
@@ -261,7 +263,9 @@ export function OrderDetailPage() {
                             <p className="font-semibold">{Number(voucher.DonGia || 0).toLocaleString('vi-VN')} VND</p>
                             <StatusBadge
                               status={
-                                codeItem.TrangThaiSuDung === "USED" || codeItem.TrangThaiSuDung === "Đã sử dụng"
+                                codeItem.TrangThaiSuDung === "Hủy voucher"
+                                  ? "refunded"
+                                  : codeItem.TrangThaiSuDung === "USED" || codeItem.TrangThaiSuDung === "Đã sử dụng"
                                   ? "used"
                                   : "unused"
                               }
@@ -312,10 +316,12 @@ export function OrderDetailPage() {
                         <p className="font-semibold">{voucher.MaVouchers[0]?.NgayHetHan || 'N/A'}</p>
                       </div>
 
-                      <StatusBadge status={voucher.MaVouchers?.[0]
-                                            ?.TrangThaiSuDung === "USED" || voucher.MaVouchers?.[0]?.TrangThaiSuDung === "Đã sử dụng"
-                                            ? "used"
-                                            : "unused"} />
+                      <StatusBadge status={
+                                              voucher.MaVouchers?.[0]?.TrangThaiSuDung === "Hủy voucher"
+                                              ? "refunded"
+                                              : voucher.MaVouchers?.[0]?.TrangThaiSuDung === "USED" || voucher.MaVouchers?.[0]?.TrangThaiSuDung === "Đã sử dụng"
+                                              ? "used"
+                                              : "unused"} />
 
                       <div className="flex gap-2">
                         <button 

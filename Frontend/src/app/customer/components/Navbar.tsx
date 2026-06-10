@@ -13,7 +13,7 @@ interface NavbarProps {
 export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const { items } = useCartStore(); 
   const cartCount = items.reduce( ( total, item ) => total + item.quantity, 0 );
@@ -80,6 +80,15 @@ export function Navbar({ isLoggedIn = false, showSearch = true }: NavbarProps) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4 shrink-0">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
+              className="flex items-center justify-center w-10 h-10 text-sm font-bold text-foreground hover:text-primary transition-colors border border-border rounded-full hover:bg-secondary/50"
+              title={language === 'vi' ? 'Switch to English' : 'Đổi sang Tiếng Việt'}
+            >
+              {language === 'vi' ? 'VI' : 'EN'}
+            </button>
+
             {isLoggedIn ? (
               <>
                 <div className="relative group">

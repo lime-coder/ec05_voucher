@@ -22,6 +22,7 @@ export function PaymentMethodPage() {
   const [showGateway, setShowGateway] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 mins
+  const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
 
   const subtotal = getCartTotal();
   const processingFee = 800;
@@ -60,16 +61,14 @@ export function PaymentMethodPage() {
     if (isProcessing) return;
     setIsProcessing(true);
     try {
-      const res = await api.patch(`/orders/${orderId}/payment/cancel`);
-      if (res.status === 200) {
-        toast.error(t('payment.failed_title'), {
-          description: t('payment.failed_desc'),
-        });
-        setShowGateway(false);
-        navigate("/checkout/review");
-      } else {
-        toast.error(t('payment.failed_title'));
+      if (createdOrderId) {
+        await api.delete(`/orders/${createdOrderId}`);
       }
+      toast.error(t('payment.failed_title'), {
+        description: t('payment.failed_desc'),
+      });
+      setShowGateway(false);
+      navigate("/checkout/review");
     } catch (error) {
       console.error("Cancel payment error:", error);
       toast.error(t('payment.failed_title'));
@@ -79,10 +78,10 @@ export function PaymentMethodPage() {
   };
 
   const handleConfirmPayment = async () => {
-    if (isProcessing) return;
+    if (isProcessing || !createdOrderId) return;
     setIsProcessing(true);
     try {
-      const res = await api.patch(`/orders/${orderId}/payment/confirm`, {
+      const res = await api.patch(`/orders/${createdOrderId}/payment/confirm`, {
         paymentMethod: selectedMethod,
       });
       if (res.status === 200) {
@@ -93,7 +92,7 @@ export function PaymentMethodPage() {
         localStorage.removeItem("checkout-info");
         setShowGateway(false);
         
-        navigate(`/checkout/success?orderId=${orderId}`);
+        navigate(`/checkout/success?orderId=${createdOrderId}`);
         setTimeout(() => {
           clearCart();
         }, 300);
@@ -109,12 +108,34 @@ export function PaymentMethodPage() {
   };
 
   const handlePayment = async () => {
-    if (!orderId) {
+    if (items.length === 0) {
       toast.error(t('payment.failed_title'));
       navigate("/cart");
       return;
     }
-    setShowGateway(true);
+    
+    setIsProcessing(true);
+    try {
+      const orderRes = await api.post("/orders", {
+        items: items.map(item => ({
+          voucherId: Number(item.id),
+          quantity: item.quantity
+        })),
+        paymentMethod: selectedMethod
+      });
+
+      if (orderRes.data && orderRes.data.orderId) {
+        setCreatedOrderId(orderRes.data.orderId);
+        setShowGateway(true);
+      } else {
+        throw new Error("Cannot create order");
+      }
+    } catch (error) {
+      console.error("Create order error:", error);
+      toast.error("Tạo đơn hàng thất bại");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
 
@@ -359,7 +380,7 @@ export function PaymentMethodPage() {
             {/* Order info */}
             <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
               <p className="text-white/70 text-xs uppercase tracking-wider mb-1">{t('payment.gateway.order_id_label')}</p>
-              <p className="font-mono font-black text-lg tracking-wider">ORD-{orderId}</p>
+              <p className="font-mono font-black text-lg tracking-wider">ORD-{createdOrderId}</p>
               <div className="flex justify-between items-center mt-2">
                 <p className="text-white/70 text-xs">{t('payment.gateway.total_label')}</p>
                 <p className="font-black text-xl">{orderTotal.toLocaleString("vi-VN")}đ</p>
@@ -398,7 +419,7 @@ export function PaymentMethodPage() {
                     { label: t('payment.gateway.bank_name_label'), value: t('payment.gateway.bank_name_value') },
                     { label: t('payment.gateway.bank_account'), value: t('payment.gateway.bank_account_value') },
                     { label: t('payment.gateway.bank_holder'), value: t('payment.gateway.bank_holder_value') },
-                    { label: t('payment.gateway.bank_note'), value: `ORD${orderId}` },
+                    { label: t('payment.gateway.bank_note'), value: `ORD${createdOrderId}` },
                     { label: t('payment.gateway.bank_amount'), value: `${orderTotal.toLocaleString("vi-VN")}đ` },
                   ].map((row) => (
                     <div key={row.label} className="flex justify-between text-xs py-1.5 border-b border-blue-100 last:border-0">
@@ -427,9 +448,6 @@ export function PaymentMethodPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  {t('payment.gateway.card_demo_note')}
-                </p>
               </div>
             )}
 

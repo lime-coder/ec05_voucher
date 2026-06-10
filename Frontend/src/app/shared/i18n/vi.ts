@@ -393,8 +393,8 @@ export const vi = {
   'order.unit_price': 'Đơn Giá',
   'order.expiration_date': 'Ngày Hết Hạn',
   'order.how_to_use': 'Cách Sử Dụng',
-  'order.step1': 'Xuất trình mã QR này cho nhân viên tại bất kỳ chi nhánh nào của chúng tôi.',
-  'order.step2': 'Nhân viên sẽ quét mã để xác minh mua hàng của bạn.',
+  'order.step1': 'Xuất trình mã QR này cho nhân viên tại các chi nhánh cho phép áp dụng trong điều khoản của voucher.',
+  'order.step2': 'Nhân viên sẽ quét mã để xác minh tính hợp lệ của voucher.',
   'order.step3': 'Thưởng thức sản phẩm của bạn! Các mã chưa sử dụng vẫn có hiệu lực cho đến ngày hết hạn.',
 
   // Profile
@@ -573,6 +573,8 @@ export const vi = {
   'partner.nav.reports': 'Báo cáo & Thống kê',
   'partner.nav.branches': 'Quản lý Chi nhánh',
   'partner.nav.store': 'Thống kê chi nhánh',
+  'partner.nav.purchases': 'Đơn hàng khách hàng',
+  'partner.nav.staff': 'Quản lý nhân sự',
   'partner.nav.profile': 'Cài đặt tài khoản',
   'partner.portal': 'Cổng Đối Tác',
   'partner.logout': 'Đăng xuất',

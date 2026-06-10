@@ -381,6 +381,21 @@ export function ContentManagement() {
     }
   };
 
+  const handleToggleArticleStatus = async (article: any) => {
+    try {
+      const nextStatus = article.TrangThai === 'Đã xuất bản' ? 'Ẩn' : 'Đã xuất bản';
+      await api.put(`/admin/content/${article.MaBaiViet}`, {
+        type: 'article',
+        TrangThai: nextStatus
+      });
+      toast.success(tText('Article status updated!', 'Cập nhật trạng thái thành công!'));
+      fetchAllContent();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(tText('Failed to update status!', 'Cập nhật trạng thái thất bại!'));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -586,12 +601,14 @@ export function ContentManagement() {
                         <TableCell>{article.TacGia}</TableCell>
                         <TableCell>{article.LuotXem}</TableCell>
                         <TableCell>
-                          <Badge
-                            variant={article.TrangThai === 'Đã xuất bản' ? 'default' : 'secondary'}
-                            className={article.TrangThai === 'Đã xuất bản' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent' : 'shadow-none border-transparent'}
-                          >
-                            {article.TrangThai === 'Đã xuất bản' ? tText('Published', 'Đã xuất bản') : article.TrangThai === 'Nháp' ? tText('Draft', 'Bản nháp') : tText('Hidden', 'Ẩn')}
-                          </Badge>
+                          <button onClick={() => handleToggleArticleStatus(article)} className="focus:outline-none hover:opacity-80 transition-opacity">
+                            <Badge
+                              variant={article.TrangThai === 'Đã xuất bản' ? 'default' : 'secondary'}
+                              className={article.TrangThai === 'Đã xuất bản' ? 'bg-green-100 text-green-700 hover:bg-green-100 shadow-none border-transparent' : 'shadow-none border-transparent'}
+                            >
+                              {article.TrangThai === 'Đã xuất bản' ? tText('Published', 'Đã xuất bản') : article.TrangThai === 'Nháp' ? tText('Draft', 'Bản nháp') : tText('Hidden', 'Ẩn')}
+                            </Badge>
+                          </button>
                         </TableCell>
                         <TableCell>{article.NgayTao ? new Date(article.NgayTao).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') : ''}</TableCell>
                         <TableCell className="text-right">

@@ -68,7 +68,7 @@ export function HeroSection({ timeLeft }: HeroSectionProps) {
                         }}
                         className="bg-primary hover:opacity-90 text-primary-foreground font-semibold px-8 py-6 rounded-lg"
                       >
-                        {activeBanner.VanBanNut || t('home.explore_deals')}
+                        {activeBanner.VanBanNut === 'Đặt vé ngay' || activeBanner.VanBanNut === 'Book Now' ? (t('home.book_now') !== 'home.book_now' ? t('home.book_now') : (t('common.confirm') === 'Xác nhận' ? 'Đặt vé ngay' : 'Book Now')) : (activeBanner.VanBanNut || t('home.explore_deals'))}
                       </Button>
                       <Button
                         variant="outline"

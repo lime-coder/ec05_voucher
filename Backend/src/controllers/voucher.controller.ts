@@ -705,6 +705,23 @@ export const searchVouchers = async (
     // /api/vouchers/search?q=coffee
     // =========================
     const q = String(req.query.q || "").trim();
+      
+      let keywords = [q];
+      const lowerQ = q.toLowerCase();
+      if (lowerQ === 'entertainment' || lowerQ === 'giải trí') {
+        keywords = ['giải trí', 'entertainment', 'phim', 'cinema'];
+      } else if (lowerQ === 'food' || lowerQ === 'ẩm thực') {
+        keywords = ['ẩm thực', 'food', 'nhà hàng', 'cafe'];
+      } else if (lowerQ === 'travel' || lowerQ === 'du lịch') {
+        keywords = ['du lịch', 'travel', 'khách sạn', 'hotel'];
+      } else if (lowerQ === 'spa' || lowerQ === 'sức khỏe') {
+        keywords = ['spa', 'sức khỏe', 'massage'];
+      } else if (lowerQ === 'sports' || lowerQ === 'thể thao') {
+        keywords = ['thể thao', 'sports', 'gym'];
+      }
+
+      // Remove empty strings
+      keywords = Array.from(new Set(keywords.filter(Boolean)));
 
     // =========================
     // Query tìm kiếm voucher
@@ -716,38 +733,11 @@ export const searchVouchers = async (
 
         // OR:
         // chỉ cần match 1 điều kiện
-        OR: [
-          // =====================
-          // Tìm theo tên voucher
-          // =====================
-          {
-            TenVoucher: {
-              contains: q,
-            },
-          },
-
-          // =====================
-          // Tìm theo tên danh mục
-          // =====================
-          {
-            DanhMuc: {
-              TenDanhMuc: {
-                contains: q,
-              },
-            },
-          },
-
-          // =====================
-          // Tìm theo tên đối tác
-          // =====================
-          {
-            DoiTac: {
-              TenDoanhNghiep: {
-                contains: q,
-              },
-            },
-          },
-        ],
+        OR: keywords.flatMap(kw => [
+          { TenVoucher: { contains: kw } },
+          { DanhMuc: { TenDanhMuc: { contains: kw } } },
+          { DoiTac: { TenDoanhNghiep: { contains: kw } } },
+        ]),
       },
 
       // Include dữ liệu liên quan

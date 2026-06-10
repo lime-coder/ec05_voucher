@@ -488,4 +488,86 @@ export class PartnerService {
     setTarget(partnerId, timeRange, target);
     return { success: true, timeRange, target };
   }
+
+  /**
+   * Tạo tài khoản nhân viên đối tác
+   */
+  static async getStaff(partnerId: number) {
+    const staff = await prisma.nhanVienDoiTac.findMany({
+      where: { MaDoiTac: partnerId },
+      include: {
+        TaiKhoan: true
+      }
+    });
+
+    return staff.map((s) => ({
+      id: s.IDNhanVien,
+      name: s.TaiKhoan?.HoTenNguoiDung || '',
+      email: s.TaiKhoan?.Email || '',
+      phone: '', // SDT was removed from TaiKhoan
+      position: s.ChucVu || 'Nhân viên',
+      branch: 'Tất cả chi nhánh', // Simplification for now
+      status: s.TaiKhoan?.TrangThaiTaiKhoan || 'Hoạt động',
+      username: s.TaiKhoan?.TenDangNhap || ''
+    }));
+  }
+
+  static async createStaff(partnerId: number, data: any) {
+    // Validate if partner exists
+    const partner = await prisma.doiTac.findUnique({
+      where: { MaDoiTac: partnerId }
+    });
+    if (!partner) throw new Error('Đối tác không tồn tại');
+
+    // Validate Username
+    if (data.username.includes(' ')) {
+      throw new Error('Tên đăng nhập không được chứa khoảng trắng');
+    }
+
+    // Validate Password
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(data.password)) {
+      throw new Error('Mật khẩu phải dài ít nhất 8 ký tự, gồm cả chữ hoa, chữ thường và chữ số');
+    }
+
+    // Check if username/email exists
+    const existingUsername = await prisma.taiKhoan.findUnique({ where: { TenDangNhap: data.username } });
+    if (existingUsername) throw new Error('Tên đăng nhập đã tồn tại');
+
+    const existingEmail = await prisma.taiKhoan.findUnique({ where: { Email: data.email } });
+    if (existingEmail) throw new Error('Email đã tồn tại');
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Create TaiKhoan and NhanVienDoiTac in a transaction
+    return await prisma.$transaction(async (tx) => {
+      const newAccount = await tx.taiKhoan.create({
+        data: {
+          TenDangNhap: data.username,
+          MatKhau: hashedPassword,
+          Email: data.email,
+          HoTenNguoiDung: data.fullName,
+          TrangThaiTaiKhoan: 'Hoạt động',
+          LoaiTK: 'DoiTac'
+        }
+      });
+
+      const newStaff = await tx.nhanVienDoiTac.create({
+        data: {
+          IDTaiKhoan: newAccount.IDTaiKhoan,
+          MaDoiTac: partnerId,
+          ChucVu: data.position || 'Nhân viên'
+        }
+      });
+
+      return {
+        IDTaiKhoan: newAccount.IDTaiKhoan,
+        IDNhanVien: newStaff.IDNhanVien,
+        TenDangNhap: newAccount.TenDangNhap,
+        Email: newAccount.Email,
+        HoTenNguoiDung: newAccount.HoTenNguoiDung,
+        ChucVu: newStaff.ChucVu
+      };
+    });
+  }
 }

@@ -369,7 +369,7 @@ export function OrderManagement() {
 
               <div className="border-t pt-3">
                 <h4 className="font-semibold text-gray-800 mb-2">{tText("Product Details", "Chi tiết sản phẩm")}</h4>
-                <div className="space-y-2">
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                   {selectedOrder.items && selectedOrder.items.map((item: any, idx: number) => (
                     <div key={idx} className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
                       <div>

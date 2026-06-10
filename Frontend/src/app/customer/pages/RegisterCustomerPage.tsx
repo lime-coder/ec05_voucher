@@ -325,7 +325,6 @@ export function RegisterCustomerPage() {
                   <option value="male">{t('profile.gender.male')}</option>
                   <option value="female">{t('profile.gender.female')}</option>
                   <option value="other">{t('profile.gender.other')}</option>
-                  <option value="prefer_not_say">{t('auth.prefer_not_say')}</option>
                 </select>
                 {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender.message}</p>}
               </div>

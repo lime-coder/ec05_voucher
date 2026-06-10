@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.middleware';
 
-import { createOrder, getOrderDetail, getOrders, getOrdersByCustomer, getOrderDetailById, confirmOrderPayment, cancelOrderPayment} from "../controllers/order.controller";
+import { createOrder, getOrderDetail, getOrders, getOrdersByCustomer, getOrderDetailById, confirmOrderPayment, cancelOrderPayment, deleteOrder} from "../controllers/order.controller";
 
 const router = Router();
 
@@ -13,6 +13,7 @@ router.use(requireAuth);
 router.post( "/", createOrder );
 router.patch("/:id/payment/confirm", confirmOrderPayment);
 router.patch("/:id/payment/cancel", cancelOrderPayment);
+router.delete("/:id", deleteOrder);
 router.get(  "/", getOrders);
 router.get(
   "/customer/:customerId",

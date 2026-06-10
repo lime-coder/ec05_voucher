@@ -574,6 +574,8 @@ export const en = {
   'partner.nav.reports': 'Reports & Statistics',
   'partner.nav.branches': 'Branch Management',
   'partner.nav.store': "Branch Statistics",
+  'partner.nav.purchases': 'Customer Orders',
+  'partner.nav.staff': 'Staff Management',
   'partner.nav.profile': 'Account Settings',
   'partner.portal': 'Partner Portal',
   'partner.logout': 'Logout',

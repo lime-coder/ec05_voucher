@@ -520,8 +520,12 @@ export function VoucherDetailPage() {
           {/* Subtle background decoration */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-bl-full -z-0" />
           
-          <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/20 relative z-10 group-hover:scale-105 transition-transform shadow-sm">
-            <Diamond className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/20 relative z-10 group-hover:scale-105 transition-transform shadow-sm overflow-hidden">
+            {voucher.partner?.avatar ? (
+              <img src={voucher.partner.avatar.startsWith('http') ? voucher.partner.avatar : `http://localhost:5000${voucher.partner.avatar}`} alt={voucher.partner.name} className="w-full h-full object-cover" />
+            ) : (
+              <Diamond className="w-8 h-8 text-primary" />
+            )}
           </div>
           
           <div className="flex-1 relative z-10 w-full">

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tag, PlusCircle, CheckCircle, BarChart3, Store, Settings, LogOut, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Tag, PlusCircle, CheckCircle, BarChart3, Store, Settings, LogOut, ShoppingBag, Users, ShoppingCart } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
 import { useLanguage } from '../../shared/contexts/LanguageContext';
@@ -21,9 +21,11 @@ export function Sidebar() {
     { id: '/partner/vouchers', label: t('partner.nav.vouchers'), icon: Tag },
     { id: '/partner/create', label: t('partner.nav.create'), icon: PlusCircle },
     { id: '/partner/verify', label: t('partner.nav.verify'), icon: CheckCircle },
+    { id: '/partner/purchases', label: t('partner.nav.purchases') || 'Giao dịch KH', icon: ShoppingCart },
     { id: '/partner/reports', label: t('partner.nav.reports'), icon: BarChart3 },
     { id: '/partner/branches', label: t('partner.nav.branches'), icon: Store },
     { id: '/partner/store', label: t('partner.nav.store') || 'Cửa hàng', icon: ShoppingBag },
+    { id: '/partner/staff', label: t('partner.nav.staff') || 'Nhân viên', icon: Users },
     { id: '/partner/profile', label: t('partner.nav.profile'), icon: Settings },
   ];
 
