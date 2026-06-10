@@ -311,6 +311,39 @@ export const vi = {
   'payment.confirm': 'Xác Nhận Thanh Toán',
   'payment.back_to_order': '< Trở Về Chi Tiết Đơn Hàng',
   'payment.need_help': 'Cần trợ giúp về thanh toán?',
+
+  // Payment Gateway Dialog
+  'payment.gateway.ewallet_name': 'VoucherHub Pay',
+  'payment.gateway.card_name': 'Thanh Toán Thẻ Bảo Mật',
+  'payment.gateway.bank_name': 'Chuyển Khoản Ngân Hàng',
+  'payment.gateway.order_id_label': 'Mã đơn hàng',
+  'payment.gateway.total_label': 'Tổng thanh toán',
+  'payment.gateway.qr_simulated': 'Mã QR giả lập',
+  'payment.gateway.ewallet_title': 'Ví điện tử VoucherHub Pay',
+  'payment.gateway.ewallet_desc': 'Mở app ví điện tử và quét mã QR hoặc xác nhận thanh toán trong ứng dụng.',
+  'payment.gateway.bank_title': 'Thông tin chuyển khoản',
+  'payment.gateway.bank_name_label': 'Ngân hàng',
+  'payment.gateway.bank_account': 'Số tài khoản',
+  'payment.gateway.bank_holder': 'Chủ tài khoản',
+  'payment.gateway.bank_note': 'Nội dung CK',
+  'payment.gateway.bank_amount': 'Số tiền',
+  'payment.gateway.bank_name_value': 'VoucherHub Bank (VHB)',
+  'payment.gateway.bank_account_value': '1234 5678 9012',
+  'payment.gateway.bank_holder_value': 'VOUCHER HUB JSC',
+  'payment.gateway.card_demo_note': '💳 Thẻ demo — không cần nhập thông tin thật',
+  'payment.gateway.ssl_note': 'Giao dịch được mã hóa SSL 256-bit. Thông tin của bạn được bảo mật tuyệt đối.',
+  'payment.gateway.cancel_btn': '✕ Hủy giao dịch',
+  'payment.gateway.confirm_btn': '✓ Xác nhận đã thanh toán',
+  'payment.gateway.processing': 'Đang xử lý...',
+
+  // Payment toast messages
+  'payment.failed_title': 'Giao Dịch Thất Bại',
+  'payment.failed_desc': 'Giao dịch thanh toán đã bị hủy hoặc thất bại.',
+  'payment.success_title': 'Giao Dịch Thành Công',
+  'payment.success_desc': 'Thanh toán đơn hàng thành công!',
+
+  // Article status lock
+  'content.article.status_readonly': 'Trạng thái chỉ có thể thay đổi khi tạo bài viết mới. Không được phép chỉnh sửa trạng thái bài viết đã tồn tại.',
   'payment.contact_support': 'Liên hệ Hỗ Trợ 24/7',
 
   // Thank You
@@ -923,3 +956,4 @@ export const vi = {
   'error.pwd_lower': 'Mật khẩu phải chứa ít nhất một chữ thường',
   'error.pwd_digit': 'Mật khẩu phải chứa ít nhất một chữ số',
 };
+

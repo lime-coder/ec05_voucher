@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { Shield, ChevronRight, Wallet, CreditCard, Landmark } from "lucide-react";
-import { Button } from "@voucherhub/ui";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { Shield, ChevronRight, Wallet, CreditCard, Landmark, Loader2, Lock } from "lucide-react";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@voucherhub/ui";
 import { useLanguage } from "../../shared/contexts/LanguageContext";
 import { useCartStore } from "../../../store/useCartStore";
 import { useAuth } from "../../auth/AuthContext";
+import api from "../../../lib/api";
+import { toast } from "sonner";
 type PaymentMethod = "EWALLET" | "CARD" | "BANK";
 
 export function PaymentMethodPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  
   const { user } = useAuth();
   const { items, clearCart, getCartTotal, } = useCartStore();
   const { t } = useLanguage();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("CARD");
-
+  
+  const [showGateway, setShowGateway] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 mins
 
   const subtotal = getCartTotal();
   const processingFee = 800;
@@ -21,133 +29,94 @@ export function PaymentMethodPage() {
   const orderTotal = subtotal + processingFee + tax;
 
   useEffect(() => {
-
-    if (items.length === 0) {
-
+    if (!orderId && items.length === 0) {
       navigate("/cart");
     }
+  }, [items, orderId, navigate]);
 
-  }, [items, navigate]);
-
-  const handlePayment =
-    async () => {
-
-      try {
-
-        // =====================
-        // Lấy buyer info
-        // =====================
-        const checkoutInfo =
-          JSON.parse(
-            localStorage.getItem(
-              "checkout-info"
-            ) || "{}"
-          );
-
-        // =====================
-        // Validate
-        // =====================
-        if (
-          !checkoutInfo.fullName ||
-          !checkoutInfo.phone ||
-          !checkoutInfo.email
-        ) {
-
-          alert(
-            "Thiếu thông tin thanh toán"
-          );
-
-          navigate(
-            "/checkout/review"
-          );
-
-          return;
+  useEffect(() => {
+    if (!showGateway) return;
+    setTimeLeft(300);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleCancelPayment();
+          return 0;
         }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [showGateway]);
 
-        // =====================
-        // Call backend
-        // =====================
-        const response =
-          await fetch(
-            "/api/orders",
-            {
-              method: "POST",
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body: JSON.stringify({
-                customerId:
-                  user?.IDTaiKhoan || 1,
-
-                paymentMethod:
-                  selectedMethod,
-
-                buyerInfo:
-                  checkoutInfo,
-
-                items:
-                  items.map(
-                    (item) => ({
-                      voucherId:
-                        Number(
-                          item.id
-                        ),
-
-                      quantity:
-                        item.quantity,
-                    })
-                  ),
-              }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        console.log(
-          "PAYMENT RESPONSE:",
-          data
-        );
-        // =====================
-        // Thành công
-        // =====================
-        if (
-
-          response.ok
-        ) {
-
-          localStorage.removeItem(
-            "checkout-info"
-          );
-
-          navigate(
-            `/checkout/success?orderId=${data.orderId}`
-          );
-
-          setTimeout(() => {
-            clearCart();
-          }, 300);
-
-        } else {
-
-          alert(
-            data.message ||
-            "Thanh toán thất bại"
-          );
-        }
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "Lỗi thanh toán"
-        );
+  const handleCancelPayment = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const res = await api.patch(`/orders/${orderId}/payment/cancel`);
+      if (res.status === 200) {
+        toast.error(t('payment.failed_title'), {
+          description: t('payment.failed_desc'),
+        });
+        setShowGateway(false);
+        navigate("/checkout/review");
+      } else {
+        toast.error(t('payment.failed_title'));
       }
-    };
+    } catch (error) {
+      console.error("Cancel payment error:", error);
+      toast.error(t('payment.failed_title'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const res = await api.patch(`/orders/${orderId}/payment/confirm`, {
+        paymentMethod: selectedMethod,
+      });
+      if (res.status === 200) {
+        toast.success(t('payment.success_title'), {
+          description: t('payment.success_desc'),
+        });
+        
+        localStorage.removeItem("checkout-info");
+        setShowGateway(false);
+        
+        navigate(`/checkout/success?orderId=${orderId}`);
+        setTimeout(() => {
+          clearCart();
+        }, 300);
+      } else {
+        toast.error(t('payment.failed_title'));
+      }
+    } catch (error: any) {
+      console.error("Confirm payment error:", error);
+      toast.error(error.response?.data?.message || t('payment.failed_title'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!orderId) {
+      toast.error(t('payment.failed_title'));
+      navigate("/cart");
+      return;
+    }
+    setShowGateway(true);
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -351,6 +320,150 @@ export function PaymentMethodPage() {
           </div>
         </div>
       </main>
+
+      {/* ============================================================ */}
+      {/* Simulated Payment Gateway Dialog */}
+      {/* ============================================================ */}
+      <Dialog open={showGateway} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md p-0 overflow-hidden" onPointerDownOutside={(e) => e.preventDefault()}>
+          {/* Gateway Header – adapts per payment method */}
+          <div className={`px-6 pt-6 pb-4 text-white ${
+            selectedMethod === "EWALLET"
+              ? "bg-gradient-to-r from-pink-500 to-rose-500"
+              : selectedMethod === "BANK"
+              ? "bg-gradient-to-r from-blue-700 to-indigo-700"
+              : "bg-gradient-to-r from-slate-800 to-slate-900"
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {selectedMethod === "EWALLET" ? (
+                  <Wallet className="w-6 h-6" />
+                ) : selectedMethod === "BANK" ? (
+                  <Landmark className="w-6 h-6" />
+                ) : (
+                  <CreditCard className="w-6 h-6" />
+                )}
+                <span className="font-bold text-sm uppercase tracking-widest">
+                  {selectedMethod === "EWALLET" ? t('payment.gateway.ewallet_name') : selectedMethod === "BANK" ? t('payment.gateway.bank_name') : t('payment.gateway.card_name')}
+                </span>
+              </div>
+              {/* Countdown Timer */}
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                timeLeft < 60 ? "bg-red-500/30 text-red-200 animate-pulse" : "bg-white/20 text-white"
+              }`}>
+                <Lock className="w-3.5 h-3.5" />
+                {formatTime(timeLeft)}
+              </div>
+            </div>
+
+            {/* Order info */}
+            <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+              <p className="text-white/70 text-xs uppercase tracking-wider mb-1">{t('payment.gateway.order_id_label')}</p>
+              <p className="font-mono font-black text-lg tracking-wider">ORD-{orderId}</p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-white/70 text-xs">{t('payment.gateway.total_label')}</p>
+                <p className="font-black text-xl">{orderTotal.toLocaleString("vi-VN")}đ</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Gateway Body */}
+          <div className="px-6 py-5">
+            {/* Method-specific instruction */}
+            {selectedMethod === "EWALLET" && (
+              <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-4 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl mx-auto mb-3 flex items-center justify-center">
+                  <Wallet className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm font-semibold text-pink-800 mb-1">{t('payment.gateway.ewallet_title')}</p>
+                <p className="text-xs text-pink-600">{t('payment.gateway.ewallet_desc')}</p>
+                <div className="mt-3 w-32 h-32 mx-auto bg-white border-2 border-pink-200 rounded-lg flex items-center justify-center">
+                  <div className="grid grid-cols-4 gap-1 p-2 opacity-30">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <div key={i} className={`w-full aspect-square rounded-sm ${Math.random() > 0.5 ? "bg-pink-800" : "bg-transparent"}`} />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-pink-400 mt-2">{t('payment.gateway.qr_simulated')}</p>
+              </div>
+            )}
+
+            {selectedMethod === "BANK" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                  <Landmark className="w-4 h-4" /> {t('payment.gateway.bank_title')}
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { label: t('payment.gateway.bank_name_label'), value: t('payment.gateway.bank_name_value') },
+                    { label: t('payment.gateway.bank_account'), value: t('payment.gateway.bank_account_value') },
+                    { label: t('payment.gateway.bank_holder'), value: t('payment.gateway.bank_holder_value') },
+                    { label: t('payment.gateway.bank_note'), value: `ORD${orderId}` },
+                    { label: t('payment.gateway.bank_amount'), value: `${orderTotal.toLocaleString("vi-VN")}đ` },
+                  ].map((row) => (
+                    <div key={row.label} className="flex justify-between text-xs py-1.5 border-b border-blue-100 last:border-0">
+                      <span className="text-blue-600 font-medium">{row.label}:</span>
+                      <span className="font-bold text-blue-900 font-mono">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedMethod === "CARD" && (
+              <div className="mb-4">
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white mb-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-8 -translate-x-8" />
+                  <div className="relative">
+                    <div className="flex justify-between items-start mb-6">
+                      <CreditCard className="w-8 h-8 text-white/70" />
+                      <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded font-mono">VISA</span>
+                    </div>
+                    <p className="font-mono text-lg tracking-[0.3em] text-white/90 mb-2">•••• •••• •••• 4242</p>
+                    <div className="flex justify-between text-xs text-white/60">
+                      <span>VOUCHER HUB DEMO</span>
+                      <span>12/28</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  {t('payment.gateway.card_demo_note')}
+                </p>
+              </div>
+            )}
+
+            {/* Security note */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-5">
+              <Lock className="w-3.5 h-3.5 shrink-0 text-green-600" />
+              <span>{t('payment.gateway.ssl_note')}</span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-400"
+                onClick={handleCancelPayment}
+                disabled={isProcessing}
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : t('payment.gateway.cancel_btn')}
+              </Button>
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                onClick={handleConfirmPayment}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> {t('payment.gateway.processing')}</span>
+                ) : (
+                  t('payment.gateway.confirm_btn')
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

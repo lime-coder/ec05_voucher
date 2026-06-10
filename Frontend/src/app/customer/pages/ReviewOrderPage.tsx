@@ -273,11 +273,27 @@ export function ReviewOrderPage() {
                     }
 
                     // =====================
+                    // Tạo đơn hàng chờ thanh toán ở Backend
+                    // =====================
+                    const orderRes = await api.post("/orders", {
+                      items: vouchers.map(item => ({
+                        voucherId: Number(item.id),
+                        quantity: item.quantity
+                      })),
+                      paymentMethod: "CARD" // Tạm thời mặc định CARD, người dùng sẽ chọn lại ở bước sau
+                    });
+
+                    if (!orderRes.data || !orderRes.data.orderId) {
+                      throw new Error("Không lấy được Order ID từ hệ thống");
+                    }
+
+                    const orderId = orderRes.data.orderId;
+
+                    // =====================
                     // Lưu buyer info
                     // =====================
                     localStorage.setItem(
                       "checkout-info",
-
                       JSON.stringify({
                         fullName,
                         phone,
@@ -286,13 +302,15 @@ export function ReviewOrderPage() {
                     );
 
                     // =====================
-                    // Chuyển payment
+                    // Chuyển sang payment method page kèm orderId
                     // =====================
                     navigate(
-                      "/checkout/payment"
+                      `/checkout/payment?orderId=${orderId}`
                     );
-                  } catch (e) {
+                  } catch (e: any) {
                     console.error("Checkout error:", e);
+                    setErrorModalMessage(e.response?.data?.message || e.message || "Tạo đơn hàng thất bại, vui lòng thử lại.");
+                    setShowErrorModal(true);
                     setIsCheckingOut(false);
                   }
                 }}

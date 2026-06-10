@@ -107,25 +107,18 @@ export const createOrder =
           await tx.donHang.create(
             {
               data: {
-
                 IDTaiKhoan:
                   Number(
                     customerId
                   ),
-
                 TongTien:
                   totalPrice,
-
-                ThoiGianThanhToan:
-                  new Date(),
-
+                ThoiGianThanhToan: null,
                 PhuongThucThanhToan:
                   paymentMethod ||
                   "COD",
-
-                TrangThaiDonHang: 'Hoàn tất',
-
-                TrangThaiThanhToan: 'Đã thanh toán',
+                TrangThaiDonHang: 'Chờ xử lý',
+                TrangThaiThanhToan: 'Chưa thanh toán',
               },
             }
           );
@@ -134,7 +127,6 @@ export const createOrder =
         // Tạo chi tiết đơn hàng
         // =====================
         for (const item of items) {
-
           const voucher =
             await tx.voucher.findUnique(
               {
@@ -162,109 +154,34 @@ export const createOrder =
           // =====================
           // Tạo chi tiết đơn hàng
           // =====================
-          const orderDetail =
-            await tx.chiTietDonHang.create(
-              {
-                data: {
-
-                  MaDonHang:
-                    order.MaDonHang,
-
-                  VoucherID:
-                    voucher.VoucherID,
-
-                  SoLuongMua:
-                    Number(
-                      item.quantity
-                    ),
-
-                  DonGia:
-                    Number(
-                      voucher.GiaBan
-                    ),
-
-                  ThanhTien:
-                    thanhTien,
-                },
-              }
-            );
-
-          // =====================
-          // Update sold
-          // =====================
-          await tx.voucher.update(
+          await tx.chiTietDonHang.create(
             {
-              where: {
+              data: {
+                MaDonHang:
+                  order.MaDonHang,
                 VoucherID:
                   voucher.VoucherID,
-              },
-
-              data: {
-                SoLuongDaBan: {
-                  increment:
-                    Number(
-                      item.quantity
-                    ),
-                },
+                SoLuongMua:
+                  Number(
+                    item.quantity
+                  ),
+                DonGia:
+                  Number(
+                    voucher.GiaBan
+                  ),
+                ThanhTien:
+                  thanhTien,
               },
             }
           );
-
-          // =====================
-          // Tạo mã voucher
-          // =====================
-          for (
-            let i = 0;
-            i <
-            Number(
-              item.quantity
-            );
-            i++
-          ) {
-
-            await tx.maVoucher.create(
-              {
-                data: {
-
-                  SoMaVoucher:
-                    nanoid(12),
-
-                  MaCTDonHang:
-                    orderDetail.MaCTDonHang,
-
-                  TrangThaiSuDung:
-                    "Chưa sử dụng",
-
-                  ThoiDiemPhatHanh:
-                    new Date(),
-                },
-              }
-            );
-          }
-        }
-
-        // =====================
-        // Clear Cart
-        // =====================
-        const cart = await tx.gioHang.findUnique({
-          where: { IDTaiKhoan: Number(customerId) },
-        });
-        if (cart) {
-          await tx.chiTietGioHang.deleteMany({
-            where: { MaGioHang: cart.MaGioHang },
-          });
         }
 
         // =====================
         // Thành công
         // =====================
         res.status(201).json({
-
-          message:
-            "Đặt hàng thành công",
-
-          orderId:
-            order.MaDonHang,
+          message: "Tạo đơn hàng thành công",
+          orderId: order.MaDonHang,
         });
       }); // end transaction
 
@@ -500,4 +417,128 @@ export const getOrderDetailById =
         });
     }
   };
+
+export const confirmOrderPayment = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.id);
+    const { paymentMethod } = req.body;
+
+    const customerId = (req as any).user?.IDTaiKhoan;
+    if (!customerId) return res.status(401).json({ message: "Unauthorized" });
+
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.donHang.findUnique({
+        where: { MaDonHang: orderId },
+        include: { ChiTietDonHangs: { include: { Voucher: true } } },
+      });
+
+      if (!order) {
+        throw new Error("404:Không tìm thấy đơn hàng");
+      }
+
+      if (order.TrangThaiDonHang !== 'Chờ xử lý') {
+        throw new Error("400:Trạng thái đơn hàng không hợp lệ để thanh toán");
+      }
+
+      // 1. Cập nhật đơn hàng
+      await tx.donHang.update({
+        where: { MaDonHang: orderId },
+        data: {
+          TrangThaiDonHang: 'Hoàn tất',
+          TrangThaiThanhToan: 'Đã thanh toán',
+          ThoiGianThanhToan: new Date(),
+          PhuongThucThanhToan: paymentMethod || order.PhuongThucThanhToan || "CARD",
+        },
+      });
+
+      // 2. Xử lý từng chi tiết đơn hàng (tăng SoLuongDaBan và phát hành MaVoucher)
+      for (const item of order.ChiTietDonHangs) {
+        const voucher = item.Voucher;
+        if (!voucher) continue;
+
+        // Tăng SoLuongDaBan
+        await tx.voucher.update({
+          where: { VoucherID: voucher.VoucherID },
+          data: {
+            SoLuongDaBan: {
+              increment: Number(item.SoLuongMua),
+            },
+          },
+        });
+
+        // Phát hành MaVoucher
+        for (let i = 0; i < Number(item.SoLuongMua); i++) {
+          await tx.maVoucher.create({
+            data: {
+              SoMaVoucher: nanoid(12),
+              MaCTDonHang: item.MaCTDonHang,
+              TrangThaiSuDung: "Chưa sử dụng",
+              ThoiDiemPhatHanh: new Date(),
+            },
+          });
+        }
+      }
+
+      // 3. Clear Cart
+      const cart = await tx.gioHang.findUnique({
+        where: { IDTaiKhoan: Number(customerId) },
+      });
+      if (cart) {
+        await tx.chiTietGioHang.deleteMany({
+          where: { MaGioHang: cart.MaGioHang },
+        });
+      }
+
+      res.status(200).json({
+        message: "Thanh toán thành công",
+        orderId: order.MaDonHang,
+      });
+    });
+  } catch (error: any) {
+    console.error("Payment confirmation error:", error);
+    if (error.message && error.message.includes(':')) {
+      const parts = error.message.split(':');
+      const status = parseInt(parts[0], 10);
+      if (!isNaN(status)) {
+        return res.status(status).json({ message: parts.slice(1).join(':') });
+      }
+    }
+    res.status(500).json({ message: "Lỗi hệ thống khi xác nhận thanh toán", error: error.message });
+  }
+};
+
+export const cancelOrderPayment = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.id);
+
+    const order = await prisma.donHang.findUnique({
+      where: { MaDonHang: orderId },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    if (order.TrangThaiDonHang !== 'Chờ xử lý') {
+      return res.status(400).json({ message: "Trạng thái đơn hàng không hợp lệ để hủy" });
+    }
+
+    // Cập nhật trạng thái đơn hàng
+    await prisma.donHang.update({
+      where: { MaDonHang: orderId },
+      data: {
+        TrangThaiDonHang: 'Đã hủy',
+        TrangThaiThanhToan: 'Thất bại',
+      },
+    });
+
+    res.status(200).json({
+      message: "Hủy thanh toán thành công",
+      orderId: order.MaDonHang,
+    });
+  } catch (error: any) {
+    console.error("Payment cancellation error:", error);
+    res.status(500).json({ message: "Lỗi hệ thống khi hủy thanh toán", error: error.message });
+  }
+};
 

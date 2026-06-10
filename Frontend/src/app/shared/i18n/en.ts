@@ -312,6 +312,39 @@ export const en = {
   'payment.confirm': 'Confirm Payment',
   'payment.back_to_order': '< Back to Order Details',
   'payment.need_help': 'Need help with your payment?',
+
+  // Payment Gateway Dialog
+  'payment.gateway.ewallet_name': 'VoucherHub Pay',
+  'payment.gateway.card_name': 'Secure Card Payment',
+  'payment.gateway.bank_name': 'Bank Transfer',
+  'payment.gateway.order_id_label': 'Order ID',
+  'payment.gateway.total_label': 'Total Amount',
+  'payment.gateway.qr_simulated': 'Simulated QR Code',
+  'payment.gateway.ewallet_title': 'VoucherHub Pay E-wallet',
+  'payment.gateway.ewallet_desc': 'Open the e-wallet app and scan the QR code or confirm payment in the app.',
+  'payment.gateway.bank_title': 'Bank Transfer Details',
+  'payment.gateway.bank_name_label': 'Bank',
+  'payment.gateway.bank_account': 'Account Number',
+  'payment.gateway.bank_holder': 'Account Holder',
+  'payment.gateway.bank_note': 'Transfer Note',
+  'payment.gateway.bank_amount': 'Amount',
+  'payment.gateway.bank_name_value': 'VoucherHub Bank (VHB)',
+  'payment.gateway.bank_account_value': '1234 5678 9012',
+  'payment.gateway.bank_holder_value': 'VOUCHER HUB JSC',
+  'payment.gateway.card_demo_note': '💳 Demo card — no real card info needed',
+  'payment.gateway.ssl_note': 'Transactions are 256-bit SSL encrypted. Your information is fully protected.',
+  'payment.gateway.cancel_btn': '✕ Cancel Transaction',
+  'payment.gateway.confirm_btn': '✓ Confirm Payment',
+  'payment.gateway.processing': 'Processing...',
+
+  // Payment toast messages
+  'payment.failed_title': 'Transaction Failed',
+  'payment.failed_desc': 'The payment transaction was cancelled or failed.',
+  'payment.success_title': 'Transaction Successful',
+  'payment.success_desc': 'Order payment completed successfully!',
+
+  // Article status lock
+  'content.article.status_readonly': 'Status can only be changed when creating a new article. Editing an existing article\'s status is not allowed.',
   'payment.contact_support': 'Contact Support 24/7',
 
   // Thank You
@@ -924,3 +957,4 @@ export const en = {
   'error.unknown': 'An unknown error occurred',
   'auth.login_required': 'Please login to continue',
 };
+
