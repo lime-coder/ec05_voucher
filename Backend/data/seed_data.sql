@@ -278,7 +278,7 @@ VALUES
     N'Combo bắp ngọt size L và 2 nước ngọt size M.',
     N'Đổi tại quầy bắp nước của CGV.',
     115000, 89000, '2026-02-01 00:00:00', '2026-11-30 23:59:59', '2026-02-01 00:00:00', '2026-11-30 23:59:59',
-    1000, 1, N'Đang hoạt động',
+    1000, 2, N'Đang hoạt động',
     N'Không hoàn tiền.',
     N'Quét mã tại quầy nhận bắp nước.',
     '/uploads/vouchers/partner_2_cgv-cinemas/cgv_combo.jpg'),
@@ -315,7 +315,7 @@ VALUES
     N'Phiếu mua hàng điện tử thanh toán nước/bánh tại Phúc Long.',
     N'Hóa đơn phải lớn hơn hoặc bằng giá trị voucher.',
     50000, 46000, '2026-01-01 00:00:00', '2026-12-31 23:59:59', '2026-01-01 00:00:00', '2026-12-31 23:59:59',
-    1500, 2, N'Đang hoạt động',
+    1500, 3, N'Đang hoạt động',
     N'Voucher không quy đổi thành tiền mặt.',
     N'Đưa cho nhân viên quầy thu ngân quét khi thanh toán.',
     '/uploads/vouchers/partner_3_phuc-long/phuclong_50k.jpg'),
@@ -324,7 +324,7 @@ VALUES
     N'Thưởng thức dòng Trà Đào Sữa trứ danh của Phúc Long size L.',
     N'Chỉ áp dụng cho món Trà đào sữa ly size L.',
     55000, 35000, '2026-02-01 00:00:00', '2026-10-31 23:59:59', '2026-02-01 00:00:00', '2026-10-31 23:59:59',
-    800, 2, N'Đang hoạt động',
+    800, 3, N'Đang hoạt động',
     N'Không hoàn tiền.',
     N'Cung cấp mã cho thu ngân trước khi gọi món.',
     '/uploads/vouchers/partner_3_phuc-long/phuclong_tradaosua.jpg'),
@@ -437,14 +437,14 @@ VALUES
 (1,  14, '2026-05-10 10:00:00', 90000,  N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
 (2,  14, '2026-05-15 14:30:00', 59000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 (3,  14, '2026-05-15 10:00:00', 85000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
-(4,  14, NULL,                  46000,  N'Thẻ ATM nội địa',   N'Đã hủy',          N'Chưa thanh toán'),
+(4,  14, '2026-05-15 11:00:00',         46000,  N'Thẻ ATM nội địa',   N'Hoàn tất',        N'Đã thanh toán'),
 (5,  14, '2026-05-20 09:15:00', 138000, N'Ví điện tử',        N'Đã hủy',          N'Đã hoàn tiền'),
 
 -- customer2 (IDTaiKhoan=15)
 (6,  15, '2026-05-11 11:20:00', 170000, N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
 (7,  15, '2026-05-16 16:40:00', 46000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
 (8,  15, '2026-05-18 16:00:00', 89000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
-(9,  15, NULL,                  35000,  N'Thẻ ATM',           N'Đã hủy',          N'Chưa thanh toán'),
+(9,  15, '2026-05-16 14:20:00',         35000,  N'Thẻ ATM',           N'Hoàn tất',        N'Đã thanh toán'),
 
 -- customer3 (IDTaiKhoan=16)
 (10, 16, '2026-05-12 15:10:00', 70000,  N'Ví điện tử',        N'Hoàn tất',        N'Đã thanh toán'),
@@ -453,7 +453,7 @@ VALUES
 
 -- customer4 (IDTaiKhoan=17)
 (13, 17, '2026-05-14 09:00:00', 45000,  N'Thẻ quốc tế',      N'Hoàn tất',        N'Đã thanh toán'),
-(14, 17, NULL,                  89000,  N'Thẻ ATM',           N'Đã hủy',          N'Chưa thanh toán'),
+(14, 17, '2026-05-20 16:45:00',         89000,  N'Thẻ ATM',           N'Hoàn tất',        N'Đã thanh toán'),
 (15, 17, '2026-05-25 11:30:00', 92000,  N'Ví điện tử',        N'Đã hủy',          N'Đã hoàn tiền'),
 
 -- customer5 (IDTaiKhoan=18) - 2 đơn mới để chứa MaVoucher cho 3 mã test
@@ -520,6 +520,11 @@ VALUES
 ('TESTVALID1', 17, N'Chưa sử dụng', '2026-05-28 10:00:00', NULL,                    NULL),
 ('TESTUSED12', 18, N'Đã sử dụng',   '2026-05-01 14:00:00', '2026-05-02 11:00:00',   1),
 ('TESTEXPIRE', 19, N'Hết hạn',      '2026-05-01 14:00:00', NULL,                    NULL),
+
+-- ===== Đơn 4, 9, 14 (Đã hoàn tất thanh toán) =====
+('PL50K82J4X', 4, N'Chưa sử dụng', '2026-05-15 11:00:00', NULL, NULL),
+('PLTDS93K8J', 10, N'Chưa sử dụng', '2026-05-16 14:20:00', NULL, NULL),
+('CGVCB14X9Y', 15, N'Chưa sử dụng', '2026-05-20 16:45:00', NULL, NULL),
 
 -- ===== Đơn 1 (Hoàn tất): 2x Highlands 50k - MaCTDH=1 =====
 ('HL50K9X2J1', 1, N'Chưa sử dụng', '2026-05-10 10:00:00', NULL,                    NULL),
