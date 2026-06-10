@@ -3,6 +3,33 @@ import prisma from '../../config/db';
 import { logActivity } from './index';
 import { ACCOUNT_STATUS } from '../../constants';
 
+const checkIsLocked = (statusStr: string | null | undefined): boolean => {
+  if (!statusStr) return false;
+  const s = statusStr.trim();
+  const normalizedS = s.normalize('NFC');
+  const normalizedNFD = s.normalize('NFD');
+  const upper = s.toUpperCase();
+  
+  return upper === 'LOCKED' || 
+         upper === 'INACTIVE' || 
+         upper === 'BỊ KHÓA' || 
+         normalizedS === 'Bị khóa' ||
+         normalizedNFD === 'Bị khóa'.normalize('NFD');
+};
+
+const checkIsPending = (statusStr: string | null | undefined): boolean => {
+  if (!statusStr) return false;
+  const s = statusStr.trim();
+  const normalizedS = s.normalize('NFC');
+  const normalizedNFD = s.normalize('NFD');
+  const upper = s.toUpperCase();
+  
+  return upper === 'PENDING' || 
+         upper === 'CHỜ DUYỆT' || 
+         normalizedS === 'Chờ duyệt' ||
+         normalizedNFD === 'Chờ duyệt'.normalize('NFD');
+};
+
 export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const accounts = await prisma.taiKhoan.findMany({
@@ -16,10 +43,9 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
     const mapped = accounts.map(u => {
       const phone = u.KhachHang?.SDT_KH || u.Admin?.SDT_Admin || '';
 
-      const dbStatus = (u.TrangThaiTaiKhoan || '').trim().toUpperCase();
       let status: 'ACTIVE' | 'INACTIVE' | 'PENDING' = 'ACTIVE';
-      if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') status = 'INACTIVE';
-      else if (dbStatus === 'PENDING' || dbStatus === 'CHỜ DUYỆT') status = 'PENDING';
+      if (checkIsLocked(u.TrangThaiTaiKhoan)) status = 'INACTIVE';
+      else if (checkIsPending(u.TrangThaiTaiKhoan)) status = 'PENDING';
 
       let accountType: 'Admin' | 'Partner' | 'Customer' = 'Customer';
       if (u.Admin) accountType = 'Admin';
@@ -34,7 +60,7 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
         } else if (pt.TrangThai === ACCOUNT_STATUS.REJECTED || pt.TrangThai === ACCOUNT_STATUS.LOCKED) {
           status = 'INACTIVE';
         } else if (pt.TrangThai === ACCOUNT_STATUS.ACTIVE) {
-          if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
+          if (checkIsLocked(u.TrangThaiTaiKhoan)) {
             status = 'INACTIVE';
           } else {
             status = 'ACTIVE';
@@ -57,7 +83,7 @@ export const toggleUserActive = async (req: Request, res: Response, next: NextFu
       where: { IDTaiKhoan: Number(id) },
       include: { NhanVienDoiTacs: { include: { DoiTac: true } } }
     });
-    
+
     if (!user) {
       return res.status(404).json({ error: 'Không tìm thấy người dùng' });
     }
@@ -69,10 +95,9 @@ export const toggleUserActive = async (req: Request, res: Response, next: NextFu
       }
     }
 
-    const dbStatus = (user.TrangThaiTaiKhoan || '').trim().toUpperCase();
     let derivedStatus: 'ACTIVE' | 'INACTIVE' | 'PENDING' = 'ACTIVE';
-    if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') derivedStatus = 'INACTIVE';
-    else if (dbStatus === 'PENDING' || dbStatus === 'CHỜ DUYỆT') derivedStatus = 'PENDING';
+    if (checkIsLocked(user.TrangThaiTaiKhoan)) derivedStatus = 'INACTIVE';
+    else if (checkIsPending(user.TrangThaiTaiKhoan)) derivedStatus = 'PENDING';
 
     if (user.NhanVienDoiTacs?.length > 0 && user.NhanVienDoiTacs[0]?.DoiTac) {
       const pt = user.NhanVienDoiTacs[0].DoiTac;
@@ -81,7 +106,7 @@ export const toggleUserActive = async (req: Request, res: Response, next: NextFu
       } else if (pt.TrangThai === ACCOUNT_STATUS.REJECTED || pt.TrangThai === ACCOUNT_STATUS.LOCKED) {
         derivedStatus = 'INACTIVE';
       } else if (pt.TrangThai === ACCOUNT_STATUS.ACTIVE) {
-        if (dbStatus === 'LOCKED' || dbStatus === 'INACTIVE' || dbStatus === 'BỊ KHÓA') {
+        if (checkIsLocked(user.TrangThaiTaiKhoan)) {
           derivedStatus = 'INACTIVE';
         } else {
           derivedStatus = 'ACTIVE';

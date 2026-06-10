@@ -204,7 +204,7 @@ export function OrderDetailPage() {
                       <div className="text-right mr-4">
                         <p className="text-sm text-muted">{t('order.total_price')}</p>
                         <p className="font-bold text-lg">
-                          {Number(voucher.DonGia || 0).toLocaleString('vi-VN')} VND
+                          {Number((voucher.DonGia || 0) * (voucher.SoLuongMua || 1)).toLocaleString('vi-VN')} VND
                         </p>
                       </div>
 

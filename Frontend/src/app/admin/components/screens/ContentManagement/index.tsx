@@ -774,6 +774,74 @@ export function ContentManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* --- View Banner Dialog --- */}
+      <Dialog open={showViewBannerModal} onOpenChange={setShowViewBannerModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold">
+              {previewBanner?.TieuDe}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4 text-sm">
+            {previewBanner?.HinhAnh && (
+              <div className="border rounded-lg overflow-hidden bg-gray-50 flex justify-center items-center">
+                <img src={previewBanner.HinhAnh} alt={previewBanner.TieuDe} className="w-full h-auto object-cover max-h-48" />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4 border-t pt-3 text-xs text-gray-500">
+              <div>
+                <span>{tText('Position:', 'Vị trí:')}</span>{' '}
+                <strong className="text-gray-700">
+                  {previewBanner?.ViTri === 'Homepage Top' ? tText('Homepage Top', 'Homepage Top')
+                   : previewBanner?.ViTri === 'Homepage Middle' ? tText('Homepage Middle', 'Homepage Middle')
+                   : previewBanner?.ViTri === 'Category Page' ? tText('Category Page', 'Trang danh mục')
+                   : previewBanner?.ViTri}
+                </strong>
+              </div>
+              <div>
+                <span>{tText('Status:', 'Trạng thái:')}</span>{' '}
+                <strong className="text-gray-700">
+                  {previewBanner?.TrangThai === 'Đang hiển thị' ? tText('Visible', 'Đang hiển thị') : tText('Paused', 'Tạm dừng')}
+                </strong>
+              </div>
+              <div>
+                <span>{tText('Tag / Subtitle:', 'Tag / Phụ đề:')}</span>{' '}
+                <strong className="text-gray-700">{previewBanner?.Tag || '-'}</strong>
+              </div>
+              <div>
+                <span>{tText('Button Text:', 'Văn bản nút:')}</span>{' '}
+                <strong className="text-gray-700">{previewBanner?.VanBanNut || '-'}</strong>
+              </div>
+              {previewBanner?.ThoiGianKetThuc && (
+                <div className="col-span-2">
+                  <span>{tText('End Time:', 'Thời gian kết thúc:')}</span>{' '}
+                  <strong className="text-gray-700">
+                    {new Date(previewBanner.ThoiGianKetThuc).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
+                  </strong>
+                </div>
+              )}
+              {previewBanner?.LinkURL && (
+                <div className="col-span-2">
+                  <span>{tText('Link URL:', 'Đường dẫn đích:')}</span>{' '}
+                  <a href={previewBanner.LinkURL} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all font-medium">
+                    {previewBanner.LinkURL}
+                  </a>
+                </div>
+              )}
+            </div>
+            {previewBanner?.MoTa && (
+              <div className="border-t pt-3 space-y-1">
+                <span className="text-xs text-gray-500">{tText('Description:', 'Mô tả:')}</span>
+                <p className="text-gray-700 leading-relaxed text-xs">{previewBanner.MoTa}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowViewBannerModal(false)}>{tText('Close', 'Đóng')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Custom Confirm Dialog */}
       <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-[400px]">
